@@ -9,16 +9,16 @@ ThumbMarkJS is open source (GPL-3.0).
 ## Simple usage from CDN
 
 ```javascript
-<script src="https://cdn.ilkkapeltola.com/ThumbMarkjs/latest/ThumbMark.js"></script>
+<script src="https://cdn.ilkkapeltola.com/thumbmark/latest/ThumbMark.js"></script>
 <script>
-    ThumbMark.getFingerprint().then(
+    ThumbMarkJS.getFingerprint().then(
         function(fp) {
             console.log(fp);
         }
     );
 </script>
 ```
-You can also call `ThumbMark.getFingerprintData()` to get a full JSON object with all its components.
+You can also call `ThumbMarkJS.getFingerprintData()` to get a full JSON object with all its components.
 
 
 ## Components included in fingerprint

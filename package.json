@@ -1,6 +1,6 @@
 {
   "name": "fptest",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -8,11 +8,12 @@
     "build": "npx webpack",
     "publish": "aws s3 cp ./build/ThumbMark.js s3://ilkka-public/thumbmark/$npm_package_version/ThumbMark.js",
     "latest": "npm run publish && aws s3 cp ./build/ThumbMark.js s3://ilkka-public/thumbmark/latest/ThumbMark.js",
-    "testpage": "aws s3 sync ./testpage s3://thumbmark"
+    "testpage": "aws s3 sync ./testpage s3://thumbmark",
+    "invalidate": "aws cloudfront create-invalidation --distribution-id E28YXSF0I434DS --paths \"/thumbmark/latest/*\""
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": ["fingerprint"],
+  "author": "Ilkka Peltola",
+  "license": "LGPL-3.0-or-later",
   "devDependencies": {
     "@types/node": "^20.10.5",
     "@types/ua-parser-js": "^0.7.39",
