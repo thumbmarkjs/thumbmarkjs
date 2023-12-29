@@ -19,16 +19,26 @@ export interface componentFunctionInterface {
 // components include a dictionary of name: function.
  export const components: {[name: string]: componentFunctionInterface} = {};
 
-//In case a promise time-outs, this is what we use 
+//In case a promise time-outs, this is what we use as the value in place
 export const timeoutInstance: componentInterface = {
     'timeout': "true"
 }
 
-// 
+/** 
+ * includeComponent is the function each component function needs to call in order for the component to be included
+ * in the fingerprint.
+ * @param {string} name - the name identifier of the component
+ * @param {componentFunctionInterface} creationFunction - the function that implements the component
+ * @returns 
+ */ 
 export const includeComponent = (name:string, creationFunction: componentFunctionInterface) => {
     components[name] = creationFunction;
 }
 
+/**
+ * The function turns the map of component functions to a map of Promises when called
+ * @returns {[name: string]: <Promise>componentInterface} 
+ */
 export const getComponentPromises = () => {
     return Object.fromEntries(
         Object.entries(components).map(([key, value]) => [key, value()])

@@ -1,13 +1,14 @@
 {
   "name": "fptest",
-  "version": "0.5.0",
+  "version": "0.7.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "npx webpack",
-    "publish": "aws s3 cp ./build/visitFP.js s3://ilkka-public/visitfp/$npm_package_version/visitFP.js",
-    "latest": "npm run publish && aws s3 cp ./build/visitFP.js s3://ilkka-public/visitfp/latest/visitFP.js"
+    "publish": "aws s3 cp ./build/ThumbMark.js s3://ilkka-public/thumbmark/$npm_package_version/ThumbMark.js",
+    "latest": "npm run publish && aws s3 cp ./build/ThumbMark.js s3://ilkka-public/thumbmark/latest/ThumbMark.js",
+    "testpage": "aws s3 sync ./testpage s3://thumbmark"
   },
   "keywords": [],
   "author": "",

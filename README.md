@@ -1,24 +1,24 @@
-# visitFP
+# ThumbMarkJS
 
-VisitFP is a simple JavaScript library that creates a fingerprint hash of the browser. It is easy to use and easily extendable.
+ThumbMarkJS is a simple JavaScript library that creates a fingerprint hash of the browser. It is easy to use and easily extendable.
 
-This library is not intended to be robust against trickery such as plugins that deliberately are used to trick you.
+This library is not very robust against trickery such as plugins that deliberately are used to trick you.
 
-VisitFP is open source (GPL-3.0).
+ThumbMarkJS is open source (GPL-3.0).
 
 ## Simple usage from CDN
 
 ```javascript
-<script src="https://cdn.ilkkapeltola.com/visitfp/latest/visitFP.js"></script>
+<script src="https://cdn.ilkkapeltola.com/ThumbMarkjs/latest/ThumbMark.js"></script>
 <script>
-    visitFP.getFingerprint().then(
+    ThumbMark.getFingerprint().then(
         function(fp) {
             console.log(fp);
         }
     );
 </script>
 ```
-You can also call `visitFP.getFingerprintData()` to get a full JSON object with all its components.
+You can also call `ThumbMark.getFingerprintData()` to get a full JSON object with all its components.
 
 
 ## Components included in fingerprint

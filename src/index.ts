@@ -1,6 +1,7 @@
 import { getComponentPromises, timeoutInstance, componentInterface } from './factory';
 import { hash } from './utils/hash';
-import { raceAll } from './utils/raceAll'
+import { raceAll } from './utils/raceAll';
+import * as packageJson from '../package.json';
 
 export async function getFingerprintData(timeout: number = 1000): Promise<componentInterface>  {
     //
@@ -26,4 +27,8 @@ export async function getFingerprint(): Promise<string> {
             resolve(thisHash.toString());
         });
     });
+}
+
+export function getVersion(): string {
+    return packageJson.version;
 }

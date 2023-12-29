@@ -11,69 +11,73 @@ import { hash } from '../../utils/hash'
 export default function generateCanvasFingerprint(): Promise<componentInterface> {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-    let dataURL: string = '';
   
     return new Promise((resolve, reject) => {
-        if (ctx) {
-            // Set canvas dimensions
-            canvas.width = 250;
-            canvas.height = 50;
-        
-            // Text with lowercase/uppercase/punctuation symbols
-            var txt = "FingerPrint <canvas> 1.0";
-    
-            // Create a linear gradient
-            const gradient = ctx.createLinearGradient(0, 0, canvas.width, 10);
-    
-    //        1. Red 2. Orange 3. Yellow 4. Green 5. Blue 6. Indigo 7. Violet
-            // Add three color stops
-            gradient.addColorStop(0, "red");
-            gradient.addColorStop(1/6, "orange");
-            gradient.addColorStop(2/6, "yellow");
-            gradient.addColorStop(3/6, "green");
-            gradient.addColorStop(4/6, "blue");
-            gradient.addColorStop(5/6, "indigo");
-            gradient.addColorStop(1, "violet");
-    
-            ctx.save();
-            ctx.rotate(2.123456789 * Math.PI / 180);
-    
-    
-            // Set the fill style and draw a rectangle
-            ctx.fillStyle = gradient;
-            ctx.fillRect(10, 10, canvas.width, 10);
-    
-            ctx.textBaseline = "top";
-            // The most common type
-            ctx.font = "20.3px 'Arial'";
-            ctx.textBaseline = "alphabetic";
-            ctx.fillStyle = "#f60";
-            ctx.fillRect(95,1,62,15);
-            // Some tricks for color mixing to increase the difference in rendering
-            ctx.fillStyle = "#069";
-            ctx.fillText(txt, 2, 15);
-            ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
-            ctx.fillText(txt, 4, 17);    // Get the canvas data as a base64-encoded image
-            
-            txt = `${String.fromCharCode(55357, 56835)}`
-    
-            ctx.fillText(txt, canvas.width * 4 / 5, canvas.height / 2)
-            ctx.restore();
-            dataURL = canvas.toDataURL();
+        // this test is required to check that the image is the same always
+        const dataURL1 = generateCanvasDataURL();
+        const dataURL2 = generateCanvasDataURL();
+
+        if (dataURL1 == dataURL2) {
             resolve(
                 {
-                    'dataHash': hash(JSON.stringify(dataURL)).toString(),
-                    // 'dataUrl': dataURL
+                    'dataHash': hash(dataURL1).toString(),
                 }
-            );
+            )
         }
-        
         resolve (
             {
                 'dataHash': 'unsupported'
             }
         );
     });
+}
+
+function generateCanvasDataURL(): string {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) {
+        return "unsupported";
+    }
+
+    // Set canvas dimensions
+    canvas.width = 280;
+    canvas.height = 20;
+
+    // Create rainbow gradient for the background rectangle
+    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    gradient.addColorStop(0, "red");
+    gradient.addColorStop(1/6, "orange");
+    gradient.addColorStop(2/6, "yellow");
+    gradient.addColorStop(3/6, "green");
+    gradient.addColorStop(4/6, "blue");
+    gradient.addColorStop(5/6, "indigo");
+    gradient.addColorStop(1, "violet");
+
+    // Draw background rectangle with the rainbow gradient
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw some random text
+    const randomText = 'Random Text WMwmil10Oo';
+    ctx.font = '23.123px Arial';
+    ctx.fillStyle = 'black';
+    ctx.fillText(randomText, -5, 15);
+
+    // Draw the same text with an offset, different color, and slight transparency
+    ctx.fillStyle = 'rgba(0, 0, 255, 0.5)';
+    ctx.fillText(randomText, -3.3, 17.7);
+
+    // Draw a line crossing the image at an arbitrary angle
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(canvas.width * 2/7, canvas.height);
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Return data URL of the canvas
+    return canvas.toDataURL();
 }
 
 includeComponent('canvas', generateCanvasFingerprint);
