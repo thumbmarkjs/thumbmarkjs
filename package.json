@@ -1,11 +1,11 @@
 {
   "name": "fptest",
-  "version": "0.7.2",
+  "version": "0.8.2",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "npx webpack",
+    "build": "npx webpack && cp ./build/ThumbMark.js ./testpage",
     "publish": "aws s3 cp ./build/ThumbMark.js s3://ilkka-public/thumbmark/$npm_package_version/ThumbMark.js",
     "latest": "npm run publish && aws s3 cp ./build/ThumbMark.js s3://ilkka-public/thumbmark/latest/ThumbMark.js",
     "testpage": "aws s3 sync ./testpage s3://thumbmark",

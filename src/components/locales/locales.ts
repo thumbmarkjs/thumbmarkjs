@@ -4,22 +4,16 @@ function getLocales(): Promise<componentInterface> {
   return new Promise((resolve) => {
     resolve(
       {
-        'languages': getUserLanguages(),
+        'languages': getUserLanguage(),
         'timezone': getUserTimezone()
       });
     });
 }
 
-function getUserLanguages(): string[] {
+function getUserLanguage(): string {
     const userLanguages: string[] = [];
-  
-    if (navigator.languages) {
-      userLanguages.push(...navigator.languages);
-    } else if (navigator.language) {
-      userLanguages.push(navigator.language);
-    }
-  
-    return userLanguages;
+
+    return navigator.language;
   }
 
   function getUserTimezone(): string {

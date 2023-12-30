@@ -6,8 +6,6 @@ function screenDetails(): Promise<componentInterface> {
             {
                 'is_touchscreen': navigator.maxTouchPoints > 0,
                 'maxTouchPoints': navigator.maxTouchPoints,
-                'width': screen.width,
-                'height': screen.height,
                 'colorDepth': screen.colorDepth,
                 'mediaMatches': matchMedias(),
             }
@@ -42,12 +40,12 @@ function matchMedias(): string[] {
         'scripting': ['none', 'initial-only', 'enabled'],
         'forced-colors': ['active', 'none'],
         'display-mode': ['fullscreen', 'standalone', 'minimal-ui', 'browser'],
-        'aspect-ratio': ['1/1', '16/9', '16/10', '4/3'],
+//        'aspect-ratio': ['1/1', '16/9', '16/10', '4/3'],
 //        'resolution': ['300dpi', '2dppx', '3dppx'],
         'prefers-color-scheme': ['dark', 'light', 'no-preference'],
 //        'overflow': ['auto', 'hidden'],
 //        'transform-3d': ['0', '1'],
-        'device-aspect-ratio': ['1/1', '16/9', '16/10', '4/3'],
+//        'device-aspect-ratio': ['1/1', '16/9', '16/10', '4/3'],
 //        'device-height': ['640px', '768px', '1024px'],
 //        'device-width': ['320px', '360px', '375px'],
 //        'forced-color-adjust': ['none', 'auto'],
