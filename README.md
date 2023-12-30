@@ -6,10 +6,16 @@ This library is not very robust against trickery such as plugins that deliberate
 
 ThumbMarkJS is open source (GPL-3.0).
 
+## Demo page
+
+You can help this project by visiting the demo page that **logs your fingerprint for analysis**. The logged fingerprint data is only used to improve this library. Visit the page from the link below:
+
+[Show and log my fingerprint](https://www.thumbmarkjs.com/)
+
 ## Simple usage from CDN
 
 ```javascript
-<script src="https://cdn.ilkkapeltola.com/thumbmark/latest/ThumbMark.js"></script>
+<script src="https://cdn.thumbmarkjs.com/latest/ThumbMark.js"></script>
 <script>
     ThumbMarkJS.getFingerprint().then(
         function(fp) {
@@ -21,22 +27,27 @@ ThumbMarkJS is open source (GPL-3.0).
 
 You can also call `ThumbMarkJS.getFingerprintData()` to get a full JSON object with all its components.
 
-## Demo page
+## Or build it yourself
 
-You can help this project by visiting the demo page that logs your fingerprint for analysis. The logged fingerprint data is only used to improve this library. Visit the page from the link below:
+Clone this repo and then run
 
-[Show and log my fingerprint](https://thumbmark.s3.eu-central-1.amazonaws.com/index.html)
+```
+npm run install
+npm run build
+```
 
-## 🆘 It's easy for you to help! 🆘
+## Please help! ♥
 
 Simply going to the page above (which logs your visit) helps a lot. It's all anonymous and only used to develop this library.
-Let me know if you run into any errors by opening an issue.
+Let me know if you run into any errors by opening an issue. You can also reach me at [ilkkapel@gmail.com](mailto:ilkkapel@gmail.com)
 
 Test cases you can try:
 - Check your fingerprint, then refresh the page with Ctrl + R
 - Refresh without cache
 - Move the window to another screen
 - Try in incognito
+
+if you see a fingerprint change when it shouldn't, you can use [this JSON Diff Finder tool](https://url-decode.com/tool/json-diff) to check what causes the diff.
 
 ## Components included in fingerprint
 - audio fingerprint
