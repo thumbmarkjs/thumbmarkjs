@@ -7,42 +7,42 @@ import { hash } from '../../utils/hash'
  * @returns a CanvasInfo JSON object
  */
 
+const _WIDTH = 280;
+const _HEIGHT = 20;
 
 export default function generateCanvasFingerprint(): Promise<componentInterface> {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
   
-    return new Promise((resolve, reject) => {
-        // this test is required to check that the image is the same always
-        const dataURL1 = generateCanvasDataURL();
-        const dataURL2 = generateCanvasDataURL();
+    return new Promise((resolve) => {
 
-        if (dataURL1 == dataURL2) {
-            resolve(
-                {
-                    'dataHash': hash(dataURL1).toString(),
-                }
-            )
-        }
-        resolve (
+        /**
+         * Since some browsers fudge with the canvas pixels to prevent fingerprinting, the following
+         * creates the canvas three times and getCommonPixels picks the most common byte for each
+         * channel of each pixel.
+         */
+        const imageDatas: ImageData[] = Array.from({length: 3}, () => generateCanvasImageData() );
+        const commonImageData = getCommonPixels(imageDatas);
+
+        resolve(
             {
-                'dataHash': 'unsupported'
+                'commonImageDataHash': hash(commonImageData.data).toString()
             }
-        );
+        )
     });
 }
 
-function generateCanvasDataURL(): string {
+function generateCanvasImageData(): ImageData {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
 
     if (!ctx) {
-        return "unsupported";
+        return new ImageData(1,1);
     }
 
     // Set canvas dimensions
-    canvas.width = 280;
-    canvas.height = 20;
+    canvas.width = _WIDTH;
+    canvas.height = _HEIGHT;
 
     // Create rainbow gradient for the background rectangle
     const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
@@ -76,8 +76,48 @@ function generateCanvasDataURL(): string {
     ctx.lineWidth = 2;
     ctx.stroke();
 
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     // Return data URL of the canvas
-    return canvas.toDataURL();
+    return imageData;
+}
+
+function getMostFrequent(arr: number[]): number {
+    if (arr.length === 0) {
+      return 0; // Handle empty array case
+    }
+  
+    const frequencyMap: { [key: number]: number } = {};
+    
+    // Count occurrences of each number in the array
+    for (const num of arr) {
+      frequencyMap[num] = (frequencyMap[num] || 0) + 1;
+    }
+  
+    let mostFrequent: number = arr[0];
+    
+    // Find the number with the highest frequency
+    for (const num in frequencyMap) {
+      if (frequencyMap[num] > frequencyMap[mostFrequent]) {
+        mostFrequent = parseInt(num, 10);
+      }
+    }
+  
+    return mostFrequent;
+  }
+
+export function getCommonPixels(images: ImageData[], width = _WIDTH, height = _HEIGHT ): ImageData {
+    let finalData: number[] = [];
+    for (let i = 0; i < images[0].data.length; i++) {
+        let indice: number[] = [];
+        for (let u = 0; u < images.length; u++) {
+            indice.push(images[u].data[i]);
+        }
+        finalData.push(getMostFrequent(indice));
+    }
+
+    const pixelData = finalData;
+    const pixelArray = new Uint8ClampedArray(pixelData);
+    return new ImageData(pixelArray, width, height);
 }
 
 includeComponent('canvas', generateCanvasFingerprint);

@@ -32,6 +32,12 @@ You can help this project by visiting the demo page that logs your fingerprint f
 Simply going to the page above (which logs your visit) helps a lot. It's all anonymous and only used to develop this library.
 Let me know if you run into any errors by opening an issue.
 
+Test cases you can try:
+- Check your fingerprint, then refresh the page with Ctrl + R
+- Refresh without cache
+- Move the window to another screen
+- Try in incognito
+
 ## Components included in fingerprint
 - audio fingerprint
 - canvas fingerprint
