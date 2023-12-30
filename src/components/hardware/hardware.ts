@@ -5,7 +5,8 @@ function getHardwareInfo(): Promise<componentInterface> {
     resolve(
       {
         'videocard': getVideoCard(),
-        'architecture': getArchitecture()
+        'architecture': getArchitecture(),
+        'deviceMemory': navigator.deviceMemory
       }
     )
   });
