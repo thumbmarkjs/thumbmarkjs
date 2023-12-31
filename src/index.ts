@@ -5,8 +5,13 @@ import * as packageJson from '../package.json';
 const componentsContext = require.context('./components', true, /\.ts$/);
 componentsContext.keys().forEach(componentsContext);
 
-export async function getFingerprintData(timeout: number = 1000): Promise<componentInterface>  {
+interface fingerprintOptionsInterface {
+    [key: string]: string | boolean | number;
+}
+
+export async function getFingerprintData(opts?: fingerprintOptionsInterface): Promise<componentInterface>  {
     try {
+        const timeout = 1000;
         const promiseMap = getComponentPromises();
         const keys = Object.keys(promiseMap);
         const promises = Object.values(promiseMap);
@@ -22,7 +27,7 @@ export async function getFingerprintData(timeout: number = 1000): Promise<compon
     }
 }
 
-export async function getFingerprint(): Promise<string> {
+export async function getFingerprint(opts?: fingerprintOptionsInterface): Promise<string> {
     try {
         const fingerprintData = await getFingerprintData();
         const thisHash = hash(JSON.stringify(fingerprintData));
