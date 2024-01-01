@@ -63,7 +63,6 @@ if you see a fingerprint change when it shouldn't, you can use [this JSON Diff F
 - browser permissions
 - available plugins
 - a ton of screen details including media queries
-- [ua-parser-js](https://uaparser.js.org/) details
 - and a bunch of smaller things
 
 ## Technical details
