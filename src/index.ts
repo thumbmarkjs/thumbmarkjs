@@ -2,7 +2,8 @@ import { getComponentPromises, timeoutInstance, componentInterface } from './fac
 import { hash } from './utils/hash';
 import { raceAll } from './utils/raceAll';
 import * as packageJson from '../package.json';
-const componentsContext = require.context('./components', true, /\.ts$/);
+//const componentsContext = require.context('./components', true, /\.ts$/);
+const componentsContext = require.context('./components', true, /^(?!.*\.test\.ts$).*\.ts$/);
 componentsContext.keys().forEach(componentsContext);
 
 interface fingerprintOptionsInterface {

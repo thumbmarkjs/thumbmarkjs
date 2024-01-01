@@ -6,7 +6,8 @@ function getSystemDetails(): Promise<componentInterface> {
         'platform': window.navigator.platform,
         'cookieEnabled': window.navigator.cookieEnabled,
         'productSub': navigator.productSub,
-        'product': navigator.product
+        'product': navigator.product,
+        'useragent': navigator.userAgent
     });
 });
 }

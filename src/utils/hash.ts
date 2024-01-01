@@ -9,3 +9,13 @@ function hash(object: Object): String {
 }
 
 export { hash }
+/*
+import { createHash } from 'crypto';
+
+function hash(input: string): string {
+  const hash = createHash('sha256'); // Selecting the SHA-256 algorithm
+  hash.update(input);
+  return hash.digest('hex'); // Get the hash in hexadecimal format
+}
+
+export { hash }*/

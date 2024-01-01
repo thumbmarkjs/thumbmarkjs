@@ -1,13 +1,14 @@
 {
-  "name": "fptest",
-  "version": "0.8.5",
+  "name": "thumbmarkjs",
+  "version": "0.9.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "jest",
+    "prod": "npx webpack --mode production",
     "build": "npx webpack && cp ./build/ThumbMark.js ./testpage",
-    "publish": "aws s3 cp ./build/ThumbMark.js s3://ilkka-public/thumbmark/$npm_package_version/ThumbMark.js",
-    "latest": "npm run publish && aws s3 cp ./build/ThumbMark.js s3://ilkka-public/thumbmark/latest/ThumbMark.js",
+    "publish": "aws s3 cp ./build/ThumbMark.js s3://ilkka-public/thumbmark/$npm_package_version/ThumbMark.js --profile ilkka",
+    "latest": "npm run publish && aws s3 cp ./build/ThumbMark.js s3://ilkka-public/thumbmark/latest/ThumbMark.js  --profile ilkka",
     "testpage": "aws s3 sync ./testpage s3://thumbmarkjs.com",
     "invalidate": "aws cloudfront create-invalidation --distribution-id E24XBAADLODIDB --paths \"/latest/ThumbMark.js\"",
     "testpage-invalidate": "aws cloudfront create-invalidation --distribution-id E1IK40S4U87D63 --paths \"/*\""
@@ -21,7 +22,7 @@
     "@testing-library/jest-dom": "^6.1.6",
     "@types/jest": "^29.5.11",
     "@types/jsdom": "^21.1.6",
-    "@types/node": "^20.10.5",
+    "@types/node": "^20.10.6",
     "@types/ua-parser-js": "^0.7.39",
     "@types/webpack-env": "^1.18.4",
     "@webpack-cli/generators": "^3.0.7",

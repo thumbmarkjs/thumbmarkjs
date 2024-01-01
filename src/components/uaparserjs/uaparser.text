@@ -2,7 +2,8 @@ import { componentInterface, includeComponent } from '../../factory';
 
 
 /**
- * Might want to replace this with a different implementation, since this is a few KBs
+ * I decided to remove this since it was doubling the size of the library.
+ * system has the navigator.userAgent now and it's all the entropy I need.
  */
 
 import { UAParser } from 'ua-parser-js'
