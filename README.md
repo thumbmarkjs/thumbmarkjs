@@ -1,4 +1,4 @@
-# ThumbMarkJS
+# ThumbmarkJS
 
 ThumbMarkJS is a simple JavaScript library that creates a fingerprint hash of the browser. It is easy to use and easily extendable. While not (yet) as good, it's a free open source alternative to the market leading [FingerprintJS](https://github.com/fingerprintjs/fingerprintjs).
 
@@ -17,7 +17,7 @@ You can help this project by visiting the demo page that **logs your fingerprint
 ```javascript
 <script src="https://cdn.thumbmarkjs.com/latest/ThumbMark.js"></script>
 <script>
-    ThumbMarkJS.getFingerprint().then(
+    ThumbmarkJS.getFingerprint().then(
         function(fp) {
             console.log(fp);
         }
@@ -25,7 +25,7 @@ You can help this project by visiting the demo page that **logs your fingerprint
 </script>
 ```
 
-You can also call `ThumbMarkJS.getFingerprintData()` to get a full JSON object with all its components.
+You can also call `ThumbmarkJS.getFingerprintData()` to get a full JSON object with all its components.
 
 You can also get any previous version from the CDN by replacing `latest` with the version number. Currently the URL would be
 
