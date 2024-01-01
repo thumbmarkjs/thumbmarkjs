@@ -15,7 +15,7 @@ You can help this project by visiting the demo page that **logs your fingerprint
 ## Simple usage from CDN
 
 ```javascript
-<script src="https://cdn.thumbmarkjs.com/latest/ThumbMark.js"></script>
+<script src="https://cdn.thumbmarkjs.com/latest/Thumbmark.js"></script>
 <script>
     ThumbmarkJS.getFingerprint().then(
         function(fp) {
@@ -29,7 +29,7 @@ You can also call `ThumbmarkJS.getFingerprintData()` to get a full JSON object w
 
 You can also get any previous version from the CDN by replacing `latest` with the version number. Currently the URL would be
 
-`https://cdn.thumbmarkjs.com/0.8.5/ThumbMark.js`
+`https://cdn.thumbmarkjs.com/0.8.5/Thumbmark.js`
 
 ## Or build it yourself
 
