@@ -143,4 +143,4 @@ function measureSingleFont(ctx: CanvasRenderingContext2D | null, font: string): 
     return width;
 }
 
-includeComponent('fonts', getFontMetrics);
+//includeComponent('fonts', getFontMetrics);
