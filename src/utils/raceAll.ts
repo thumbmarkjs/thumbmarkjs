@@ -14,7 +14,7 @@ export interface RaceResult<T> {
   elapsed?: number;
 }
 
-export function raceAll<T>(
+export function raceAllPerformance<T>(
   promises: Promise<T>[],
   timeoutTime: number,
   timeoutVal: T
@@ -37,11 +37,9 @@ export function raceAll<T>(
 }
 
 
-/*
+
 export function raceAll<T>(promises: Promise<T>[], timeoutTime: number, timeoutVal: T): Promise<(T | undefined)[]> {
   return Promise.all(promises.map((p) => {
     return Promise.race([p, delay(timeoutTime, timeoutVal)]);
   }));
 }
-
-*/

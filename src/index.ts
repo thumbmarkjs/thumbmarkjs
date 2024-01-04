@@ -13,28 +13,8 @@ interface fingerprintOptionsInterface {
 interface fingerprintRaceResultsInterface {
     [key: string]: RaceResult<componentInterface>
 }
-
-let globalResolvedComponents: fingerprintRaceResultsInterface = {};
-
-export async function init(opts?: fingerprintOptionsInterface): Promise<boolean> {
-    try {
-        if (Object.keys(globalResolvedComponents).length > 0) {
-            console.log("cached")
-            return true
-        }
-        globalResolvedComponents = await getFingerprintData(opts)
-        return true
-    } catch (error) {
-        throw error
-    }
-}
-
 export async function getFingerprintData(opts?: fingerprintOptionsInterface): Promise<fingerprintRaceResultsInterface>  {
     try {
-        if (Object.keys(globalResolvedComponents).length > 0) {
-            console.log("cached")
-            return globalResolvedComponents
-        }
             
         const timeout = 1000;
         const promiseMap = getComponentPromises();
@@ -45,7 +25,7 @@ export async function getFingerprintData(opts?: fingerprintOptionsInterface): Pr
         resolvedValues.forEach((value, index) => {
             resolvedComponents[keys[index]] = value;
         });
-        globalResolvedComponents = resolvedComponents
+
         return resolvedComponents;
     }
     catch (error) {
