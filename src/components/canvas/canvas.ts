@@ -26,7 +26,7 @@ export default function generateCanvasFingerprint(): Promise<componentInterface>
 
         resolve(
             {
-                'commonImageDataHash': hash(commonImageData.data).toString()
+                'commonImageDataHash': hash(commonImageData.data.toString()).toString()
             }
         )
     });
