@@ -2,11 +2,12 @@ import { componentInterface, includeComponent } from '../../factory'
 
 function getHardwareInfo(): Promise<componentInterface> {
   return new Promise((resolve, reject) => {
+    const deviceMemory = (navigator.deviceMemory !== undefined) ? navigator.deviceMemory : 0
     resolve(
       {
         'videocard': getVideoCard(),
         'architecture': getArchitecture(),
-        'deviceMemory': navigator.deviceMemory
+        'deviceMemory': deviceMemory.toString() || 'undefined'
       }
     )
   });
@@ -20,19 +21,16 @@ interface VideoCard {
 /**
  * @see Credits: https://stackoverflow.com/a/49267844
  */
-function getVideoCard(): componentInterface | undefined {
+function getVideoCard(): componentInterface | string {
   const canvas = document.createElement('canvas')
   const gl = canvas.getContext('webgl') ?? canvas.getContext('experimental-webgl')
-  if (gl && 'getExtension' in gl) {
-    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info')
-    if (debugInfo) {
-      return {
-        vendor: (gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) || '').toString(),
-        renderer: (gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || '').toString(),
-      }
+  if (gl && 'getParameter' in gl) {
+    return {
+      vendor: (gl.getParameter(gl.VENDOR) || '').toString(),
+      renderer: (gl.getParameter(gl.RENDERER) || '').toString(),
     }
   }
-  return undefined
+  return "undefined"
 }
 
 function getArchitecture(): number {

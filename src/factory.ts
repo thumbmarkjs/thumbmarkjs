@@ -7,7 +7,7 @@
 
 // the component interface is the form of the JSON object the function's promise must return
  export interface componentInterface {
-    [key: string]: string | string[] | number | boolean | undefined | componentInterface;
+    [key: string]: string | string[] | number | boolean | componentInterface;
 }
 
 
