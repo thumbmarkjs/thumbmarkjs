@@ -4,7 +4,7 @@ ThumbmarkJS is a simple JavaScript library that creates a fingerprint hash of th
 
 This library is not very robust against trickery such as plugins that deliberately are used to trick you. The library is still under development.
 
-ThumbmarkJS is open source (GPL-3.0).
+ThumbmarkJS is open source (MIT).
 
 ## Demo page
 
