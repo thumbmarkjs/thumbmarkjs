@@ -29,7 +29,7 @@ You can also call `ThumbmarkJS.getFingerprintData()` to get a full JSON object w
 
 You can also get any previous version from the CDN by replacing `latest` with the version number. Currently the URL would be
 
-`https://cdn.thumbmarkjs.com/0.9.0/Thumbmark.js`
+`https://cdn.thumbmarkjs.com/0.11.1/Thumbmark.js`
 
 ## Or build it yourself
 
