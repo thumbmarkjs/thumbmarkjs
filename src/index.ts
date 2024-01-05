@@ -37,7 +37,6 @@ export async function getFingerprint(opts?: fingerprintOptionsInterface): Promis
     try {
         const fingerprintData: fingerprintRaceResultsInterface = await getFingerprintData();
         const thisHash = hash(JSON.stringify(cleanElapsed(fingerprintData))).toString();
-        console.log(JSON.stringify(fingerprintData), thisHash)
         return thisHash;
     } catch (error) {
         throw error;

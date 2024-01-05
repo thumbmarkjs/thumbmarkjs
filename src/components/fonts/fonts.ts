@@ -113,7 +113,6 @@ export default function getFontMetrics(): Promise<componentInterface> {
                     return measureSingleFont(ctx, font)
                 })
 
-                console.log(defaultWidths)
                 let results: {[k: string]: any} = {};
                 availableFonts.forEach((font) => {
                     const fontWidth = measureSingleFont(ctx, font);
