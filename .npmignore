@@ -1,0 +1,17 @@
+# Files and directories to exclude from the published package
+node_modules
+dist
+build
+*.log
+*.md
+*.ts
+*.tsx
+Makefile
+.env
+.github
+LICENSE
+jest.config.js
+README.md
+tsconfig.json
+webpack.congig.js
+testpage
