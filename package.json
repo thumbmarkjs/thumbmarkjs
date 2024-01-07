@@ -1,6 +1,6 @@
 {
   "name": "thumbmarkjs",
-  "version": "0.11.1",
+  "version": "0.11.3",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -11,7 +11,7 @@
     "fingerprint"
   ],
   "author": "Ilkka Peltola",
-  "license": "LGPL-3.0-or-later",
+  "license": "MIT",
   "devDependencies": {
     "@testing-library/jest-dom": "^6.1.6",
     "@types/jest": "^29.5.11",

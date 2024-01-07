@@ -40,6 +40,12 @@ npm run install
 npm run build
 ```
 
+## Still under construction
+
+Because the library is still under construction, changes might happen to it. I might need to add an `init()` function at some point.
+The components of the fingerprint might change. Obviously trying to keep this as simple as possible to take into use and avoid any
+unnecessary changes. But if you're planning to use this live, better to freeze to a specific version with CDN or host the file yourself.
+
 ## Please help! ♥
 
 Simply going to the page above (which logs your visit) helps a lot. It's all anonymous and only used to develop this library.
