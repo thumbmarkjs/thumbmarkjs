@@ -1,0 +1,10 @@
+{
+    "compilerOptions": {
+      // Your test-specific compiler options
+      "types": ["node", "jest"]
+    },
+    "include": [
+      "src/**/*.test.ts" // Include your test files pattern here
+    ],
+    "extends": "./tsconfig.json" // Extend the main tsconfig
+  }
