@@ -17,21 +17,40 @@ You can help this project by visiting the demo page that **logs your fingerprint
 ```javascript
 <script src="https://cdn.thumbmarkjs.com/latest/Thumbmark.js"></script>
 <script>
-    ThumbmarkJS.getFingerprint().then(
-        function(fp) {
-            console.log(fp);
-        }
-    );
+ThumbmarkJS.getFingerprint().then(
+    function(fp) {
+        console.log(fp);
+    }
+);
 </script>
+
+<!-- or -->
+
+<script>
+import('https://cdn.thumbmarkjs.com/latest/Thumbmark.js')
+.then(() => {
+    ThumbmarkJS.getFingerprint().then((fp) => { console.log(fp)})
+})
+</script>
+
 ```
 
 You can also call `ThumbmarkJS.getFingerprintData()` to get a full JSON object with all its components.
-
 You can also get any previous version from the CDN by replacing `latest` with the version number. Currently the URL would be
+`https://cdn.thumbmarkjs.com/0.11.2/Thumbmark.js`
 
-`https://cdn.thumbmarkjs.com/0.11.1/Thumbmark.js`
+## Install with NPM
 
-## Or build it yourself
+The npm package is called `thumbmarkjs`
+so, install it with
+
+```
+npm install thumbmarkjs
+```
+
+But bear in mind that the library is meant to be running in the browser. Trying to run your code through node will fail.
+
+## Build it yourself
 
 Clone this repo and then run
 

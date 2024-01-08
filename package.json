@@ -1,12 +1,14 @@
 {
   "name": "thumbmarkjs",
-  "version": "0.11.3",
+  "version": "0.11.3-rc1",
   "description": "",
   "main": "dist/index.js",
   "module": "dist/index.js",
+  "public": true,
+  "files": ["dist"],
   "scripts": {
     "test": "jest",
-    "build": "npx webpack"
+    "build": "npx webpack && npx tsc"
   },
   "keywords": [
     "fingerprint"

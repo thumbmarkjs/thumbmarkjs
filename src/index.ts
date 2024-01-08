@@ -1,7 +1,9 @@
 import { getFingerprint, getFingerprintData } from './fingerprint/functions';
 import * as packageJson from '../package.json';
-const componentsContext = require.context('./components', true, /^(?!.*\.test\.ts$).*\.ts$/);
-componentsContext.keys().forEach(componentsContext);
+import './components'
+
+//const componentsContext = require.context('./components', true, /^(?!.*\.test\.ts$).*\.ts$/);
+//componentsContext.keys().forEach(componentsContext);
 
 interface fingerprintOptionsInterface {
     showElapsed?: boolean
