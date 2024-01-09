@@ -13,7 +13,7 @@
     "build": "npx webpack && npx tsc"
   },
   "keywords": [
-    "fingerprint"
+    "fingerprint", "fingerprinting", "browser-fingerprint", "browser-fingerprinting"
   ],
   "author": "Ilkka Peltola",
   "license": "MIT",
