@@ -46,6 +46,8 @@ The function in question is included in the fingerprint by calling the function 
 
 And to do this, you just need the `componentInterface` and the `includeComponent` function by importing them from `../../factory`.
 
+The last thing to do is include the newly added file into `./components/index.ts`
+
 ## What the factory.ts does
 
 The purpose of the `factory.ts` is to implement the common interfaces for the fingerprint component functions and keep a list of all the components that are included.
@@ -58,8 +60,9 @@ The `getComponentPromises()` is called in the main entry point when someone want
 
 ## Putting it all together
 
-The main entry point `index.ts` doesn't really do that much.
-It simply includes all `.ts` files from under `./components`, which add the component functions.
+The main entry point `index.ts` doesn't really do that much. The import of `./components` handles importing all the component scripts.
+
 It then gets the promise map with `getComponentPromises()`. It races each promise against a timeout.
 At time out the promises that are still pending return a `timeoutInstance`.
+
 The function `getFingerprintData()` returns the promise of the component map, while the function `getFingerprint()` returns the promise of a hash based on the resolved component map.

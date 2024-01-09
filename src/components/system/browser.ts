@@ -6,6 +6,12 @@ interface BrowserResult {
   
   // Define a function to parse the user agent string and return the browser name and version
 export function getBrowser(): BrowserResult {
+  if (typeof navigator === 'undefined') {
+    return {
+      name: "unknown",
+      version: "unknown"
+    }
+  }
     const ua = navigator.userAgent
     // Define some regular expressions to match different browsers and their versions
     const regexes = [

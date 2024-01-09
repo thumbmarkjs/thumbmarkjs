@@ -1,16 +1,14 @@
 # ThumbmarkJS
+![GitHub package.json dynamic](https://img.shields.io/github/package-json/version/ilkkapeltola/thumbmarkjs)
+![NPM Version](https://img.shields.io/npm/v/thumbmarkjs)
 
-ThumbmarkJS is a simple JavaScript library that creates a fingerprint hash of the browser. It is easy to use and easily extendable. While not (yet) as good, it's a free open source alternative to the market leading [FingerprintJS](https://github.com/fingerprintjs/fingerprintjs).
-
-This library is not very robust against trickery such as plugins that deliberately are used to trick you. The library is still under development.
+ThumbmarkJS the world's second best browser fingerprinting JavaScript library. While not (yet?) as good, it's a free open source alternative to the market leading [FingerprintJS](https://github.com/fingerprintjs/fingerprintjs). It is easy to use and easily extendable.
 
 ThumbmarkJS is open source (MIT).
 
 ## Demo page
 
-You can help this project by visiting the demo page that **logs your fingerprint for analysis**. The logged fingerprint data is only used to improve this library. Visit the page from the link below:
-
-[Show and log my fingerprint](https://www.thumbmarkjs.com/)
+You can help this project by visiting the demo page that **logs your fingerprint for analysis**. The logged fingerprint data is only used to improve this library. Visit the page from the link: [Show and log my fingerprint](https://www.thumbmarkjs.com/)
 
 ## Simple usage from CDN
 
@@ -37,18 +35,23 @@ import('https://cdn.thumbmarkjs.com/latest/Thumbmark.js')
 
 You can also call `ThumbmarkJS.getFingerprintData()` to get a full JSON object with all its components.
 You can also get any previous version from the CDN by replacing `latest` with the version number. Currently the URL would be
-`https://cdn.thumbmarkjs.com/0.11.2/Thumbmark.js`
+`https://cdn.thumbmarkjs.com/0.11.4/Thumbmark.js`
 
 ## Install with NPM
 
-The npm package is called `thumbmarkjs`
-so, install it with
+Installing from NPM:
 
-```
+```bash
 npm install thumbmarkjs
 ```
 
-But bear in mind that the library is meant to be running in the browser. Trying to run your code through node will fail.
+and in your code
+
+```javascript
+import { getFingerprint } from 'thumbmarkjs'
+```
+
+But bear in mind that the library is meant to be running in the browser. Let me know if the library fails on a server side import. However, `getFingerprint()` is not meant to be called server side.
 
 ## Build it yourself
 
@@ -59,16 +62,9 @@ npm run install
 npm run build
 ```
 
-## Still under construction
+## How you can help
 
-Because the library is still under construction, changes might happen to it. I might need to add an `init()` function at some point.
-The components of the fingerprint might change. Obviously trying to keep this as simple as possible to take into use and avoid any
-unnecessary changes. But if you're planning to use this live, better to freeze to a specific version with CDN or host the file yourself.
-
-## Please help! ♥
-
-Simply going to the page above (which logs your visit) helps a lot. It's all anonymous and only used to develop this library.
-Let me know if you run into any errors by opening an issue. The discussion section is also open.
+Simply going to the [Show and log my fingerprint](https://www.thumbmarkjs.com/)-page helps a lot. The logging is all anonymous and only used to develop this library. Let me know if you run into any errors by opening an issue. The discussion section is also open.
 
 Test cases you can try:
 - Check your fingerprint, then refresh the page with Ctrl + R
