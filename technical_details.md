@@ -9,6 +9,7 @@ components/
   canvas/
     canvas.ts
   etc../
+  index.ts
 utils/
   hash.ts
   raceAll.ts
