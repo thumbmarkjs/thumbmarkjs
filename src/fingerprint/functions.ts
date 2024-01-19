@@ -1,14 +1,15 @@
 import { getComponentPromises, timeoutInstance, componentInterface } from '../factory';
 import { hash } from '../utils/hash';
-import { raceAll} from '../utils/raceAll';
+import { raceAll, raceAllPerformance} from '../utils/raceAll';
+
+const _TIMEOUT: number = 1000
 
 export async function getFingerprintData(): Promise<componentInterface>  {
     try {
-        const timeout = 1000;
         const promiseMap = getComponentPromises();
         const keys = Object.keys(promiseMap);
         const promises = Object.values(promiseMap);
-        const resolvedValues = await raceAll(promises, timeout, timeoutInstance );
+        const resolvedValues = await raceAll(promises, _TIMEOUT, timeoutInstance );
         const resolvedComponents: { [key: string]: any } = {};
         resolvedValues.forEach((value, index) => {
             resolvedComponents[keys[index]] = value;
@@ -30,3 +31,20 @@ export async function getFingerprint(): Promise<string> {
     }
 }
 
+export async function getFingerprintPerformance() {
+    try {
+        const promiseMap = getComponentPromises();
+        const keys = Object.keys(promiseMap);
+        const promises = Object.values(promiseMap);
+        const resolvedValues = await raceAllPerformance(promises, _TIMEOUT, timeoutInstance );
+        const resolvedComponents: { [key: string]: any } = {}
+        resolvedValues.forEach((value, index) => {
+            resolvedComponents[keys[index]] = value.elapsed;
+            //resolvedComponents["elapsed"][keys[index]] = value.elapsed;
+        });
+        return resolvedComponents;
+    }
+    catch (error) {
+        throw error;
+    }
+}

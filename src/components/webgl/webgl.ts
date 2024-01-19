@@ -15,12 +15,13 @@ async function createWebGLFingerprint(): Promise<componentInterface> {
     }
 
     // calculating this three times
-    const imageDatas: ImageData[] = Array.from({length: 3}, () => createWebGLImageData() );
+    //const imageDatas: ImageData[] = Array.from({length: 3}, () => createWebGLImageData() );
     // and then checking the most common bytes for each channel of each pixel
-    const commonImageData = getCommonPixels(imageDatas, canvas.width, canvas.height);
+    //const commonImageData = getCommonPixels(imageDatas, canvas.width, canvas.height);
+    const imageData = createWebGLImageData()
 
     return {
-      'commonImageHash': hash(commonImageData.data.toString()).toString(),
+      'commonImageHash': hash(imageData.data.toString()).toString(),
       'renderer': gl.getParameter(gl.RENDERER),
       'vendor': gl.getParameter(gl.VENDOR),
       'version': gl.getParameter(gl.VERSION),
