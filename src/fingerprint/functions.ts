@@ -37,10 +37,12 @@ export async function getFingerprintPerformance() {
         const keys = Object.keys(promiseMap);
         const promises = Object.values(promiseMap);
         const resolvedValues = await raceAllPerformance(promises, _TIMEOUT, timeoutInstance );
-        const resolvedComponents: { [key: string]: any } = {}
+        const resolvedComponents: { [key: string]: any } = {
+            elapsed: {}
+        }
         resolvedValues.forEach((value, index) => {
-            resolvedComponents[keys[index]] = value.elapsed;
-            //resolvedComponents["elapsed"][keys[index]] = value.elapsed;
+            resolvedComponents[keys[index]] = value.value;
+            resolvedComponents["elapsed"][keys[index]] = value.elapsed;
         });
         return resolvedComponents;
     }

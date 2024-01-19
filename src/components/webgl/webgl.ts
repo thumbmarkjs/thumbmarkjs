@@ -14,14 +14,13 @@ async function createWebGLFingerprint(): Promise<componentInterface> {
         throw new Error('WebGL not supported');
     }
 
-    // calculating this three times
-    //const imageDatas: ImageData[] = Array.from({length: 3}, () => createWebGLImageData() );
+    const imageDatas: ImageData[] = Array.from({length: 3}, () => createWebGLImageData() );
     // and then checking the most common bytes for each channel of each pixel
-    //const commonImageData = getCommonPixels(imageDatas, canvas.width, canvas.height);
-    const imageData = createWebGLImageData()
+    const commonImageData = getCommonPixels(imageDatas, canvas.width, canvas.height);
+    //const imageData = createWebGLImageData()
 
     return {
-      'commonImageHash': hash(imageData.data.toString()).toString(),
+      'commonImageHash': hash(commonImageData.data.toString()).toString(),
       'renderer': gl.getParameter(gl.RENDERER),
       'vendor': gl.getParameter(gl.VENDOR),
       'version': gl.getParameter(gl.VERSION),
@@ -35,12 +34,13 @@ async function createWebGLFingerprint(): Promise<componentInterface> {
 }
 
 function createWebGLImageData(): ImageData {
-    try {
-      const canvas = document.createElement('canvas')
+  let gl = null
+  try {
+      const canvas = document.createElement('canvas');
       canvas.width = 200;
       canvas.height = 100;
 
-      const gl = canvas.getContext('webgl')
+      gl = canvas.getContext('webgl');
 
       if (!gl) {
           throw new Error('WebGL not supported');
@@ -71,7 +71,14 @@ function createWebGLImageData(): ImageData {
       gl.shaderSource(fragmentShader, fragmentShaderSource);
 
       gl.compileShader(vertexShader);
+      if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
+          throw new Error('Vertex shader compilation failed: ' + gl.getShaderInfoLog(vertexShader));
+      }
+
       gl.compileShader(fragmentShader);
+      if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
+          throw new Error('Fragment shader compilation failed: ' + gl.getShaderInfoLog(fragmentShader));
+      }
 
       const shaderProgram = gl.createProgram();
 
@@ -82,6 +89,10 @@ function createWebGLImageData(): ImageData {
       gl.attachShader(shaderProgram, vertexShader);
       gl.attachShader(shaderProgram, fragmentShader);
       gl.linkProgram(shaderProgram);
+      if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+          throw new Error('Shader program linking failed: ' + gl.getProgramInfoLog(shaderProgram));
+      }
+
       gl.useProgram(shaderProgram);
 
       // Set up vertices to form lines
@@ -113,23 +124,29 @@ function createWebGLImageData(): ImageData {
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.LINES, 0, numSpokes * 2);
 
-      const pixelData = new Uint8ClampedArray(canvas.width * canvas.height * 4)
-      gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, pixelData)
-      const imageData = new ImageData(pixelData, canvas.width, canvas.height)
+      const pixelData = new Uint8ClampedArray(canvas.width * canvas.height * 4);
+      gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, pixelData);
+      const imageData = new ImageData(pixelData, canvas.width, canvas.height);
 
-      // Close WebGL context
+      // WebGL cleanup
+      gl.disableVertexAttribArray(positionAttribute);
+      gl.deleteBuffer(vertexBuffer);
       gl.deleteProgram(shaderProgram);
       gl.deleteShader(vertexShader);
       gl.deleteShader(fragmentShader);
-      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-      gl.bindTexture(gl.TEXTURE_2D, null);
-      canvas.remove();
-  
-      return imageData
 
-    } catch (error) {
-      return new ImageData(1,1);
-    }
+      return imageData;
+  } catch (error) {
+      console.error(error);
+      return new ImageData(1, 1);
+  } finally {
+    if (gl) {
+      const loseContextExtension = gl.getExtension('WEBGL_lose_context');
+      if (loseContextExtension) {
+          loseContextExtension.loseContext();
+      }
   }
+  }
+}
 
   includeComponent('webgl', createWebGLFingerprint);

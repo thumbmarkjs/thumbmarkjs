@@ -1,28 +1,30 @@
 import { componentInterface, includeComponent } from '../../factory'
 
 const getMathInfo = async (): Promise<componentInterface> => {
-    const x = 1e10
-    const y = 1e-10
-    const angle = Math.PI / 4
-    const value = 0.5
     return {
-        pi: Math.PI,
+        acos: Math.acos(0.5),
+        asin: integrate(Math.asin, -1, 1, 97),
+        atan: integrate(Math.atan, -1, 1, 97),
+        cos: integrate(Math.cos, 0, Math.PI, 97),
+        cosh: Math.cosh(9/7),
         e: Math.E,
-        difference: x - y - x,
-        log: Math.log(1000),
-        sin: Math.sin(angle),
-        cos: Math.cos(angle),
-        tan: Math.tan(angle),
-        asin: Math.asin(value),
-        acos: Math.acos(value),
-        atan: Math.atan(value),
-        largeSin: Math.sin(1e20),
         largeCos: Math.cos(1e20),
+        largeSin: Math.sin(1e20),
         largeTan: Math.tan(1e20),
-        exp: Math.exp(1000),
-        integral: integrate(Math.sin, 0, Math.PI, 1000)
+        log: Math.log(1000),
+        pi: Math.PI,
+        sin: integrate(Math.sin, -Math.PI, Math.PI, 97),
+        sinh: integrate(Math.sinh, -9/7, 7/9, 97),
+        sqrt: Math.sqrt(2),
+        tan: integrate(Math.tan, 0, 2 * Math.PI, 97),
+        tanh: integrate(Math.tanh, -9/7, 7/9, 97),
     }
 }
+
+/** This might be a little excessive, but I wasn't sure what number to pick for some of the
+ * trigonometric functions. Using an integral here, so a few numbers are calculated. However,
+ * I do this mainly for those integrals that sum up to a small value, otherwise there's no point.
+*/ 
 
 const integrate = (f: (x: number) => number, a: number, b: number, n: number): number => {
     const h = (b - a) / n;
