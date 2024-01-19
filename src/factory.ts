@@ -32,7 +32,8 @@ export const timeoutInstance: componentInterface = {
  * @returns 
  */ 
 export const includeComponent = (name:string, creationFunction: componentFunctionInterface) => {
-    components[name] = creationFunction;
+    if (typeof window !== 'undefined')
+        components[name] = creationFunction;
 }
 
 /**

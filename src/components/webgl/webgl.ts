@@ -1,14 +1,45 @@
 import { componentInterface, includeComponent } from '../../factory'
 import { hash } from '../../utils/hash'
+import { getCommonPixels } from '../../utils/commonPixels';
 
 async function createWebGLFingerprint(): Promise<componentInterface> {
-  return new Promise((resolve) => {
+  try {
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 200;
+    canvas.height = 100;
+    
+    const gl = canvas.getContext('webgl');
+    if (!gl) {
+        throw new Error('WebGL not supported');
+    }
+
+    // calculating this three times
+    const imageDatas: ImageData[] = Array.from({length: 3}, () => createWebGLImageData() );
+    // and then checking the most common bytes for each channel of each pixel
+    const commonImageData = getCommonPixels(imageDatas, canvas.width, canvas.height);
+
+    return {
+      'commonImageHash': hash(commonImageData.data.toString()).toString(),
+      'renderer': gl.getParameter(gl.RENDERER),
+      'vendor': gl.getParameter(gl.VENDOR),
+      'version': gl.getParameter(gl.VERSION),
+      'shadingLanguageVersion': gl.getParameter(gl.SHADING_LANGUAGE_VERSION)
+    }
+  } catch (error) {
+    return {
+      'webgl': 'unsupported'
+    }
+  }
+}
+
+function createWebGLImageData(): ImageData {
     try {
-      const canvas = document.createElement('canvas');
+      const canvas = document.createElement('canvas')
       canvas.width = 200;
       canvas.height = 100;
 
-      const gl = canvas.getContext('webgl');
+      const gl = canvas.getContext('webgl')
 
       if (!gl) {
           throw new Error('WebGL not supported');
@@ -24,7 +55,7 @@ async function createWebGLFingerprint(): Promise<componentInterface> {
       const fragmentShaderSource = `
           precision mediump float;
           void main() {
-              gl_FragColor = vec4(0.812, 0.195, 0.553, 0.921); // Set line color to white
+              gl_FragColor = vec4(0.812, 0.195, 0.553, 0.921); // Set line color
           }
       `;
 
@@ -81,28 +112,23 @@ async function createWebGLFingerprint(): Promise<componentInterface> {
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.LINES, 0, numSpokes * 2);
 
-      const dataURL = canvas.toDataURL();
+      const pixelData = new Uint8ClampedArray(canvas.width * canvas.height * 4)
+      gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, pixelData)
+      const imageData = new ImageData(pixelData, canvas.width, canvas.height)
 
       // Close WebGL context
       gl.deleteProgram(shaderProgram);
       gl.deleteShader(vertexShader);
       gl.deleteShader(fragmentShader);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.bindTexture(gl.TEXTURE_2D, null);
       canvas.remove();
   
-      resolve({
-        'imageHash': hash(JSON.stringify(dataURL)).toString(),
-        //'dataUrl': dataURL, // a hash is smaller
-        'renderer': gl.getParameter(gl.RENDERER),
-        'vendor': gl.getParameter(gl.VENDOR),
-        'version': gl.getParameter(gl.VERSION),
-        'shadingLanguageVersion': gl.getParameter(gl.SHADING_LANGUAGE_VERSION)
-      });
+      return imageData
+
     } catch (error) {
-      resolve( {
-        'webgl': 'unsupported'
-      });
+      return new ImageData(1,1);
     }
-    });
   }
 
   includeComponent('webgl', createWebGLFingerprint);

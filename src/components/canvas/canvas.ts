@@ -1,5 +1,6 @@
 import { componentInterface, includeComponent } from '../../factory'
 import { hash } from '../../utils/hash'
+import { getCommonPixels } from '../../utils/commonPixels';
 
 /**
  * A simple canvas finger printing function
@@ -22,7 +23,7 @@ export default function generateCanvasFingerprint(): Promise<componentInterface>
          * channel of each pixel.
          */
         const imageDatas: ImageData[] = Array.from({length: 3}, () => generateCanvasImageData() );
-        const commonImageData = getCommonPixels(imageDatas);
+        const commonImageData = getCommonPixels(imageDatas, _WIDTH, _HEIGHT);
 
         resolve(
             {
@@ -79,45 +80,6 @@ function generateCanvasImageData(): ImageData {
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     // Return data URL of the canvas
     return imageData;
-}
-
-function getMostFrequent(arr: number[]): number {
-    if (arr.length === 0) {
-      return 0; // Handle empty array case
-    }
-  
-    const frequencyMap: { [key: number]: number } = {};
-    
-    // Count occurrences of each number in the array
-    for (const num of arr) {
-      frequencyMap[num] = (frequencyMap[num] || 0) + 1;
-    }
-  
-    let mostFrequent: number = arr[0];
-    
-    // Find the number with the highest frequency
-    for (const num in frequencyMap) {
-      if (frequencyMap[num] > frequencyMap[mostFrequent]) {
-        mostFrequent = parseInt(num, 10);
-      }
-    }
-  
-    return mostFrequent;
-  }
-
-export function getCommonPixels(images: ImageData[], width = _WIDTH, height = _HEIGHT ): ImageData {
-    let finalData: number[] = [];
-    for (let i = 0; i < images[0].data.length; i++) {
-        let indice: number[] = [];
-        for (let u = 0; u < images.length; u++) {
-            indice.push(images[u].data[i]);
-        }
-        finalData.push(getMostFrequent(indice));
-    }
-
-    const pixelData = finalData;
-    const pixelArray = new Uint8ClampedArray(pixelData);
-    return new ImageData(pixelArray, width, height);
 }
 
 includeComponent('canvas', generateCanvasFingerprint);
