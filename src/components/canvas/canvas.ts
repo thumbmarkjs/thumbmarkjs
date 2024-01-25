@@ -1,6 +1,7 @@
 import { componentInterface, includeComponent } from '../../factory'
 import { hash } from '../../utils/hash'
 import { getCommonPixels } from '../../utils/commonPixels';
+import { getBrowser } from '../system/browser';
 
 /**
  * A simple canvas finger printing function
@@ -27,7 +28,7 @@ export default function generateCanvasFingerprint(): Promise<componentInterface>
 
         resolve(
             {
-                'commonImageDataHash': hash(commonImageData.data.toString()).toString()
+                'commonImageDataHash': hash(commonImageData.data.toString()).toString(),
             }
         )
     });
@@ -82,4 +83,6 @@ function generateCanvasImageData(): ImageData {
     return imageData;
 }
 
-includeComponent('canvas', generateCanvasFingerprint);
+if (getBrowser().name != 'Firefox')
+    includeComponent('canvas', generateCanvasFingerprint);
+

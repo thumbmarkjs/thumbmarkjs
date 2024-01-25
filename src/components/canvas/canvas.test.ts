@@ -1,4 +1,4 @@
-import { getCommonPixels } from './canvas';
+import { getCommonPixels } from '../../utils/commonPixels';
 
 class MockImageData {
     data: Uint8ClampedArray;
