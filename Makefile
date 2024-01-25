@@ -7,7 +7,7 @@ publish:
 latest:
 	make publish
 	aws s3 cp ./build/Thumbmark.js $(CDN_BUCKET)/thumbmark/latest/Thumbmark.js --profile $(AWS_PROFILE)
-	npm publish
+	npm publish --access public
 
 testpage:
 	aws s3 sync ./testpage $(TESTPAGE_BUCKET) --profile $(AWS_PROFILE)

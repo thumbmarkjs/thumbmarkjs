@@ -1,6 +1,6 @@
 # ThumbmarkJS
 ![GitHub package.json dynamic](https://img.shields.io/github/package-json/version/ilkkapeltola/thumbmarkjs)
-![NPM Version](https://img.shields.io/npm/v/thumbmarkjs)
+![NPM Version](https://img.shields.io/npm/v/@thumbmarkjs/thumbmarkjs)
 
 ThumbmarkJS is the world's second best browser fingerprinting JavaScript library. While not (yet?) as good, it's a free open source alternative to the market leading [FingerprintJS](https://github.com/fingerprintjs/fingerprintjs). It is easy to use and easily extendable.
 
@@ -44,14 +44,16 @@ You can also get any previous version from the CDN by replacing `latest` with th
 Installing from NPM:
 
 ```bash
-npm install thumbmarkjs
+npm install @thumbmarkjs/thumbmarkjs
 ```
 
 and in your code
 
 ```javascript
-import { getFingerprint } from 'thumbmarkjs'
+import { getFingerprint } from '@thumbmarkjs/thumbmarkjs'
 ```
+
+:warning: note, thumbmarkjs was published up to version 0.12.1 to NPM package `thumbmarkjs` and from v0.12.1 onwards will be published under `@thumbmarkjs/thumbmarkjs`. I'll occasionally update the old location, but please update your imports.
 
 But bear in mind that the library is meant to be running in the browser. Let me know if the library fails on a server side import. However, `getFingerprint()` is not meant to be called server side.
 

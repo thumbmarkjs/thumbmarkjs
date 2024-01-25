@@ -1,5 +1,5 @@
 {
-  "name": "thumbmarkjs",
+  "name": "@thumbmarkjs/thumbmarkjs",
   "version": "0.12.1",
   "description": "",
   "main": "dist/index.js",
