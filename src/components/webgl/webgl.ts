@@ -2,19 +2,20 @@ import { componentInterface, includeComponent } from '../../factory'
 import { hash } from '../../utils/hash'
 import { getCommonPixels } from '../../utils/commonPixels';
 
+const canvas = document.createElement('canvas');
+canvas.width = 200;
+canvas.height = 100;
+const gl = canvas.getContext('webgl');
+
 async function createWebGLFingerprint(): Promise<componentInterface> {
   try {
 
-    const canvas = document.createElement('canvas');
-    canvas.width = 200;
-    canvas.height = 100;
-    
-    const gl = canvas.getContext('webgl');
     if (!gl) {
         throw new Error('WebGL not supported');
     }
 
-    const imageDatas: ImageData[] = Array.from({length: 3}, () => createWebGLImageData() );
+
+    const imageDatas: ImageData[] = Array.from({length: 1}, () => createWebGLImageData() );
     // and then checking the most common bytes for each channel of each pixel
     const commonImageData = getCommonPixels(imageDatas, canvas.width, canvas.height);
     //const imageData = createWebGLImageData()
@@ -34,13 +35,7 @@ async function createWebGLFingerprint(): Promise<componentInterface> {
 }
 
 function createWebGLImageData(): ImageData {
-  let gl = null
   try {
-      const canvas = document.createElement('canvas');
-      canvas.width = 200;
-      canvas.height = 100;
-
-      gl = canvas.getContext('webgl');
 
       if (!gl) {
           throw new Error('WebGL not supported');
@@ -128,24 +123,18 @@ function createWebGLImageData(): ImageData {
       gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, pixelData);
       const imageData = new ImageData(pixelData, canvas.width, canvas.height);
 
-      // WebGL cleanup
-      gl.disableVertexAttribArray(positionAttribute);
-      gl.deleteBuffer(vertexBuffer);
-      gl.deleteProgram(shaderProgram);
-      gl.deleteShader(vertexShader);
-      gl.deleteShader(fragmentShader);
-
       return imageData;
   } catch (error) {
       console.error(error);
       return new ImageData(1, 1);
   } finally {
     if (gl) {
-      const loseContextExtension = gl.getExtension('WEBGL_lose_context');
-      if (loseContextExtension) {
-          loseContextExtension.loseContext();
-      }
-  }
+      // Reset WebGL state
+      gl.bindBuffer(gl.ARRAY_BUFFER, null);
+      gl.useProgram(null);
+      gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+      gl.clearColor(0.0, 0.0, 0.0, 0.0);
+    }
   }
 }
 
