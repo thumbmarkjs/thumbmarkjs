@@ -19,5 +19,6 @@ testpage-invalidate:
 	aws cloudfront create-invalidation --distribution-id $(TESTPAGE_DISTRIBUTION) --paths "/*" --profile $(AWS_PROFILE)
 
 bld:
+	rm -rf dist
 	npm run build
 	cp ./build/Thumbmark.js ./testpage/Thumbmark.js
