@@ -33,7 +33,6 @@ function matchMedias(): string[] {
         'prefers-reduced-transparency': ['reduce', 'no-preference'],
         'scripting': ['none', 'initial-only', 'enabled'],
         'forced-colors': ['active', 'none'],
-        'display-mode': ['fullscreen', 'standalone', 'minimal-ui', 'browser'],
         'prefers-color-scheme': ['dark', 'light', 'no-preference'],
       };
 
