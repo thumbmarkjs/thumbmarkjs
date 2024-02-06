@@ -10,7 +10,6 @@ function getHardwareInfo(): Promise<componentInterface> {
         'architecture': getArchitecture(),
         'deviceMemory': deviceMemory.toString() || 'undefined',
         'jsHeapSizeLimit': memoryInfo.jsHeapSizeLimit || 'undefined',
-        'applePayInfo': getApplePayInfo()
       }
     )
   });
@@ -45,28 +44,5 @@ function getArchitecture(): number {
 
   return u8[3];
 }
-/**
- * @returns applePayCanMakePayments: boolean, applePayMaxSupportedVersion: number
- */
-function getApplePayInfo(): { applePayCanMakePayments: boolean, applePayMaxSupportedVersion: number } {
-    let applePayCanMakePayments = false;
-    let applePayMaxSupportedVersion = 0;
-
-    if (typeof (window as any).ApplePaySession === 'function') {
-        const versionCheck = (window as any).ApplePaySession.supportsVersion;
-        let version = 0;
-        while (versionCheck(version + 1)) {
-            version++;
-        }
-        applePayCanMakePayments = version > 0;
-        applePayMaxSupportedVersion = version;
-    }
-
-    return {
-        applePayCanMakePayments,
-        applePayMaxSupportedVersion
-    };
-}
-
 
 includeComponent('hardware', getHardwareInfo);
