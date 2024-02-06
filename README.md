@@ -37,7 +37,7 @@ import('https://cdn.thumbmarkjs.com/latest/Thumbmark.js')
 
 You can also call `ThumbmarkJS.getFingerprintData()` to get a full JSON object with all its components.
 You can also get any previous version from the CDN by replacing `latest` with the version number. Currently the URL would be
-`https://cdn.thumbmarkjs.com/0.11.4/Thumbmark.js`
+`https://cdn.thumbmarkjs.com/0.13.0/Thumbmark.js`
 
 ## Install with NPM
 
