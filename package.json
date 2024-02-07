@@ -1,6 +1,6 @@
 {
   "name": "@thumbmarkjs/thumbmarkjs",
-  "version": "0.12.6",
+  "version": "0.13.0",
   "description": "",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -13,7 +13,7 @@
     "build": "npx webpack && npx tsc"
   },
   "keywords": [
-    "fingerprint", "fingerprinting", "browser-fingerprint", "browser-fingerprinting"
+    "fingerprint", "fingerprinting", "browser-fingerprint", "browser-fingerprinting", "audio-fingerprinting", "canvas-fingerprinting", "visitor-identifier", "fraud-detection"
   ],
   "author": "Ilkka Peltola",
   "license": "MIT",

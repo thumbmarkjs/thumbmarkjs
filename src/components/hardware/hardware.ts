@@ -3,11 +3,13 @@ import { componentInterface, includeComponent } from '../../factory'
 function getHardwareInfo(): Promise<componentInterface> {
   return new Promise((resolve, reject) => {
     const deviceMemory = (navigator.deviceMemory !== undefined) ? navigator.deviceMemory : 0
+    const memoryInfo = (window.performance && (window.performance as any).memory ) ? (window.performance as any).memory : 0
     resolve(
       {
         'videocard': getVideoCard(),
         'architecture': getArchitecture(),
-        'deviceMemory': deviceMemory.toString() || 'undefined'
+        'deviceMemory': deviceMemory.toString() || 'undefined',
+        'jsHeapSizeLimit': memoryInfo.jsHeapSizeLimit || 'undefined',
       }
     )
   });
@@ -20,6 +22,7 @@ interface VideoCard {
   
 /**
  * @see Credits: https://stackoverflow.com/a/49267844
+ * @returns VideoCard | "undefined"
  */
 function getVideoCard(): componentInterface | string {
   const canvas = document.createElement('canvas')
