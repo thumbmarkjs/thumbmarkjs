@@ -19,24 +19,18 @@ function getSystemDetails(): Promise<componentInterface> {
 /**
  * @returns applePayCanMakePayments: boolean, applePayMaxSupportedVersion: number
  */
-function getApplePayInfo(): { applePayCanMakePayments: boolean, applePayMaxSupportedVersion: number } {
-    let applePayCanMakePayments = false;
+function getApplePayInfo(): number {
     let applePayMaxSupportedVersion = 0;
 
     if (typeof (window as any).ApplePaySession === 'function') {
         const versionCheck = (window as any).ApplePaySession.supportsVersion;
-        let version = 0;
-        while (versionCheck(version + 1)) {
-            version++;
+        for (let i = 10; i > 0; i--) {
+            if (versionCheck(i)) {
+                return i;
+            }
         }
-        applePayCanMakePayments = version > 0;
-        applePayMaxSupportedVersion = version;
     }
-
-    return {
-        applePayCanMakePayments,
-        applePayMaxSupportedVersion
-    };
+    return 0
 }
 
 includeComponent('system', getSystemDetails);

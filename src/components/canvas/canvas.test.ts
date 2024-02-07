@@ -23,13 +23,16 @@ const createImageFromArray = (array: number[]) => {
     return new ImageData(pixelArray, width, height);
 }
 
+const pixel1 = createImageFromArray([128, 255, 255, 255]);
+const pixel2 = createImageFromArray([255, 200, 255, 230]);
+const pixel3 = createImageFromArray([255, 255, 250, 255]);
+const pixel4 = createImageFromArray([255, 255, 255, 255]);
+
 describe('canvas tests', () => {
-    test("single pixel array", () => {
-        const pixel1 = createImageFromArray([128, 255, 255, 255]);
-        const pixel2 = createImageFromArray([255, 200, 255, 230]);
-        const pixel3 = createImageFromArray([255, 255, 250, 255]);
-        const pixel4 = createImageFromArray([255, 255, 255, 255]);
+    test("commonPixels is an ImageData", () => {
         expect(getCommonPixels([pixel1, pixel2, pixel3], 1, 1)).toBeInstanceOf(ImageData);
-        expect(getCommonPixels([pixel1, pixel2, pixel3], 1, 1).data).toStrictEqual(pixel4.data);
-    });    
+    });
+    test("commonPixels returns the most common bytes", () => {
+      expect(getCommonPixels([pixel1, pixel2, pixel3], 1, 1).data).toStrictEqual(pixel4.data);
+    });
 });
