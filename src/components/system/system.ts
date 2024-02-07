@@ -20,11 +20,9 @@ function getSystemDetails(): Promise<componentInterface> {
  * @returns applePayCanMakePayments: boolean, applePayMaxSupportedVersion: number
  */
 function getApplePayInfo(): number {
-    let applePayMaxSupportedVersion = 0;
-
     if (typeof (window as any).ApplePaySession === 'function') {
         const versionCheck = (window as any).ApplePaySession.supportsVersion;
-        for (let i = 10; i > 0; i--) {
+        for (let i = 15; i > 0; i--) {
             if (versionCheck(i)) {
                 return i;
             }
