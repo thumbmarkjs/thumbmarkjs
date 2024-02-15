@@ -2,10 +2,15 @@ import { componentInterface, includeComponent } from '../../factory'
 import { hash } from '../../utils/hash'
 import { getCommonPixels } from '../../utils/commonPixels';
 
-const canvas = document.createElement('canvas');
-canvas.width = 200;
-canvas.height = 100;
-const gl = canvas.getContext('webgl');
+let canvas: HTMLCanvasElement
+let gl: WebGLRenderingContext | null = null;
+
+if (document) {
+  canvas = document.createElement('canvas');
+  canvas.width = 200;
+  canvas.height = 100;
+  gl = canvas.getContext('webgl');
+}
 
 async function createWebGLFingerprint(): Promise<componentInterface> {
   try {
