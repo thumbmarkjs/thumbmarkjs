@@ -5,7 +5,7 @@ import { getCommonPixels } from '../../utils/commonPixels';
 let canvas: HTMLCanvasElement
 let gl: WebGLRenderingContext | null = null;
 
-if (document) {
+if (typeof document !== 'undefined') {
   canvas = document.createElement('canvas');
   canvas.width = 200;
   canvas.height = 100;
