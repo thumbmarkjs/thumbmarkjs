@@ -53,6 +53,8 @@ and in your code
 import { getFingerprint } from '@thumbmarkjs/thumbmarkjs'
 ```
 
+To implement ThumbmarkJS in a Next.js app, you can use a component [like this](examples/nextjs.tsx).
+
 :warning: note, thumbmarkjs was published up to version 0.12.1 to NPM package `thumbmarkjs` and from v0.12.1 onwards will be published under `@thumbmarkjs/thumbmarkjs`. I'll occasionally update the old location, but please update your imports.
 
 But bear in mind that the library is meant to be running in the browser. Let me know if the library fails on a server side import. However, `getFingerprint()` is not meant to be called server side.
