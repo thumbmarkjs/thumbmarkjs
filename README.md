@@ -14,8 +14,19 @@ The library works very well to distinguish common browsers.
 
 ## Simple usage from CDN
 
+Transpiled bundles are available now on [JSDelivr](https://www.jsdelivr.com/).
+
+Supported module formats:
+- IIFE (use this in browser): https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.iife.js
+- UMD: https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.umd.js
+- CommonJS: https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.cjs.js
+- ESM: https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.esm.js
+- AMD: https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.amd.js
+
+### And on the web page:
+
 ```javascript
-<script src="https://cdn.thumbmarkjs.com/latest/Thumbmark.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.iife.js"></script>
 <script>
 ThumbmarkJS.getFingerprint().then(
     function(fp) {
@@ -27,7 +38,7 @@ ThumbmarkJS.getFingerprint().then(
 <!-- or -->
 
 <script>
-import('https://cdn.thumbmarkjs.com/latest/Thumbmark.js')
+import('https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.iife.js')
 .then(() => {
     ThumbmarkJS.getFingerprint().then((fp) => { console.log(fp)})
 })
@@ -38,6 +49,7 @@ import('https://cdn.thumbmarkjs.com/latest/Thumbmark.js')
 You can also call `ThumbmarkJS.getFingerprintData()` to get a full JSON object with all its components.
 You can also get any previous version from the CDN by replacing `latest` with the version number. Currently the URL would be
 `https://cdn.thumbmarkjs.com/0.13.0/Thumbmark.js`
+
 
 ## Install with NPM
 
