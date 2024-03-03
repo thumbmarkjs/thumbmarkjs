@@ -31,6 +31,8 @@ function getVideoCard(): componentInterface | string {
     return {
       vendor: (gl.getParameter(gl.VENDOR) || '').toString(),
       renderer: (gl.getParameter(gl.RENDERER) || '').toString(),
+      version: (gl.getParameter(gl.VERSION) || '').toString(),
+      shadingLanguageVersion: (gl.getParameter(gl.SHADING_LANGUAGE_VERSION) || '').toString(),
     }
   }
   return "undefined"
