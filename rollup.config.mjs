@@ -1,4 +1,4 @@
-import dts from 'rollup-plugin-dts'
+//import dts from 'rollup-plugin-dts'
 import json from '@rollup/plugin-json'
 
 // rollup.config.mjs
@@ -16,12 +16,6 @@ export default {
       sourcemap: true,
     },
     {
-      file: 'dist/thumbmark.iife.js',
-      format: 'iife',
-      sourcemap: true,
-      name: 'ThumbmarkJS',
-    },
-    {
       file: 'dist/thumbmark.esm.js',
       format: 'esm',
       sourcemap: true,
@@ -31,11 +25,6 @@ export default {
       format: 'umd',
       sourcemap: true,
       name: 'ThumbmarkJS',
-    },
-    {
-      file: 'dist/thumbmark.amd.js',
-      format: 'amd',
-      sourcemap: true
     },
   ],
   plugins: [

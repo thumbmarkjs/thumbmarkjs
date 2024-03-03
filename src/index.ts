@@ -1,9 +1,10 @@
-import { getFingerprint, getFingerprintData, getFingerprintPerformance } from './fingerprint/functions';
-import * as packageJson from '../package.json';
+import { getFingerprint, getFingerprintData, getFingerprintPerformance } from './fingerprint/functions'
+import { setOption } from './fingerprint/options'
+import * as packageJson from '../package.json'
 import './components'
 
 function getVersion(): string {
-    return packageJson.version;
+    return packageJson.version
 }
 
-export { getVersion, getFingerprint, getFingerprintData, getFingerprintPerformance }
+export { setOption, getVersion, getFingerprint, getFingerprintData, getFingerprintPerformance }

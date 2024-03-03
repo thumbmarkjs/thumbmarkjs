@@ -6,6 +6,8 @@ ThumbmarkJS is the world's second best browser fingerprinting JavaScript library
 
 ThumbmarkJS is open source (MIT).
 
+🙏 Please don't do evil. ThumbmarkJS is meant to be used for good. We use this at work to prevent scammers and spammers.
+
 ## Demo page
 
 You can help this project by visiting the demo page that **logs your fingerprint for analysis**. The logged fingerprint data is only used to improve this library. Visit the page from the link: [Show and log my fingerprint](https://www.thumbmarkjs.com/)
@@ -17,11 +19,9 @@ The library works very well to distinguish common browsers.
 Transpiled bundles are available now on [JSDelivr](https://www.jsdelivr.com/).
 
 Supported module formats:
-- IIFE (use this in browser): https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.iife.js
 - UMD: https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.umd.js
 - CommonJS: https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.cjs.js
 - ESM: https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.esm.js
-- AMD: https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.amd.js
 
 ### And on the web page:
 

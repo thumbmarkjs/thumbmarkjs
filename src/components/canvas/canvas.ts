@@ -3,6 +3,8 @@ import { hash } from '../../utils/hash'
 import { getCommonPixels } from '../../utils/commonPixels';
 import { getBrowser } from '../system/browser';
 
+const _RUNS = (getBrowser().name !== 'SamsungBrowser') ? 1 : 3;
+
 /**
  * A simple canvas finger printing function
  * 
@@ -23,7 +25,7 @@ export default function generateCanvasFingerprint(): Promise<componentInterface>
          * creates the canvas three times and getCommonPixels picks the most common byte for each
          * channel of each pixel.
          */
-        const imageDatas: ImageData[] = Array.from({length: 3}, () => generateCanvasImageData() );
+        const imageDatas: ImageData[] = Array.from({length: _RUNS}, () => generateCanvasImageData() );
         const commonImageData = getCommonPixels(imageDatas, _WIDTH, _HEIGHT);
 
         resolve(

@@ -4,9 +4,10 @@
  * 
  */
 
+import { options, optionsInterface } from './fingerprint/options';
 
 // the component interface is the form of the JSON object the function's promise must return
- export interface componentInterface {
+export interface componentInterface {
     [key: string]: string | string[] | number | boolean | componentInterface;
 }
 
@@ -42,6 +43,10 @@ export const includeComponent = (name:string, creationFunction: componentFunctio
  */
 export const getComponentPromises = () => {
     return Object.fromEntries(
-        Object.entries(components).map(([key, value]) => [key, value()])
+        Object.entries(components)
+            .filter(([key]) => {
+                return !options?.exclude?.includes(key)}
+                )
+            .map(([key, value]) => [key, value()])
     );
 }

@@ -1,7 +1,9 @@
 import { componentInterface, includeComponent } from '../../factory'
 import { hash } from '../../utils/hash'
 import { getCommonPixels } from '../../utils/commonPixels';
+import { getBrowser } from '../system/browser';
 
+const _RUNS = (getBrowser().name !== 'SamsungBrowser') ? 1 : 3;
 let canvas: HTMLCanvasElement
 let gl: WebGLRenderingContext | null = null;
 
@@ -20,17 +22,13 @@ async function createWebGLFingerprint(): Promise<componentInterface> {
     }
 
 
-    const imageDatas: ImageData[] = Array.from({length: 1}, () => createWebGLImageData() );
+    const imageDatas: ImageData[] = Array.from({length: _RUNS}, () => createWebGLImageData() );
     // and then checking the most common bytes for each channel of each pixel
     const commonImageData = getCommonPixels(imageDatas, canvas.width, canvas.height);
     //const imageData = createWebGLImageData()
 
     return {
       'commonImageHash': hash(commonImageData.data.toString()).toString(),
-      'renderer': gl.getParameter(gl.RENDERER),
-      'vendor': gl.getParameter(gl.VENDOR),
-      'version': gl.getParameter(gl.VERSION),
-      'shadingLanguageVersion': gl.getParameter(gl.SHADING_LANGUAGE_VERSION)
     }
   } catch (error) {
     return {
