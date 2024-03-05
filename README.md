@@ -6,7 +6,7 @@ ThumbmarkJS is the world's second best browser fingerprinting JavaScript library
 
 ThumbmarkJS is open source (MIT).
 
-🙏 Please don't do evil. ThumbmarkJS is meant to be used for good. We use this at work to prevent scammers and spammers.
+🙏 Please don't do evil. ThumbmarkJS is meant to be used for good. Use this to prevent scammers and spammers for example. If you see this library being used for evil, contact me.
 
 ## Demo page
 
@@ -26,7 +26,7 @@ Supported module formats:
 ### And on the web page:
 
 ```javascript
-<script src="https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.umd.js"></script>
 <script>
 ThumbmarkJS.getFingerprint().then(
     function(fp) {
@@ -38,7 +38,7 @@ ThumbmarkJS.getFingerprint().then(
 <!-- or -->
 
 <script>
-import('https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.iife.js')
+import('https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.umd.js')
 .then(() => {
     ThumbmarkJS.getFingerprint().then((fp) => { console.log(fp)})
 })
@@ -50,6 +50,19 @@ You can also call `ThumbmarkJS.getFingerprintData()` to get a full JSON object w
 You can also get any previous version from the CDN by replacing `latest` with the version number. Currently the URL would be
 `https://cdn.thumbmarkjs.com/0.13.0/Thumbmark.js`
 
+## Options
+
+You can use the `setOption` method to change the behavior of the library. Currently it takes only one option.
+
+|  option |     type |                             example | what it does |
+| - | - | - | - |
+| exclude | string[] | ['webgl', 'system.browser.version'] | removes components from the fingerprint hash. An excluded top-level component improves performance. |
+
+example usage:
+
+```
+ThumbmarkJS.setOption('exclude', ['webgl', 'system.browser.version])
+```
 
 ## Install with NPM
 

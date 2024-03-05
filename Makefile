@@ -22,3 +22,4 @@ bld:
 	rm -rf dist/*
 	npm run build
 	cp ./dist/thumbmark.umd.js ./testpage/Thumbmark.js
+	rm -rf dist/types
