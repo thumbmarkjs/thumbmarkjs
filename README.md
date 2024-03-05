@@ -8,6 +8,7 @@ ThumbmarkJS is open source (MIT).
 
 🙏 Please don't do evil. ThumbmarkJS is meant to be used for good. Use this to prevent scammers and spammers for example. If you see this library being used for evil, contact me.
 
+
 ## Demo page
 
 You can help this project by visiting the demo page that **logs your fingerprint for analysis**. The logged fingerprint data is only used to improve this library. Visit the page from the link: [Show and log my fingerprint](https://www.thumbmarkjs.com/)
