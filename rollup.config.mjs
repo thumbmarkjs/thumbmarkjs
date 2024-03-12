@@ -1,4 +1,4 @@
-//import dts from 'rollup-plugin-dts'
+import dts from 'rollup-plugin-dts'
 import json from '@rollup/plugin-json'
 
 // rollup.config.mjs

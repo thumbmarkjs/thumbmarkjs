@@ -128,7 +128,7 @@ function createWebGLImageData(): ImageData {
 
       return imageData;
   } catch (error) {
-      console.error(error);
+      //console.error(error);
       return new ImageData(1, 1);
   } finally {
     if (gl) {
