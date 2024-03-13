@@ -4,7 +4,7 @@
   "description": "",
   "main": "./dist/thumbmark.cjs.js",
   "module": "./dist/thumbmark.esm.js",
-  "types": "./dist/types/thumbmark.esm.d.ts",
+  "types": "./dist/thumbmark.esm.d.ts",
   "exports": {
     ".": {
       "import": "./dist/thumbmark.esm.js",
