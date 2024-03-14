@@ -1,6 +1,8 @@
 # ThumbmarkJS
 ![GitHub package.json dynamic](https://img.shields.io/github/package-json/version/ilkkapeltola/thumbmarkjs)
 ![NPM Version](https://img.shields.io/npm/v/@thumbmarkjs/thumbmarkjs)
+![NPM Downloads](https://img.shields.io/npm/dm/%40thumbmarkjs%2Fthumbmarkjs)
+
 
 ThumbmarkJS is the world's second best browser fingerprinting JavaScript library. While not (yet?) as good, it's a free open source alternative to the market leading [FingerprintJS](https://github.com/fingerprintjs/fingerprintjs). It is easy to use and easily extendable.
 
