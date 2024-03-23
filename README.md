@@ -50,8 +50,6 @@ import('https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.umd
 ```
 
 You can also call `ThumbmarkJS.getFingerprintData()` to get a full JSON object with all its components.
-You can also get any previous version from the CDN by replacing `latest` with the version number. Currently the URL would be
-`https://cdn.thumbmarkjs.com/0.13.0/Thumbmark.js`
 
 ## Options
 
