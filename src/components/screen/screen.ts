@@ -27,13 +27,11 @@ function matchMedias(): string[] {
         'pointer': ['none', 'coarse', 'fine'],
         'hover': ['hover', 'none'],
         'update': ['fast', 'slow'],
-        'color': ['8', '16', '256'],
         'inverted-colors': ['inverted', 'none'],
         'prefers-reduced-motion': ['reduce', 'no-preference'],
         'prefers-reduced-transparency': ['reduce', 'no-preference'],
         'scripting': ['none', 'initial-only', 'enabled'],
         'forced-colors': ['active', 'none'],
-        'prefers-color-scheme': ['dark', 'light', 'no-preference'],
       };
 
     Object.keys(mediaQueries).forEach((key) => {
