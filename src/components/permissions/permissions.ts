@@ -1,31 +1,35 @@
 import { componentInterface, includeComponent } from '../../factory';
 import { mostFrequentValuesInArrayOfDictionaries } from '../../utils/getMostFrequent';
+import { options } from '../../fingerprint/options';
 
-const _RETRIES = 3;
-const permission_keys = [
-    'accelerometer',
-    'accessibility', 'accessibility-events',
-    'ambient-light-sensor',
-    'background-fetch', 'background-sync', 'bluetooth',
-    'camera',
-    'clipboard-read',
-    'clipboard-write',
-    'device-info', 'display-capture',
-    'gyroscope', 'geolocation',
-    'local-fonts',
-    'magnetometer', 'microphone', 'midi',
-    'nfc', 'notifications',
-    'payment-handler',
-    'persistent-storage',
-    'push',
-    'speaker', 'storage-access',
-    'top-level-storage-access',
-    'window-management',
-    'query',
-] as PermissionName[];
+let permission_keys: PermissionName[];
+function initializePermissionKeys() {
+    permission_keys = options?.permissions_to_check || [
+        'accelerometer',
+        'accessibility', 'accessibility-events',
+        'ambient-light-sensor',
+        'background-fetch', 'background-sync', 'bluetooth',
+        'camera',
+        'clipboard-read',
+        'clipboard-write',
+        'device-info', 'display-capture',
+        'gyroscope', 'geolocation',
+        'local-fonts',
+        'magnetometer', 'microphone', 'midi',
+        'nfc', 'notifications',
+        'payment-handler',
+        'persistent-storage',
+        'push',
+        'speaker', 'storage-access',
+        'top-level-storage-access',
+        'window-management',
+        'query',
+    ] as PermissionName[];
+}
 
 export default async function getBrowserPermissions(): Promise<componentInterface> {
-    const permissionPromises: Promise<componentInterface>[] = Array.from({length: _RETRIES}, () => getBrowserPermissionsOnce() );
+    initializePermissionKeys();
+    const permissionPromises: Promise<componentInterface>[] = Array.from({length: options?.retries || 3}, () => getBrowserPermissionsOnce() );
     return Promise.all(permissionPromises).then((resolvedPermissions) => {
         const permission = mostFrequentValuesInArrayOfDictionaries(resolvedPermissions, permission_keys);
         return permission;
@@ -33,6 +37,7 @@ export default async function getBrowserPermissions(): Promise<componentInterfac
 }
 
 async function getBrowserPermissionsOnce(): Promise<componentInterface> {
+
     const permissionStatus: { [key: string]: string } = {};
 
     for (const feature of permission_keys) {
