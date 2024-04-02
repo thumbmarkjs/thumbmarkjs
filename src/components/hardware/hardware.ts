@@ -27,12 +27,15 @@ interface VideoCard {
 function getVideoCard(): componentInterface | string {
   const canvas = document.createElement('canvas')
   const gl = canvas.getContext('webgl') ?? canvas.getContext('experimental-webgl')
-  if (gl && 'getParameter' in gl) {
-    return {
-      vendor: (gl.getParameter(gl.VENDOR) || '').toString(),
-      renderer: (gl.getParameter(gl.RENDERER) || '').toString(),
-      version: (gl.getParameter(gl.VERSION) || '').toString(),
-      shadingLanguageVersion: (gl.getParameter(gl.SHADING_LANGUAGE_VERSION) || '').toString(),
+    if (gl && 'getParameter' in gl) {
+      const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
+      return {
+        vendor: (gl.getParameter(gl.VENDOR) || '').toString(),
+        vendorUnmasked: debugInfo ? (gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) || '').toString() : '',
+        renderer: (gl.getParameter(gl.RENDERER) || '').toString(),
+        rendererUnmasked: debugInfo ? (gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || '').toString() : '',
+        version: (gl.getParameter(gl.VERSION) || '').toString(),
+        shadingLanguageVersion: (gl.getParameter(gl.SHADING_LANGUAGE_VERSION) || '').toString(),
     }
   }
   return "undefined"
