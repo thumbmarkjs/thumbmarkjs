@@ -9,7 +9,7 @@ function getHardwareInfo(): Promise<componentInterface> {
         'videocard': getVideoCard(),
         'architecture': getArchitecture(),
         'deviceMemory': deviceMemory.toString() || 'undefined',
-        'jsHeapSizeLimit': memoryInfo.jsHeapSizeLimit || 'undefined',
+        'jsHeapSizeLimit': memoryInfo.jsHeapSizeLimit || 0,
       }
     )
   });
