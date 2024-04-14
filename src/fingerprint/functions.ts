@@ -3,14 +3,12 @@ import { hash } from '../utils/hash'
 import { raceAll, raceAllPerformance} from '../utils/raceAll'
 import { options } from './options'
 
-const _TIMEOUT: number = 1000
-
 export async function getFingerprintData(): Promise<componentInterface>  {
     try {
-        const promiseMap: Record<string, Promise<componentInterface>> = await getComponentPromises()
+        const promiseMap: Record<string, Promise<componentInterface>> = getComponentPromises()
         const keys: string[] = Object.keys(promiseMap)
         const promises: Promise<componentInterface>[] = Object.values(promiseMap)
-        const resolvedValues: (componentInterface | undefined)[] = await raceAll(promises, _TIMEOUT, timeoutInstance);
+        const resolvedValues: (componentInterface | undefined)[] = await raceAll(promises, options?.timeout || 1000, timeoutInstance);
         const validValues: componentInterface[] = resolvedValues.filter((value): value is componentInterface => value !== undefined);
         const resolvedComponents: Record<string, componentInterface> = {};
         validValues.forEach((value, index) => {
@@ -44,11 +42,15 @@ function filterFingerprintData(obj: componentInterface, excludeList: string[]): 
     return result;
 }
 
-export async function getFingerprint(): Promise<string> {
+export async function getFingerprint(includeData?: boolean): Promise<string | { hash: string, data: componentInterface }> {
     try {
         const fingerprintData = await getFingerprintData()
         const thisHash = hash(JSON.stringify(fingerprintData))
-        return thisHash.toString()
+        if (includeData) {
+            return { hash: thisHash.toString(), data: fingerprintData }
+        } else {
+            return thisHash.toString()
+        }
     } catch (error) {
         throw error
     }
@@ -59,7 +61,7 @@ export async function getFingerprintPerformance() {
         const promiseMap = getComponentPromises()
         const keys = Object.keys(promiseMap)
         const promises = Object.values(promiseMap)
-        const resolvedValues = await raceAllPerformance(promises, _TIMEOUT, timeoutInstance )
+        const resolvedValues = await raceAllPerformance(promises, options?.timeout || 1000, timeoutInstance )
         const resolvedComponents: { [key: string]: any } = {
             elapsed: {}
         }
