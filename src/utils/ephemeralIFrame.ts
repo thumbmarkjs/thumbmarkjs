@@ -4,9 +4,13 @@ export async function ephemeralIFrame(callback: ({ iframe }: { iframe: Document 
       await wait(50)
     }
     const iframe = document.createElement('iframe')
+    iframe.setAttribute('frameBorder', '0')
+
     const style = iframe.style
     style.setProperty('display', 'block', 'important')
     style.setProperty('visibility', 'visible')
+    style.setProperty('border', '0');
+    
     iframe.src = 'about:blank'
     document.body.appendChild(iframe)
   
