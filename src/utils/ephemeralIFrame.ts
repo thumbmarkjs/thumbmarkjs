@@ -7,6 +7,7 @@ export async function ephemeralIFrame(callback: ({ iframe }: { iframe: Document 
     iframe.setAttribute('frameBorder', '0')
 
     const style = iframe.style
+    style.setProperty('position','fixed');
     style.setProperty('display', 'block', 'important')
     style.setProperty('visibility', 'visible')
     style.setProperty('border', '0');
