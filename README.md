@@ -62,7 +62,7 @@ You can use the `setOption` method to change the behavior of the library. Curren
 example usage:
 
 ```
-ThumbmarkJS.setOption('exclude', ['webgl', 'system.browser.version])
+ThumbmarkJS.setOption('exclude', ['webgl', 'system.browser.version'])
 ```
 
 ## Install with NPM
