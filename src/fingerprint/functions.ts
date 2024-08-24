@@ -42,6 +42,8 @@ function filterFingerprintData(obj: componentInterface, excludeList: string[]): 
     return result;
 }
 
+export async function getFingerprint(includeData?: false): Promise<string>
+export async function getFingerprint(includeData: true): Promise<{ hash: string, data: componentInterface }>
 export async function getFingerprint(includeData?: boolean): Promise<string | { hash: string, data: componentInterface }> {
     try {
         const fingerprintData = await getFingerprintData()
