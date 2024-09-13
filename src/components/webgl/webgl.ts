@@ -7,14 +7,18 @@ const _RUNS = (getBrowser().name !== 'SamsungBrowser') ? 1 : 3;
 let canvas: HTMLCanvasElement
 let gl: WebGLRenderingContext | null = null;
 
-if (typeof document !== 'undefined') {
-  canvas = document.createElement('canvas');
-  canvas.width = 200;
-  canvas.height = 100;
-  gl = canvas.getContext('webgl');
+function initializeCanvasAndWebGL() {
+  if (typeof document !== 'undefined') {
+    canvas = document.createElement('canvas');
+    canvas.width = 200;
+    canvas.height = 100;
+    gl = canvas.getContext('webgl');
+  }
 }
 
 async function createWebGLFingerprint(): Promise<componentInterface> {
+  initializeCanvasAndWebGL();
+  
   try {
 
     if (!gl) {
