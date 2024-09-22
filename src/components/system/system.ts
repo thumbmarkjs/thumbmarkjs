@@ -10,6 +10,7 @@ function getSystemDetails(): Promise<componentInterface> {
         'productSub': navigator.productSub,
         'product': navigator.product,
         'useragent': navigator.userAgent,
+        'hardwareConcurrency': navigator.hardwareConcurrency,
         'browser': {'name': browser.name, 'version': browser.version },
         'applePayVersion': getApplePayVersion()
     });
