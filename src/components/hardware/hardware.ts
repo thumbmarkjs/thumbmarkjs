@@ -27,13 +27,23 @@ interface VideoCard {
 function getVideoCard(): componentInterface | string {
   const canvas = document.createElement('canvas')
   const gl = canvas.getContext('webgl') ?? canvas.getContext('experimental-webgl')
-    if (gl && 'getParameter' in gl) {
-      const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
+  let debugInfo, vendorUnmasked, rendererUnmasked
+  if (gl && 'getParameter' in gl) {
+    try {
+      // this function might eventually go away, so we wrap it in a try/catch
+      debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
+      if (debugInfo) {
+        vendorUnmasked = (gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) || '').toString();
+        rendererUnmasked = (gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || '').toString();
+      }
+    } catch (error) {
+      // fail silently;
+    }
       return {
         vendor: (gl.getParameter(gl.VENDOR) || '').toString(),
-        vendorUnmasked: debugInfo ? (gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) || '').toString() : '',
+        vendorUnmasked: vendorUnmasked,
         renderer: (gl.getParameter(gl.RENDERER) || '').toString(),
-        rendererUnmasked: debugInfo ? (gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || '').toString() : '',
+        rendererUnmasked: rendererUnmasked,
         version: (gl.getParameter(gl.VERSION) || '').toString(),
         shadingLanguageVersion: (gl.getParameter(gl.SHADING_LANGUAGE_VERSION) || '').toString(),
     }
