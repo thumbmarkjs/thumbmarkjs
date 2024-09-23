@@ -1,68 +1,198 @@
-// MurmurHash3 constants
-const C1 = 0xcc9e2d51;
-const C2 = 0x1b873593;
-const C3 = 0xe6546b64;
-const C4 = 0x85ebca6b;
-const C5 = 0xc2b2ae35;
+/**
+ * This code is taken from https://github.com/LinusU/murmur-128/blob/master/index.js
+ * But instead of dependencies to encode-utf8 and fmix, I've implemented them here.
+ */
 
-// Helper functions to perform bitwise operations on 32-bit integers
-function rotl32(x: number, r: number): number {
-  return (x << r) | (x >>> (32 - r));
+function encodeUtf8(text: string): ArrayBuffer {
+  const encoder = new TextEncoder();
+  return encoder.encode(text).buffer;
 }
 
-function fmix32(h: number): number {
-  h ^= h >>> 16;
-  h = Math.imul(h, C4);
-  h ^= h >>> 13;
-  h = Math.imul(h, C5);
-  h ^= h >>> 16;
-  return h;
+function fmix (input : number) : number {
+  input ^= (input >>> 16)
+  input = Math.imul(input, 0x85ebca6b)
+  input ^= (input >>> 13)
+  input = Math.imul(input, 0xc2b2ae35)
+  input ^= (input >>> 16)
+
+  return (input >>> 0)
 }
 
-// MurmurHash3 x86 32-bit hash function
-export function hash(key: string, seed: number = 0): string {
-  let h = seed;
-  let k = 0;
-  let remainder = key.length & 3; // key.length % 4
-  let bytes = key.length - remainder;
-  let i = 0;
+const C = new Uint32Array([
+  0x239b961b,
+  0xab0e9789,
+  0x38b34ae5,
+  0xa1e38b93
+])
 
-  // Process key in 4-byte chunks
-  while (i < bytes) {
-    k =
-      (key.charCodeAt(i) & 0xff) |
-      ((key.charCodeAt(++i) & 0xff) << 8) |
-      ((key.charCodeAt(++i) & 0xff) << 16) |
-      ((key.charCodeAt(++i) & 0xff) << 24);
-    ++i;
+function rotl (m : number, n : number) : number {
+  return (m << n) | (m >>> (32 - n))
+}
 
-    // Mix k into h
-    k = Math.imul(k, C1);
-    k = rotl32(k, 15);
-    k = Math.imul(k, C2);
-    h ^= k;
-    h = rotl32(h, 13);
-    h = Math.imul(h, 5) + C3;
+function body (key : ArrayBuffer, hash : Uint32Array) {
+  const blocks = (key.byteLength / 16) | 0
+  const view32 = new Uint32Array(key, 0, blocks * 4)
+
+  for (let i = 0; i < blocks; i++) {
+    const k = view32.subarray(i * 4, (i + 1) * 4)
+
+    k[0] = Math.imul(k[0], C[0])
+    k[0] = rotl(k[0], 15)
+    k[0] = Math.imul(k[0], C[1])
+
+    hash[0] = (hash[0] ^ k[0])
+    hash[0] = rotl(hash[0], 19)
+    hash[0] = (hash[0] + hash[1])
+    hash[0] = Math.imul(hash[0], 5) + 0x561ccd1b
+
+    k[1] = Math.imul(k[1], C[1])
+    k[1] = rotl(k[1], 16)
+    k[1] = Math.imul(k[1], C[2])
+
+    hash[1] = (hash[1] ^ k[1])
+    hash[1] = rotl(hash[1], 17)
+    hash[1] = (hash[1] + hash[2])
+    hash[1] = Math.imul(hash[1], 5) + 0x0bcaa747
+
+    k[2] = Math.imul(k[2], C[2])
+    k[2] = rotl(k[2], 17)
+    k[2] = Math.imul(k[2], C[3])
+
+    hash[2] = (hash[2] ^ k[2])
+    hash[2] = rotl(hash[2], 15)
+    hash[2] = (hash[2] + hash[3])
+    hash[2] = Math.imul(hash[2], 5) + 0x96cd1c35
+
+    k[3] = Math.imul(k[3], C[3])
+    k[3] = rotl(k[3], 18)
+    k[3] = Math.imul(k[3], C[0])
+
+    hash[3] = (hash[3] ^ k[3])
+    hash[3] = rotl(hash[3], 13)
+    hash[3] = (hash[3] + hash[0])
+    hash[3] = Math.imul(hash[3], 5) + 0x32ac3b17
   }
+}
 
-  // Process remaining bytes
-  k = 0;
-  switch (remainder) {
+function tail (key : ArrayBuffer, hash : Uint32Array) {
+  const blocks = (key.byteLength / 16) | 0
+  const reminder = (key.byteLength % 16)
+
+  const k = new Uint32Array(4)
+  const tail = new Uint8Array(key, blocks * 16, reminder)
+
+  switch (reminder) {
+    case 15:
+      k[3] = (k[3] ^ (tail[14] << 16))
+      // fallthrough
+    case 14:
+      k[3] = (k[3] ^ (tail[13] << 8))
+      // fallthrough
+    case 13:
+      k[3] = (k[3] ^ (tail[12] << 0))
+
+      k[3] = Math.imul(k[3], C[3])
+      k[3] = rotl(k[3], 18)
+      k[3] = Math.imul(k[3], C[0])
+      hash[3] = (hash[3] ^ k[3])
+      // fallthrough
+    case 12:
+      k[2] = (k[2] ^ (tail[11] << 24))
+      // fallthrough
+    case 11:
+      k[2] = (k[2] ^ (tail[10] << 16))
+      // fallthrough
+    case 10:
+      k[2] = (k[2] ^ (tail[9] << 8))
+      // fallthrough
+    case 9:
+      k[2] = (k[2] ^ (tail[8] << 0))
+
+      k[2] = Math.imul(k[2], C[2])
+      k[2] = rotl(k[2], 17)
+      k[2] = Math.imul(k[2], C[3])
+      hash[2] = (hash[2] ^ k[2])
+      // fallthrough
+    case 8:
+      k[1] = (k[1] ^ (tail[7] << 24))
+      // fallthrough
+    case 7:
+      k[1] = (k[1] ^ (tail[6] << 16))
+      // fallthrough
+    case 6:
+      k[1] = (k[1] ^ (tail[5] << 8))
+      // fallthrough
+    case 5:
+      k[1] = (k[1] ^ (tail[4] << 0))
+
+      k[1] = Math.imul(k[1], C[1])
+      k[1] = rotl(k[1], 16)
+      k[1] = Math.imul(k[1], C[2])
+      hash[1] = (hash[1] ^ k[1])
+      // fallthrough
+    case 4:
+      k[0] = (k[0] ^ (tail[3] << 24))
+      // fallthrough
     case 3:
-      k ^= (key.charCodeAt(i + 2) & 0xff) << 16;
+      k[0] = (k[0] ^ (tail[2] << 16))
+      // fallthrough
     case 2:
-      k ^= (key.charCodeAt(i + 1) & 0xff) << 8;
+      k[0] = (k[0] ^ (tail[1] << 8))
+      // fallthrough
     case 1:
-      k ^= key.charCodeAt(i) & 0xff;
-      k = Math.imul(k, C1);
-      k = rotl32(k, 15);
-      k = Math.imul(k, C2);
-      h ^= k;
+      k[0] = (k[0] ^ (tail[0] << 0))
+
+      k[0] = Math.imul(k[0], C[0])
+      k[0] = rotl(k[0], 15)
+      k[0] = Math.imul(k[0], C[1])
+      hash[0] = (hash[0] ^ k[0])
+  }
+}
+
+function finalize (key : ArrayBuffer, hash : Uint32Array) {
+  hash[0] = (hash[0] ^ key.byteLength)
+  hash[1] = (hash[1] ^ key.byteLength)
+  hash[2] = (hash[2] ^ key.byteLength)
+  hash[3] = (hash[3] ^ key.byteLength)
+
+  hash[0] = (hash[0] + hash[1]) | 0
+  hash[0] = (hash[0] + hash[2]) | 0
+  hash[0] = (hash[0] + hash[3]) | 0
+
+  hash[1] = (hash[1] + hash[0]) | 0
+  hash[2] = (hash[2] + hash[0]) | 0
+  hash[3] = (hash[3] + hash[0]) | 0
+
+  hash[0] = fmix(hash[0])
+  hash[1] = fmix(hash[1])
+  hash[2] = fmix(hash[2])
+  hash[3] = fmix(hash[3])
+
+  hash[0] = (hash[0] + hash[1]) | 0
+  hash[0] = (hash[0] + hash[2]) | 0
+  hash[0] = (hash[0] + hash[3]) | 0
+
+  hash[1] = (hash[1] + hash[0]) | 0
+  hash[2] = (hash[2] + hash[0]) | 0
+  hash[3] = (hash[3] + hash[0]) | 0
+}
+
+export function hash (key : ArrayBuffer | string, seed = 0) : string {
+  seed = (seed ? (seed | 0) : 0)
+
+  if (typeof key === 'string') {
+    key = encodeUtf8(key)
   }
 
-  // Finalize and return
-  h ^= key.length;
-  h = fmix32(h);
-  const v = h >>> 0; // Convert to unsigned 32-bit integer
-  return v.toString(36); // Conver to base-36 string
+  if (!(key instanceof ArrayBuffer)) {
+    throw new TypeError('Expected key to be ArrayBuffer or string')
+  }
+
+  const hash = new Uint32Array([seed, seed, seed, seed])
+
+  body(key, hash)
+  tail(key, hash)
+  finalize(key, hash)
+  const byteArray = new Uint8Array(hash.buffer);
+  return Array.from(byteArray).map(byte => byte.toString(16).padStart(2, '0')).join('');
 }
