@@ -15,40 +15,46 @@ function getHardwareInfo(): Promise<componentInterface> {
   });
 }
 
-interface VideoCard {
-    vendor: string
-    renderer: string
-  }
-  
-/**
- * @see Credits: https://stackoverflow.com/a/49267844
- * @returns VideoCard | "undefined"
- */
 function getVideoCard(): componentInterface | string {
-  const canvas = document.createElement('canvas')
-  const gl = canvas.getContext('webgl') ?? canvas.getContext('experimental-webgl')
-  let debugInfo, vendorUnmasked, rendererUnmasked
-  if (gl && 'getParameter' in gl) {
-    try {
-      // this function might eventually go away, so we wrap it in a try/catch
-      debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
-      if (debugInfo) {
-        vendorUnmasked = (gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) || '').toString();
-        rendererUnmasked = (gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || '').toString();
-      }
-    } catch (error) {
-      // fail silently;
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl') ?? canvas.getContext('experimental-webgl');
+    
+    if (gl && 'getParameter' in gl) {
+        try {
+            // Try standard parameters first
+            const vendor = (gl.getParameter(gl.VENDOR) || '').toString();
+            const renderer = (gl.getParameter(gl.RENDERER) || '').toString();
+            
+            let result: componentInterface = {
+                vendor: vendor,
+                renderer: renderer,
+                version: (gl.getParameter(gl.VERSION) || '').toString(),
+                shadingLanguageVersion: (gl.getParameter(gl.SHADING_LANGUAGE_VERSION) || '').toString(),
+            };
+            
+            // Only try debug info if needed and available
+            if (!renderer.length || !vendor.length) {
+                const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
+                if (debugInfo) {
+                    const vendorUnmasked = (gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) || '').toString();
+                    const rendererUnmasked = (gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || '').toString();
+                    
+                    // Only add unmasked values if they exist
+                    if (vendorUnmasked) {
+                        result.vendorUnmasked = vendorUnmasked;
+                    }
+                    if (rendererUnmasked) {
+                        result.rendererUnmasked = rendererUnmasked;
+                    }
+                }
+            }
+            
+            return result;
+        } catch (error) {
+            // fail silently
+        }
     }
-      return {
-        vendor: (gl.getParameter(gl.VENDOR) || '').toString(),
-        vendorUnmasked: vendorUnmasked,
-        renderer: (gl.getParameter(gl.RENDERER) || '').toString(),
-        rendererUnmasked: rendererUnmasked,
-        version: (gl.getParameter(gl.VERSION) || '').toString(),
-        shadingLanguageVersion: (gl.getParameter(gl.SHADING_LANGUAGE_VERSION) || '').toString(),
-    }
-  }
-  return "undefined"
+    return "undefined";
 }
 
 function getArchitecture(): number {
