@@ -4,18 +4,23 @@
 ![NPM Downloads](https://img.shields.io/npm/dm/%40thumbmarkjs%2Fthumbmarkjs)
 
 
-ThumbmarkJS is the world's second best browser fingerprinting JavaScript library. While not (yet?) as good, it's a free open source alternative to the market leading [FingerprintJS](https://github.com/fingerprintjs/fingerprintjs). It is easy to use and easily extendable.
+ThumbmarkJS is now the world's best **free** browser fingerprinting JavaScript library.
 
 ThumbmarkJS is open source (MIT).
 
 🙏 Please don't do evil. ThumbmarkJS is meant to be used for good. Use this to prevent scammers and spammers for example. If you see this library being used for evil, contact me.
 
+🕺 Join the [Thumbmark Discord channel](https://discord.gg/663uXe77)
 
 ## Demo page
 
 You can help this project by visiting the demo page that **logs your fingerprint for analysis**. The logged fingerprint data is only used to improve this library. Visit the page from the link: [Show and log my fingerprint](https://www.thumbmarkjs.com/)
 
 The library works very well to distinguish common browsers.
+
+Data collected through this demo page show an accuracy of 90.5%-95.5% (95% confidence interval) in identifying a unique visitor correctly.
+
+Mileage may vary though. Mac/Safari users tend to clash more than Windows users, and it does depend on your audience.
 
 ## Simple usage from CDN
 
