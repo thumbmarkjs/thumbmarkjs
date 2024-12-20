@@ -10,7 +10,7 @@ ThumbmarkJS is open source (MIT).
 
 🙏 Please don't do evil. ThumbmarkJS is meant to be used for good. Use this to prevent scammers and spammers for example. If you see this library being used for evil, contact me.
 
-🕺 Join the [Thumbmark Discord channel](https://discord.gg/663uXe77)
+🕺 Join the [Thumbmark Discord channel](https://discord.gg/UM2sawXX)
 
 ## Demo page
 
