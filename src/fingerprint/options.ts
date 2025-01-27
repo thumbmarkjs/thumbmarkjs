@@ -10,13 +10,14 @@ export interface optionsInterface {
 
 export let options: optionsInterface = {
     exclude: [],
+    include: [],
 }
 
 export function setOption<K extends keyof optionsInterface>(key: K, value: optionsInterface[K]) {
-    if (!['exclude', 'permissions_to_check', 'retries', 'timeout'].includes(key))
+    if (!['include', 'exclude', 'permissions_to_check', 'retries', 'timeout'].includes(key))
         throw new Error('Unknown option ' + key)
-    if (['exclude', 'permissions_to_check'].includes(key) && !(Array.isArray(value) && value.every(item => typeof item === 'string')) )
-        throw new Error('The value of the exclude and permissions_to_check must be an array of strings');
+    if (['include', 'exclude', 'permissions_to_check'].includes(key) && !(Array.isArray(value) && value.every(item => typeof item === 'string')) )
+        throw new Error('The value of the include, exclude and permissions_to_check must be an array of strings');
     if ([ 'retries', 'timeout'].includes(key) && typeof value !== 'number')
         throw new Error('The value of retries must be a number');
     options[key] = value;
