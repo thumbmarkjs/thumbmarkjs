@@ -1,7 +1,7 @@
-import { getComponentPromises, timeoutInstance, componentInterface } from '../factory'
-import { hash } from '../utils/hash'
-import { raceAll, raceAllPerformance} from '../utils/raceAll'
-import { options } from './options'
+import {componentInterface, getComponentPromises, timeoutInstance} from '../factory'
+import {hash} from '../utils/hash'
+import {raceAll, raceAllPerformance} from '../utils/raceAll'
+import {options} from './options'
 
 export async function getFingerprintData(): Promise<componentInterface>  {
     try {
@@ -14,7 +14,7 @@ export async function getFingerprintData(): Promise<componentInterface>  {
         validValues.forEach((value, index) => {
             resolvedComponents[keys[index]] = value
         })
-        return filterFingerprintData(resolvedComponents, options.exclude || [])
+        return filterFingerprintData(resolvedComponents, options.exclude || [], options.include || [], "")
     }
     catch (error) {
         throw error
@@ -22,23 +22,34 @@ export async function getFingerprintData(): Promise<componentInterface>  {
 }
 
 /** 
- * This function filters the fingerprint data based on the exclude list
+ * This function filters the fingerprint data based on the exclude and include list
+ * @param {componentInterface} obj - components objects from main componentInterface
+ * @param {string[]} excludeList - elements to exclude from components objects (e.g : 'canvas', 'system.browser')
+ * @param {string[]} includeList - elements to only include from components objects (e.g : 'canvas', 'system.browser')
+ * @param {string} path - auto-increment path iterating on key objects from components objects
+ * @returns {componentInterface} result - returns the final object before hashing in order to get fingerprint
  */
-function filterFingerprintData(obj: componentInterface, excludeList: string[]): componentInterface {
+function filterFingerprintData(obj: componentInterface, excludeList: string[], includeList: string[], path: string = ""): componentInterface {
     const result: componentInterface = {};
-    for (const key in obj) {
-        if (obj.hasOwnProperty(key)) {
-            const value = obj[key];
-            if (typeof value === 'object' && !Array.isArray(value)) {
-                const filtered = filterFingerprintData(value, excludeList.map(e => e.startsWith(key + '.') ? e.slice(key.length + 1) : e));
-                if (Object.keys(filtered).length > 0) {
-                    result[key] = filtered;
-                }
-            } else if (!excludeList.includes(key)) {
+
+    for (const [key, value] of Object.entries(obj)) {
+        const currentPath = path + key + ".";
+
+        if (typeof value === "object" && !Array.isArray(value)) {
+            const filtered = filterFingerprintData(value, excludeList, includeList, currentPath);
+            if (Object.keys(filtered).length > 0) {
+                result[key] = filtered;
+            }
+        } else {
+            const isExcluded = excludeList.some(exclusion => currentPath.startsWith(exclusion));
+            const isIncluded = includeList.some(inclusion => currentPath.startsWith(inclusion));
+
+            if (!isExcluded || isIncluded) {
                 result[key] = value;
             }
         }
     }
+
     return result;
 }
 
