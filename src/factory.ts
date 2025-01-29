@@ -47,6 +47,12 @@ export const getComponentPromises = () => {
             .filter(([key]) => {
                 return !options?.exclude?.includes(key)}
                 )
+            .filter(([key]) => {
+                return options?.include?.some(e => e.includes('.'))
+                    ? options?.include?.some(e => e.startsWith(key))
+                    : options?.include?.length === 0 || options?.include?.includes(key)
+            }
+                    )
             .map(([key, value]) => [key, value()])
     );
 }
