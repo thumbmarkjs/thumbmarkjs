@@ -29,7 +29,7 @@ export async function getFingerprintData(): Promise<componentInterface>  {
  * @param {string} path - auto-increment path iterating on key objects from components objects
  * @returns {componentInterface} result - returns the final object before hashing in order to get fingerprint
  */
-function filterFingerprintData(obj: componentInterface, excludeList: string[], includeList: string[], path: string = ""): componentInterface {
+export function filterFingerprintData(obj: componentInterface, excludeList: string[], includeList: string[], path: string = ""): componentInterface {
     const result: componentInterface = {};
 
     for (const [key, value] of Object.entries(obj)) {
