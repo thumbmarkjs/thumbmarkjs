@@ -1,6 +1,6 @@
 {
   "name": "@thumbmarkjs/thumbmarkjs",
-  "version": "0.17.0",
+  "version": "0.18.0",
   "description": "",
   "main": "./dist/thumbmark.cjs.js",
   "module": "./dist/thumbmark.esm.js",
@@ -49,7 +49,7 @@
     "jest-environment-jsdom": "^29.7.0",
     "jsdom": "^23.0.1",
     "path": "^0.12.7",
-    "rollup": "^4.12.0",
+    "rollup": ">=4.22.4",
     "rollup-plugin-dts": "^6.1.0",
     "ts-jest": "^29.1.1",
     "ts-loader": "^9.5.1",
