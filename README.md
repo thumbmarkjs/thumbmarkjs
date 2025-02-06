@@ -98,7 +98,7 @@ ThumbmarkJS.includeComponent('tcp', fetchIpAddress);
 
 The function is expected to return a `Promise`, but it seems it works without, too.
 
-**NOTE** I don't recommend doing this, since it adds a huge lag to running the fingerprint. You can see for yourself by running `ThumbmarkJS.getFingerprintPerformance()`.
+**NOTE** I don't recommend making calls to external websites like this, since it adds a huge lag to running the fingerprint. You can see for yourself by running `ThumbmarkJS.getFingerprintPerformance()`. But it's possible.
 
 ## Install with NPM
 
