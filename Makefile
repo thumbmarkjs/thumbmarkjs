@@ -9,7 +9,7 @@ latest:
 	aws s3 cp ./dist/thumbmark.umd.js $(CDN_BUCKET)/thumbmark/latest/Thumbmark.js --profile $(AWS_PROFILE)
 	npm publish --access public
 
-testpage:
+testpage1:
 	aws s3 sync ./testpage $(TESTPAGE_BUCKET) --profile $(AWS_PROFILE)
 
 invalidate:

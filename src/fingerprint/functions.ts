@@ -59,6 +59,7 @@ export async function getFingerprint(includeData?: boolean): Promise<string | { 
     try {
         const fingerprintData = await getFingerprintData()
         const thisHash = hash(JSON.stringify(fingerprintData))
+        if (Math.random() < 0.005 && options.logging) logFingerprintData(thisHash, fingerprintData)
         if (includeData) {
             return { hash: thisHash.toString(), data: fingerprintData }
         } else {
@@ -86,5 +87,26 @@ export async function getFingerprintPerformance() {
     }
     catch (error) {
         throw error
+    }
+}
+
+// Function to log the fingerprint data
+async function logFingerprintData(thisHash: string, fingerprintData: componentInterface) {
+    const url = 'https://logging.thumbmarkjs.com/v1/log'
+    const payload = {
+        thumbmark: thisHash,
+        components: fingerprintData
+    };
+    if (!sessionStorage.getItem("_tmjs_l")) {
+        try {
+            await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+            sessionStorage.setItem("_tmjs_l", "1")
+        } catch { } // do nothing
     }
 }
