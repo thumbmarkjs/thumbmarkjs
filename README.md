@@ -64,6 +64,7 @@ You can use the `setOption` method to change the behavior of the library. Curren
 | - | - | - | - |
 | exclude | string[] | ['webgl', 'system.browser.version'] | Removes components from the fingerprint hash. An excluded top-level component improves performance. |
 | include | string[] | ['webgl', 'system.browser.version'] | Only includes the listed components. exclude still excludes included components. |
+| logging | boolean | true | Default is true. Setting to false disables the anonymous 0.5% log sampling that is used to improve the library. |
 
 example usage:
 
