@@ -21,5 +21,5 @@ testpage-invalidate:
 bld:
 	rm -rf dist/*
 	npm run build
-	cp ./dist/thumbmark.umd.js ./testpage/Thumbmark.js
+	cp ./dist/thumbmark.umd.js ./testpage/thumbmark.umd.js
 	rm -rf dist/types

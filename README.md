@@ -71,6 +71,35 @@ example usage:
 ThumbmarkJS.setOption('exclude', ['webgl', 'system.browser.version'])
 ```
 
+## Custom components
+
+You can add custom components to the hash with `includeComponent`, which takes two parameters, the `key` being the key of the component in the JSON and the function that returns the value (a string, a number or a JSON object). So for example, if you wanted to include an IP address in the components, you could do it like so:
+
+```
+function fetchIpAddress() {
+  return new Promise((resolve, reject) => {
+    fetch('http://checkip.amazonaws.com')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.text();
+      })
+      .then(ip => resolve({'ip_address': ip.trim()}))
+      .catch(error => {
+        console.error('There was a problem with the fetch operation:', error);
+        reject(error);
+      });
+  });
+}
+
+ThumbmarkJS.includeComponent('tcp', fetchIpAddress);
+```
+
+The function is expected to return a `Promise`, but it seems it works without, too.
+
+**NOTE** I don't recommend making calls to external websites like this, since it adds a huge lag to running the fingerprint. You can see for yourself by running `ThumbmarkJS.getFingerprintPerformance()`. But it's possible.
+
 ## Install with NPM
 
 Installing from NPM:
