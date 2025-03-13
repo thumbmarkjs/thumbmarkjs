@@ -1,6 +1,20 @@
 import { componentInterface, includeComponent } from '../../factory'
+import { getBrowser } from '../system/browser';
 
 async function createAudioFingerprint(): Promise<componentInterface> {
+  // Check if device is using Samsung browser
+  const browser = getBrowser();
+  if (browser.name === 'SamsungBrowser' || isSamsungDevice()) {
+    // Return a consistent default response for Samsung devices
+    return {
+      'sampleHash': 0,
+      'oscillator': 'sine',
+      'maxChannels': 2,
+      'channelCountMode': 'max',
+      'isSamsung': true
+    };
+  }
+  
   const resultPromise = new Promise<componentInterface>((resolve, reject) => {
     try {
       // Set up audio parameters
@@ -49,6 +63,14 @@ async function createAudioFingerprint(): Promise<componentInterface> {
 
 }
 
+// Helper function to detect Samsung devices from user agent
+function isSamsungDevice(): boolean {
+  const ua = navigator.userAgent.toLowerCase();
+  return ua.includes('samsung') || 
+         ua.includes('sm-') || 
+         ua.includes('gt-') ||
+         ua.includes('galaxy');
+}
 
 function calculateHash(samples: Float32Array) {
   let hash = 0;
