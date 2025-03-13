@@ -2,16 +2,19 @@ import { componentInterface, includeComponent } from '../../factory'
 import { getBrowser } from '../system/browser';
 
 async function createAudioFingerprint(): Promise<componentInterface> {
-  // Check if device is using Samsung browser
+  // Check if device is using Samsung browser or Safari
   const browser = getBrowser();
-  if (browser.name === 'SamsungBrowser' || browser.name === 'Samsung Internet' || isSamsungDevice()) {
-    // Return a consistent default response for Samsung devices
+  if (browser.name === 'SamsungBrowser' || 
+      browser.name === 'Samsung Internet' || 
+      browser.name === 'Safari' ||
+      isSamsungDevice()) {
+    // Return a consistent default response for Samsung devices and Safari
     return {
       'sampleHash': 0,
       'oscillator': 'sine',
       'maxChannels': 2,
       'channelCountMode': 'max',
-      'isSamsung': true
+      'disabledFor': browser.name === 'Safari' ? 'safari' : 'samsung'
     };
   }
   
