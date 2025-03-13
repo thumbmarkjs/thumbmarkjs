@@ -4,7 +4,7 @@ import { getBrowser } from '../system/browser';
 async function createAudioFingerprint(): Promise<componentInterface> {
   // Check if device is using Samsung browser
   const browser = getBrowser();
-  if (browser.name === 'SamsungBrowser' || isSamsungDevice()) {
+  if (browser.name === 'SamsungBrowser' || browser.name === 'Samsung Internet' || isSamsungDevice()) {
     // Return a consistent default response for Samsung devices
     return {
       'sampleHash': 0,
