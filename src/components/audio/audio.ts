@@ -1,4 +1,5 @@
 import { componentInterface, includeComponent } from '../../factory'
+import { getBrowser } from '../system/browser'
 
 async function createAudioFingerprint(): Promise<componentInterface> {
   const resultPromise = new Promise<componentInterface>((resolve, reject) => {
@@ -58,4 +59,6 @@ function calculateHash(samples: Float32Array) {
   return hash;
 }
 
-includeComponent('audio', createAudioFingerprint);
+const browser = getBrowser()
+if (!['SamsungBrowser', 'Safari'].includes(browser.name))
+  includeComponent('audio', createAudioFingerprint);

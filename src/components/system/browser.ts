@@ -28,13 +28,16 @@ export function getBrowser(): BrowserResult {
       // Other browsers that use the format "BrowserName/version"
       /(?<name>[A-Za-z]+)\/(?<version>\d+(?:\.\d+)?)/,
       // Samsung internet browser
-      /(?<name>SamsungBrowser)\/(?<version>\d+(?:\.\d+)?)/
+      /(?<name>SamsungBrowser)\/(?<version>\d+(?:\.\d+)?)/,
+      // Samsung browser (Tizen format)
+      /(?<name>samsung).*Version\/(?<version>\d+(?:\.\d+)?)/i
     ];
   
     // Define a map for browser name translations
     const browserNameMap: { [key: string]: string } = {
-      'Edg': 'Edge',
-      'OPR': 'Opera'
+      'edg': 'Edge',
+      'opr': 'Opera',
+      'samsung': 'SamsungBrowser'
     };
 
     // Loop through the regexes and try to find a match
@@ -42,7 +45,7 @@ export function getBrowser(): BrowserResult {
       const match = ua.match(regex);
       if (match && match.groups) {
         // Translate the browser name if necessary
-        const name = browserNameMap[match.groups.name] || match.groups.name;
+        const name = browserNameMap[match.groups.name.toLowerCase()] || match.groups.name;
         // Return the browser name and version
         return {
           name: name,
