@@ -5,7 +5,7 @@ export interface optionsInterface {
     canvas_runs?: number,
     permissions_to_check?: PermissionName[], // new option
     retries?: number, // new option
-    timeout?: number, // new option
+    timeout: number, // new option
     logging: boolean
 }
 
@@ -13,6 +13,7 @@ export let options: optionsInterface = {
     exclude: [],
     include: [],
     logging: true,
+    timeout: 1000
 }
 
 export function setOption<K extends keyof optionsInterface>(key: K, value: optionsInterface[K]) {
