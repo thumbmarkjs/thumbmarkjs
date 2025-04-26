@@ -1,10 +1,12 @@
 import { componentInterface, includeComponent } from '../../factory'
 import { hash } from '../../utils/hash'
-import { getCommonPixels } from '../../utils/commonPixels';
-import { getBrowser } from '../system/browser';
+import { getCommonPixels } from '../../utils/commonPixels'
+import { getBrowser } from '../system/browser'
+import { runInIframe } from '../../utils/ephemeralIFrame'
 
-const _RUNS = (getBrowser().name !== 'SamsungBrowser') ? 1 : 3;
+//const _RUNS = (getBrowser().name !== 'SamsungBrowser') ? 1 : 3;
 
+const _RUNS = 3
 /**
  * A simple canvas finger printing function
  * 
@@ -25,14 +27,21 @@ export default function generateCanvasFingerprint(): Promise<componentInterface>
          * creates the canvas three times and getCommonPixels picks the most common byte for each
          * channel of each pixel.
          */
-        const imageDatas: ImageData[] = Array.from({length: _RUNS}, () => generateCanvasImageData() );
-        const commonImageData = getCommonPixels(imageDatas, _WIDTH, _HEIGHT);
+        const imageDatas = Array.from({ length: _RUNS }, () => runInIframe(generateCanvasImageData));
 
-        resolve(
-            {
-                'commonImageDataHash': hash(commonImageData.data.toString()).toString(),
-            }
-        )
+        Promise.all(imageDatas).then((imageDatas) => {
+            imageDatas.forEach((imageData) => {
+                console.log(hash(imageData.data.toString()).toString());
+            })
+
+            const commonImageData = getCommonPixels(imageDatas, _WIDTH, _HEIGHT);
+
+            resolve(
+                {
+                    'commonImageDataHash': hash(commonImageData.data.toString()).toString(),
+                }
+            )            
+        })
     });
 }
 

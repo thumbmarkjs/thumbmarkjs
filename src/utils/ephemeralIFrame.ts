@@ -30,6 +30,17 @@ export async function ephemeralIFrame(callback: ({ iframe }: { iframe: Document 
     }, 0);
   }
 
+  export async function runInIframe<T>(fn: () => T): Promise<T> {
+    return new Promise((resolve, reject) => {
+      ephemeralIFrame(({ iframe }) => {
+        const iframeWindow = iframe.defaultView;
+        const iframeFn = new iframeWindow.Function('return (' + fn.toString() + ')()');
+        const result = iframeFn.call(iframeWindow);
+        resolve(result);
+      });
+    });
+  }
+
   export function wait<T = void>(durationMs: number, resolveWith?: T): Promise<T> {
     return new Promise((resolve) => setTimeout(resolve, durationMs, resolveWith))
   }
