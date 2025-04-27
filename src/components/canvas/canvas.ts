@@ -100,7 +100,7 @@ function canvasHasRenderingBias() {
     canvas.height = 8;
 
     if(!ctx) {
-        return false
+        return true // if context isn't available, let's default to bias
     }
     ctx.fillStyle = 'rgba(127,127,127,1)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
