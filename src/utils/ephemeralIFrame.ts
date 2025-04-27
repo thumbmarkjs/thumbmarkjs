@@ -1,10 +1,10 @@
 export async function ephemeralIFrame(callback: ({ iframe }: { iframe: Document }) => void): Promise<any> {
-
     while (!document.body) {
-      await wait(50)
+      await wait(5)
     }
     const iframe = document.createElement('iframe')
     iframe.setAttribute('frameBorder', '0')
+    
 
     const style = iframe.style
     style.setProperty('position','fixed');
@@ -30,16 +30,38 @@ export async function ephemeralIFrame(callback: ({ iframe }: { iframe: Document 
     }, 0);
   }
 
-  export async function runInIframe<T>(fn: () => T): Promise<T> {
-    return new Promise((resolve, reject) => {
-      ephemeralIFrame(({ iframe }) => {
-        const iframeWindow = iframe.defaultView;
-        const iframeFn = new iframeWindow.Function('return (' + fn.toString() + ')()');
+  export async function runInIframe<T>(fn: (params: T) => any, params: T): Promise<any> {
+  return new Promise((resolve, reject) => {
+    ephemeralIFrame(({ iframe }) => {
+      if (!iframe) {
+        return reject(new Error("Iframe is not accessible"));
+      }
+      
+      iframe.onerror = () => {
+        console.error("Error loading iframe");
+        reject(new Error("Error loading iframe"));
+      };
+
+      iframe.onload = () => {
+        console.log("Iframe content loaded");
+      };
+      const iframeWindow = iframe.defaultView;
+      if (!iframeWindow) {
+        return reject(new Error("Iframe window is not accessible"));
+      }
+
+      try {
+        const iframeFn = new iframeWindow.Function('return (' + fn.toString() + ')(' + JSON.stringify(params) + ')');
         const result = iframeFn.call(iframeWindow);
         resolve(result);
-      });
+      } catch (error) {
+        console.error("Error executing function in iframe:", error);
+        reject(error);
+      }
+
     });
-  }
+  });
+}
 
   export function wait<T = void>(durationMs: number, resolveWith?: T): Promise<T> {
     return new Promise((resolve) => setTimeout(resolve, durationMs, resolveWith))

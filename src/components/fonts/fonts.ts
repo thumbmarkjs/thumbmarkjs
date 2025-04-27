@@ -1,5 +1,4 @@
 import { componentInterface, includeComponent } from '../../factory'
-import { ephemeralIFrame } from '../../utils/ephemeralIFrame'
 import { getBrowser } from '../system/browser'
 
 interface FontMetrics {[k: string]: number}
@@ -103,32 +102,35 @@ export default function getFontMetrics(): Promise<componentInterface> {
     return new Promise((resolve, reject) => {
         try {
 
-            ephemeralIFrame(async ({ iframe }) => {
-                const textToRender = 'Hello, world!';
-
-                const canvas = iframe.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-
-                const defaultWidths: number[] = baseFonts.map((font) => {
-                    return measureSingleFont(ctx, font)
-                })
-
-                let results: {[k: string]: any} = {};
-                availableFonts.forEach((font) => {
-                    const fontWidth = measureSingleFont(ctx, font);
-                    if (!defaultWidths.includes(fontWidth))
-                        results[font] = fontWidth;
-                });
-    
-                resolve(results);
-            })
-
+            //ephemeralIFrame(async ({ iframe }) => {
+            const fontMetrics = measureAllFonts({availableFonts: availableFonts, baseFonts: baseFonts});
+            resolve(fontMetrics)
 
         } catch (error) {
             reject({'error': 'unsupported'})
         }
     });
 };
+
+function measureAllFonts(params: {availableFonts: string[], baseFonts: string[]}) {
+    const textToRender = 'Hello, world!';
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    const defaultWidths: number[] = params.baseFonts.map((font) => {
+        return measureSingleFont(ctx, font)
+    })
+
+    let results: {[k: string]: any} = {};
+    params.availableFonts.forEach((font) => {
+        const fontWidth = measureSingleFont(ctx, font);
+        if (!defaultWidths.includes(fontWidth))
+            results[font] = fontWidth;
+    });
+
+    return results
+}
 
 
 function measureSingleFont(ctx: CanvasRenderingContext2D | null, font: string): number {

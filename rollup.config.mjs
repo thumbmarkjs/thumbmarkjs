@@ -32,8 +32,8 @@ const config = [
       resolve(), // so Rollup can find `ms`
       commonjs(), // so Rollup can convert `ms` to an ES module
       typescript(),
-      json(),
-      terser() // minify, but only in production
+      json()
+      ,terser() // minify, but only in production
     ]
   },
   {
