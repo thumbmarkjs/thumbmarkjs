@@ -1,9 +1,11 @@
 import { componentInterface, includeComponent } from '../../factory'
 import { hash } from '../../utils/hash'
-import { getCommonPixels } from '../../utils/commonPixels';
-import { getBrowser } from '../system/browser';
+import { getCommonPixels } from '../../utils/commonPixels'
+import { getBrowser } from '../system/browser'
+import { runInIframe, ephemeralIFrame } from '../../utils/ephemeralIFrame'
 
-const _RUNS = (getBrowser().name !== 'SamsungBrowser') ? 1 : 3;
+//const _RUNS = (getBrowser().name !== 'SamsungBrowser') ? 1 : 3;
+
 
 /**
  * A simple canvas finger printing function
@@ -15,28 +17,31 @@ const _WIDTH = 280;
 const _HEIGHT = 20;
 
 export default function generateCanvasFingerprint(): Promise<componentInterface> {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
+    const _RUNS = canvasHasRenderingBias() ? 3 : 1
   
     return new Promise((resolve) => {
 
         /**
          * Since some browsers fudge with the canvas pixels to prevent fingerprinting, the following
-         * creates the canvas three times and getCommonPixels picks the most common byte for each
+         * creates the canvas three times if there is noise and getCommonPixels picks the most common byte for each
          * channel of each pixel.
          */
-        const imageDatas: ImageData[] = Array.from({length: _RUNS}, () => generateCanvasImageData() );
-        const commonImageData = getCommonPixels(imageDatas, _WIDTH, _HEIGHT);
+        
+        const imageDatas = Array.from({ length: _RUNS }, () => runInIframe(generateCanvasImageData, {width: _WIDTH, height: _HEIGHT}));
 
-        resolve(
-            {
-                'commonImageDataHash': hash(commonImageData.data.toString()).toString(),
-            }
-        )
+        Promise.all(imageDatas).then((imageDatas) => {
+            const commonImageData = getCommonPixels(imageDatas, _WIDTH, _HEIGHT);
+
+            resolve(
+                {
+                    'commonImageDataHash': hash(commonImageData.data.toString()).toString(),
+                }
+            )            
+        })
     });
 }
 
-function generateCanvasImageData(): ImageData {
+function generateCanvasImageData(params: { width: number, height: number }): ImageData {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
 
@@ -45,8 +50,8 @@ function generateCanvasImageData(): ImageData {
     }
 
     // Set canvas dimensions
-    canvas.width = _WIDTH;
-    canvas.height = _HEIGHT;
+    canvas.width = params.width;
+    canvas.height = params.height;
 
     // Create rainbow gradient for the background rectangle
     const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
@@ -85,6 +90,39 @@ function generateCanvasImageData(): ImageData {
     return imageData;
 }
 
-if (getBrowser().name != 'Firefox')
-    includeComponent('canvas', generateCanvasFingerprint);
+//if (getBrowser().name != 'Firefox')
+includeComponent('canvas', generateCanvasFingerprint);
 
+function canvasHasRenderingBias() {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 8;
+    canvas.height = 8;
+
+    if(!ctx) {
+        return true // if context isn't available, let's default to bias
+    }
+    ctx.fillStyle = 'rgba(127,127,127,1)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+    const r0 = data[0];
+    const g0 = data[1];
+    const b0 = data[2];
+    const a0 = data[3];
+
+    for (let i = 4; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        const a = data[i + 3];
+
+        if (r !== r0 || g !== g0 || b !== b0 || a !== a0) {
+            return true; // Biased
+        }
+    }
+
+    return false; // Not biased
+}
+    
