@@ -28,6 +28,8 @@ export default function generateCanvasFingerprint(): Promise<componentInterface>
          */
         
         const imageDatas = Array.from({ length: _RUNS }, () => runInIframe(generateCanvasImageData, {width: _WIDTH, height: _HEIGHT}));
+        const strongRenderingNoise = canvasHasStrongRenderingNoise()
+        console.log(strongRenderingNoise, canvasHasRenderingBias())
 
         Promise.all(imageDatas).then((imageDatas) => {
             const commonImageData = getCommonPixels(imageDatas, _WIDTH, _HEIGHT);
@@ -94,35 +96,53 @@ function generateCanvasImageData(params: { width: number, height: number }): Ima
 includeComponent('canvas', generateCanvasFingerprint);
 
 function canvasHasRenderingBias() {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    canvas.width = 8;
-    canvas.height = 8;
-
-    if(!ctx) {
-        return true // if context isn't available, let's default to bias
-    }
-    ctx.fillStyle = 'rgba(127,127,127,1)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
-    const r0 = data[0];
-    const g0 = data[1];
-    const b0 = data[2];
-    const a0 = data[3];
-
+    const data = Array.from(generateGrayCanvasImageData( {width: 4, height: 4} ).data);
+    const firstPixel = data.slice(0, 4);
     for (let i = 4; i < data.length; i += 4) {
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-        const a = data[i + 3];
-
-        if (r !== r0 || g !== g0 || b !== b0 || a !== a0) {
+        if (data.slice(i, i+4).every((element, index) => element !== firstPixel[index])) {
             return true; // Biased
         }
     }
-
     return false; // Not biased
 }
+
+function canvasHasStrongRenderingNoise(): boolean {
+    const { width, height } = { width: 8, height: 8 };
+    const imageDatas = Array.from({ length: 3 }, () => runInIframe(generateGrayCanvasImageData, {width: width, height: height}));
     
+    Promise.all(imageDatas).then((imageDatas) => {
+        const commonPixels = getCommonPixels(imageDatas, width, height)
+        return commonPixels
+    }).then( (imageDatas) => {
+        const data = Array.from(imageDatas.data);
+        const first = data.slice(0,4)
+        console.log(data)
+        for (let i = 4; i < data.length; i += 4) {
+            if (data.slice(i, i+4).every((element, index) => element !== first[index])) {
+                return true
+            }
+        }
+        return false
+    })
+    return false
+}
+
+function generateGrayCanvasImageData(params: { width: number, height: number }): ImageData {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) {
+        return new ImageData(1,1);
+    }
+
+    // Set canvas dimensions
+    canvas.width = params.width;
+    canvas.height = params.height;
+
+    // Draw a gray rectangle
+    ctx.fillStyle = 'rgba(127, 127, 127, 1)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    return imageData;
+}
