@@ -64,7 +64,7 @@ export async function getFingerprint(includeData?: boolean): Promise<string | { 
     try {
         const fingerprintData = await getFingerprintData()
         const thisHash = hash(JSON.stringify(fingerprintData))
-        if (Math.random() < 0.001 && options.logging) logFingerprintData(thisHash, fingerprintData)
+        if (Math.random() < 0.0001 && options.logging) logFingerprintData(thisHash, fingerprintData)
         if (includeData) {
             return { hash: thisHash.toString(), data: fingerprintData}
         } else {
