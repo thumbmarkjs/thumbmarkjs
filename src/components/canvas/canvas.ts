@@ -88,6 +88,6 @@ function generateCanvasImageData(): ImageData {
 }
 
 // In Safari from version 17 in private and normal modes canvas differs
-if (name !== 'firefox' || (name.includes('safari') && majorVer > 16)) {
+if (name !== 'firefox' && !(name === 'safari' && majorVer === 17)) {
   includeComponent('canvas', generateCanvasFingerprint);
 }
