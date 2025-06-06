@@ -12,6 +12,8 @@ ThumbmarkJS is open source (MIT).
 
 🕺 Join the [Thumbmark Discord channel](https://discord.gg/PAqxQ3TnDA)
 
+Have a look at the [IOS](https://github.com/thumbmarkjs/thumbmark-swift) and [Android](https://github.com/thumbmarkjs/thumbmark-android) versions as well.
+
 ## Demo page
 
 You can help this project by visiting the demo page that **logs your fingerprint for analysis**. The logged fingerprint data is only used to improve this library. Visit the page from the link: [Show and log my fingerprint](https://www.thumbmarkjs.com/)
