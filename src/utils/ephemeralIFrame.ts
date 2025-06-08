@@ -3,6 +3,8 @@ export async function ephemeralIFrame(callback: ({ iframe }: { iframe: Document 
       await wait(5)
     }
     const iframe = document.createElement('iframe')
+    iframe.src = 'about:blank'
+    iframe.sandbox = 'allow-scripts allow-same-origin'
     iframe.setAttribute('frameBorder', '0')
     
 
@@ -13,7 +15,7 @@ export async function ephemeralIFrame(callback: ({ iframe }: { iframe: Document 
     style.setProperty('border', '0');
     style.setProperty('opacity','0');
     
-    iframe.src = 'about:blank'
+    
     document.body.appendChild(iframe)
   
     const iframeDocument = iframe.contentDocument || iframe.contentWindow?.document;
