@@ -17,7 +17,7 @@ const _WIDTH = 280;
 const _HEIGHT = 20;
 
 export default function generateCanvasFingerprint(): Promise<componentInterface> {
-    const _RUNS = canvasHasRenderingBias() ? 3 : 1
+    const _RUNS = canvasHasRenderingBias() ? 3 : 3
   
     return new Promise((resolve) => {
 
