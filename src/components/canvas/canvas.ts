@@ -8,7 +8,7 @@ const name = browser.name.toLowerCase();
 const ver = browser.version.split('.')[0] || '0';
 const majorVer = parseInt(ver, 10);
 
-const _RUNS = name !== 'samsungbrowser' ? 1 : 3;
+const _RUNS = 3;
 
 /**
  * A simple canvas finger printing function

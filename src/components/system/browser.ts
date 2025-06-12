@@ -15,6 +15,8 @@ export function getBrowser(): BrowserResult {
     const ua = navigator.userAgent
     // Define some regular expressions to match different browsers and their versions
     const regexes = [
+      // Samsung internet browser
+      /(?<name>SamsungBrowser)\/(?<version>\d+(?:\.\d+)?)/,
       // Edge
       /(?<name>Edge|Edg)\/(?<version>\d+(?:\.\d+)?)/,
       // Chrome, Chromium, Opera, Vivaldi, Brave, etc.
@@ -25,12 +27,10 @@ export function getBrowser(): BrowserResult {
       /(?<name>Safari)\/(?<version>\d+(?:\.\d+)?)/,
       // Internet Explorer, IE Mobile, etc.
       /(?<name>MSIE|Trident|IEMobile).+?(?<version>\d+(?:\.\d+)?)/,
+      // Samsung browser (Tizen format)
+      /(?<name>samsung).*Version\/(?<version>\d+(?:\.\d+)?)/i,
       // Other browsers that use the format "BrowserName/version"
       /(?<name>[A-Za-z]+)\/(?<version>\d+(?:\.\d+)?)/,
-      // Samsung internet browser
-      /(?<name>SamsungBrowser)\/(?<version>\d+(?:\.\d+)?)/,
-      // Samsung browser (Tizen format)
-      /(?<name>samsung).*Version\/(?<version>\d+(?:\.\d+)?)/i
     ];
   
     // Define a map for browser name translations
