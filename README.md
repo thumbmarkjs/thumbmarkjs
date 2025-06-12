@@ -2,6 +2,7 @@
 ![GitHub package.json dynamic](https://img.shields.io/github/package-json/version/ilkkapeltola/thumbmarkjs)
 ![NPM Version](https://img.shields.io/npm/v/@thumbmarkjs/thumbmarkjs)
 ![NPM Downloads](https://img.shields.io/npm/dm/%40thumbmarkjs%2Fthumbmarkjs)
+![jsDelivr hits](https://img.shields.io/jsdelivr/npm/hm/%40thumbmarkjs%2Fthumbmarkjs)
 
 
 ThumbmarkJS is now the world's best **free** browser fingerprinting JavaScript library.
