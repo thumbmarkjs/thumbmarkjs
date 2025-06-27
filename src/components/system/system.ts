@@ -4,18 +4,23 @@ import { getBrowser } from './browser'
 function getSystemDetails(): Promise<componentInterface> {
     return new Promise((resolve) => {
         const browser = getBrowser()
-        resolve( {
+
+        const result: componentInterface = {
         'platform': window.navigator.platform,
-        'cookieEnabled': window.navigator.cookieEnabled,
         'productSub': navigator.productSub,
         'product': navigator.product,
         'useragent': navigator.userAgent,
         'hardwareConcurrency': navigator.hardwareConcurrency,
         'browser': {'name': browser.name, 'version': browser.version },
-        'applePayVersion': getApplePayVersion()
+        }
+        // Safari handles these differently in an iFrame so removing them from components
+        if (browser.name.toLowerCase() !== 'safari') {
+            result['applePayVersion'] = getApplePayVersion();
+            result['cookieEnabled'] = window.navigator.cookieEnabled;
+        }
+        resolve(result);
     });
-});
-}
+};
 
 /**
  * @returns applePayCanMakePayments: boolean, applePayMaxSupportedVersion: number

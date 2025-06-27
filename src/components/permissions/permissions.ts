@@ -1,6 +1,7 @@
 import { componentInterface, includeComponent } from '../../factory';
 import { mostFrequentValuesInArrayOfDictionaries } from '../../utils/getMostFrequent';
 import { options } from '../../fingerprint/options';
+import { getBrowser } from '../system/browser';
 
 let permission_keys: PermissionName[];
 function initializePermissionKeys() {
@@ -29,6 +30,10 @@ function initializePermissionKeys() {
 
 export default async function getBrowserPermissions(): Promise<componentInterface> {
     initializePermissionKeys();
+    const browser = getBrowser();
+    if (browser.name.toLowerCase() === 'safari') { // removing from Safari due to iFrame handling
+        permission_keys = permission_keys.filter((key) => !['camera', 'geolocation', 'microphone'].includes(key));
+    }
     const permissionPromises: Promise<componentInterface>[] = Array.from({length: options?.retries || 3}, () => getBrowserPermissionsOnce() );
     return Promise.all(permissionPromises).then((resolvedPermissions) => {
         const permission = mostFrequentValuesInArrayOfDictionaries(resolvedPermissions, permission_keys);
