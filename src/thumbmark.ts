@@ -1,5 +1,5 @@
 import { optionsInterface } from "./fingerprint/options";
-import { getThumbmark as _getThumbmark } from "./fingerprint/tm_functions";
+import { getThumbmark } from "./fingerprint/tm_functions";
 
 /**
  * A client for generating thumbmarks with a persistent configuration.
@@ -29,6 +29,6 @@ export class Thumbmark {
      */
     public async get(overrideOptions?: optionsInterface): Promise<any> {
       const finalOptions = { ...this.options, ...overrideOptions };
-      return _getThumbmark(finalOptions);
+      return getThumbmark(finalOptions);
     }
   }

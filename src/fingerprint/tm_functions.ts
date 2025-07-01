@@ -1,10 +1,17 @@
-import { getVersion, getFingerprintData as getThumbmarkData } from "./functions";
-import { optionsInterface } from "./options";
+import {  } from "./functions";
+import { options, optionsInterface } from "./options";
 import tm_components from "../components/tm_components";
 //import { getComponentPromises } from "../factory";
 import { componentInterface } from "../factory";
 import { hash } from "../utils/hash";
 import { defaultOptions } from "../thumbmark";
+import { raceAll } from "../utils/raceAll";
+import { timeoutInstance } from "../factory";
+import * as packageJson from '../../package.json'
+
+export function getVersion(): string {
+    return packageJson.version
+}
 
 export const getComponentPromises = (
     comps: { [key: string]: (options?: optionsInterface) => Promise<componentInterface | null> },
@@ -26,11 +33,52 @@ export const getComponentPromises = (
     );
 };
 
+let currentProPromise: Promise<componentInterface> | null = null;
+let proPromiseResult: componentInterface | null = null;
+
+export const getProPromise = (options: optionsInterface): Promise<componentInterface> => {
+    // By default, API calls are cached to prevent unnecessary calls.
+    if (options.cache_api_call && proPromiseResult) {
+        return Promise.resolve(proPromiseResult);
+    }
+    // API call promises are chained as well, so that simultaneous calls are not made.
+    else if (currentProPromise) {
+        return currentProPromise;
+    } 
+    const endpoint = 'https://d903eo6428tug.cloudfront.net/thumbmark';
+    console.log('api call');
+
+    return fetch(endpoint, {
+        method: 'GET',
+        headers: {
+            'x-api-key': options.api_key!,
+            'Authorization': 'custom-authorized',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        proPromiseResult = data;
+        currentProPromise = null;
+        return data
+    })
+    .catch(error => {
+        console.error('Error fetching pro data', error);
+        return 'error';
+    })
+}
+
 export async function getThumbmark(options?: optionsInterface): Promise<any> {
-    const _options = {...options, ...defaultOptions };
-    const promiseMap =  await getComponentPromises(tm_components, _options)
-    const components = await getThumbmarkData(promiseMap);
-    console.log("components", components);
+    const _options = {...defaultOptions, ...options };
+    const promiseMap =  getComponentPromises(tm_components, _options)
+    let components = await getThumbmarkDataFromPromiseMap(promiseMap, _options);
+    console.log('api_key', _options?.api_key);
+    if (options?.api_key !== undefined) {
+        const proComponents = {pro: await getProPromise(_options)};
+
+        if (proComponents)
+            components = {...components, ...proComponents}
+    }
+    console.log("components", components, options?.api_key !== undefined);
     const thumbmark = hash(JSON.stringify(components))
 
     return {
@@ -38,8 +86,54 @@ export async function getThumbmark(options?: optionsInterface): Promise<any> {
         components,
         version: getVersion(),
         info: {
-            'trust_score': 9,
+            'uniqueness_score': 95,
             'bot_score': 1,
         }
     }
+}
+
+export async function getThumbmarkDataFromPromiseMap(
+    promiseMap: Record<string, Promise<componentInterface | null>>,
+    options?: optionsInterface)
+: Promise<componentInterface>  {
+    try {
+        const keys: string[] = Object.keys(promiseMap)
+        const promises: Promise<componentInterface | null>[] = Object.values(promiseMap)
+        const resolvedValues: (componentInterface | null | undefined)[] = await raceAll(promises, options?.timeout || 1000, timeoutInstance);
+        const validValues: componentInterface[] = resolvedValues.filter((value): value is componentInterface => value !== undefined);
+        const resolvedComponents: Record<string, componentInterface> = {};
+        validValues.forEach((value, index) => {
+            resolvedComponents[keys[index]] = value
+        })
+        return filterThumbmarkData(resolvedComponents, options, "")
+    }
+    catch (error) {
+        throw error
+    }
+}
+
+export function filterThumbmarkData(obj: componentInterface, options?: optionsInterface, path: string = ""): componentInterface {
+    const result: componentInterface = {};
+    const excludeList = options?.exclude || [];
+    const includeList = options?.include || [];
+
+    for (const [key, value] of Object.entries(obj)) {
+        const currentPath = path + key + ".";
+
+        if (typeof value === "object" && !Array.isArray(value)) {
+            const filtered = filterThumbmarkData(value, options, currentPath);
+            if (Object.keys(filtered).length > 0) {
+                result[key] = filtered;
+            }
+        } else {
+            const isExcluded = excludeList.some(exclusion => currentPath.startsWith(exclusion));
+            const isIncluded = includeList.some(inclusion => currentPath.startsWith(inclusion));
+
+            if (!isExcluded || isIncluded) {
+                result[key] = value;
+            }
+        }
+    }
+
+    return result;
 }

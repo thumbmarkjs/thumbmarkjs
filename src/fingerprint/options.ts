@@ -8,13 +8,15 @@ export interface optionsInterface {
     timeout?: number, // new option
     logging?: boolean,
     api_key?: string,
+    cache_api_call?: boolean,
 }
 
 export let options: optionsInterface = {
     exclude: [],
     include: [],
     logging: true,
-    timeout: 1000
+    timeout: 3000,
+    cache_api_call: true
 }
 /**
  * 

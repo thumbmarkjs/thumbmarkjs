@@ -1,30 +1,13 @@
 import {componentInterface, getComponentPromises, timeoutInstance} from '../factory'
-import {hash} from '../utils/hash'
-import {raceAll, raceAllPerformance} from '../utils/raceAll'
 import {options} from './options'
-import * as packageJson from '../../package.json'
+import { raceAllPerformance } from '../utils/raceAll';
+import { getVersion } from './tm_functions';
 
-export function getVersion(): string {
-    return packageJson.version
-}
+import { getThumbmark } from './tm_functions'
 
-
-export async function getFingerprintData(pmap?: Record<string, Promise<componentInterface | null>>): Promise<componentInterface>  {
-    try {
-        const promiseMap: Record<string, Promise<componentInterface>> = pmap || getComponentPromises()
-        const keys: string[] = Object.keys(promiseMap)
-        const promises: Promise<componentInterface>[] = Object.values(promiseMap)
-        const resolvedValues: (componentInterface | undefined)[] = await raceAll(promises, options?.timeout || 1000, timeoutInstance);
-        const validValues: componentInterface[] = resolvedValues.filter((value): value is componentInterface => value !== undefined);
-        const resolvedComponents: Record<string, componentInterface> = {};
-        validValues.forEach((value, index) => {
-            resolvedComponents[keys[index]] = value
-        })
-        return filterFingerprintData(resolvedComponents, options.exclude || [], options.include || [], "")
-    }
-    catch (error) {
-        throw error
-    }
+export async function getFingerprintData() {
+    const thumbmarkData = await getThumbmark(options);
+    return thumbmarkData.components;
 }
 
 /** 
@@ -68,13 +51,12 @@ export async function getFingerprint(includeData?: false): Promise<string>
 export async function getFingerprint(includeData: true): Promise<{ hash: string, data: componentInterface }>
 export async function getFingerprint(includeData?: boolean): Promise<string | { hash: string, data: componentInterface }> {
     try {
-        const fingerprintData = await getFingerprintData()
-        const thisHash = hash(JSON.stringify(fingerprintData))
-        if (Math.random() < 0.00001 && options.logging) logFingerprintData(thisHash, fingerprintData)
+        const thumbmarkData = await getThumbmark(options);
+        if (Math.random() < 0.00001 && options.logging) logFingerprintData(thumbmarkData.thumbmark, thumbmarkData.components)
         if (includeData) {
-            return { hash: thisHash.toString(), data: fingerprintData}
+            return { hash: thumbmarkData.thumbmark.toString(), data: thumbmarkData.components}
         } else {
-            return thisHash.toString()
+            return thumbmarkData.thumbmark.toString()
         }
     } catch (error) {
         throw error
