@@ -11,15 +11,17 @@ export interface optionsInterface {
     cache_api_call?: boolean,
 }
 
-export let options: optionsInterface = {
+export const defaultOptions: optionsInterface = {
     exclude: [],
     include: [],
     logging: true,
     timeout: 3000,
     cache_api_call: true
-}
+    };
+
+export let options = {...defaultOptions};
 /**
- * 
+ §* 
  * @param key @deprecated this function will be removed
  * @param value 
  */

@@ -1,10 +1,9 @@
 import {  } from "./functions";
-import { options, optionsInterface } from "./options";
+import { defaultOptions, optionsInterface } from "./options";
 import tm_components from "../components/tm_components";
 //import { getComponentPromises } from "../factory";
 import { componentInterface } from "../factory";
 import { hash } from "../utils/hash";
-import { defaultOptions } from "../thumbmark";
 import { raceAll } from "../utils/raceAll";
 import { timeoutInstance } from "../factory";
 import * as packageJson from '../../package.json'
@@ -34,21 +33,24 @@ export const getComponentPromises = (
 };
 
 let currentProPromise: Promise<componentInterface> | null = null;
-let proPromiseResult: componentInterface | null = null;
+let proPromiseResult: componentInterface;
 
 export const getProPromise = (options: optionsInterface): Promise<componentInterface> => {
+    console.log("cache", options.cache_api_call);
     // By default, API calls are cached to prevent unnecessary calls.
-    if (options.cache_api_call && proPromiseResult) {
+    if (options.cache_api_call && currentProPromise) {
+        console.log("chaining");
         return Promise.resolve(proPromiseResult);
     }
     // API call promises are chained as well, so that simultaneous calls are not made.
     else if (currentProPromise) {
+        console.log("cached");
         return currentProPromise;
-    } 
+    }
     const endpoint = 'https://d903eo6428tug.cloudfront.net/thumbmark';
     console.log('api call');
 
-    return fetch(endpoint, {
+    currentProPromise = fetch(endpoint, {
         method: 'GET',
         headers: {
             'x-api-key': options.api_key!,
@@ -65,20 +67,22 @@ export const getProPromise = (options: optionsInterface): Promise<componentInter
         console.error('Error fetching pro data', error);
         return 'error';
     })
+
+    return currentProPromise;
 }
 
 export async function getThumbmark(options?: optionsInterface): Promise<any> {
     const _options = {...defaultOptions, ...options };
-    const promiseMap =  getComponentPromises(tm_components, _options)
-    let components = await getThumbmarkDataFromPromiseMap(promiseMap, _options);
-    console.log('api_key', _options?.api_key);
-    if (options?.api_key !== undefined) {
-        const proComponents = {pro: await getProPromise(_options)};
+    console.log(_options);
 
-        if (proComponents)
-            components = {...components, ...proComponents}
-    }
-    console.log("components", components, options?.api_key !== undefined);
+    const promiseMap = 
+    (_options.api_key) ?
+        { ...getComponentPromises(tm_components, _options), ...{pro: getProPromise(_options)} }
+    :
+        getComponentPromises(tm_components, _options);
+
+    const components = await getThumbmarkDataFromPromiseMap(promiseMap, _options);
+    console.log("components", components, _options?.api_key !== undefined);
     const thumbmark = hash(JSON.stringify(components))
 
     return {

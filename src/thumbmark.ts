@@ -1,15 +1,10 @@
 import { optionsInterface } from "./fingerprint/options";
 import { getThumbmark } from "./fingerprint/tm_functions";
+import { defaultOptions } from "./fingerprint/options";
 
 /**
  * A client for generating thumbmarks with a persistent configuration.
  */
-export const defaultOptions: optionsInterface = {
-    exclude: [],
-    include: [],
-    logging: true,
-    timeout: 1000
-    };
     
 export class Thumbmark {
     private options: optionsInterface;
