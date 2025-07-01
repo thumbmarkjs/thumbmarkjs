@@ -1,6 +1,6 @@
 import { componentInterface, includeComponent } from '../../factory'
 
-function getHardwareInfo(): Promise<componentInterface> {
+export default function getHardware(): Promise<componentInterface> {
   return new Promise((resolve, reject) => {
     const deviceMemory = (navigator.deviceMemory !== undefined) ? navigator.deviceMemory : 0
     const memoryInfo = (window.performance && (window.performance as any).memory ) ? (window.performance as any).memory : 0
@@ -66,4 +66,4 @@ function getArchitecture(): number {
   return u8[3];
 }
 
-includeComponent('hardware', getHardwareInfo);
+includeComponent('hardware', getHardware);

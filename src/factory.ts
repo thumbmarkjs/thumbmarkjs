@@ -5,11 +5,12 @@
  */
 
 import { options, optionsInterface } from './fingerprint/options';
+//import { getComponentPromises } from './fingerprint/tm_functions';
 
 // the component interface is the form of the JSON object the function's promise must return
 export interface componentInterface {
     [key: string]: string | string[] | number | boolean | componentInterface;
-}
+};
 
 
 // The component function's interface is simply the promise of the above
@@ -18,7 +19,7 @@ export interface componentFunctionInterface {
 }
 
 // components include a dictionary of name: function.
- export const components: {[name: string]: componentFunctionInterface} = {};
+ export const components: {[name: string]: componentFunctionInterface | null} = {};
 
 //In case a promise time-outs, this is what we use as the value in place
 export const timeoutInstance: componentInterface = {
@@ -32,7 +33,7 @@ export const timeoutInstance: componentInterface = {
  * @param {componentFunctionInterface} creationFunction - the function that implements the component
  * @returns 
  */ 
-export const includeComponent = (name:string, creationFunction: componentFunctionInterface) => {
+export const includeComponent = (name:string, creationFunction: componentFunctionInterface, options?: optionsInterface) => {
     if (typeof window !== 'undefined')
         components[name] = creationFunction;
 }
@@ -41,9 +42,10 @@ export const includeComponent = (name:string, creationFunction: componentFunctio
  * The function turns the map of component functions to a map of Promises when called
  * @returns {[name: string]: <Promise>componentInterface} 
  */
-export const getComponentPromises = () => {
+export const getComponentPromises = (comps?: componentInterface) => {
+    const c = comps || components; 
     return Object.fromEntries(
-        Object.entries(components)
+        Object.entries(c)
             .filter(([key]) => {
                 return !options?.exclude?.includes(key)}
                 )

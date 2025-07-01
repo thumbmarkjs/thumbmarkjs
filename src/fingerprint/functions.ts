@@ -8,9 +8,10 @@ export function getVersion(): string {
     return packageJson.version
 }
 
-export async function getFingerprintData(): Promise<componentInterface>  {
+
+export async function getFingerprintData(pmap?: Record<string, Promise<componentInterface | null>>): Promise<componentInterface>  {
     try {
-        const promiseMap: Record<string, Promise<componentInterface>> = getComponentPromises()
+        const promiseMap: Record<string, Promise<componentInterface>> = pmap || getComponentPromises()
         const keys: string[] = Object.keys(promiseMap)
         const promises: Promise<componentInterface>[] = Object.values(promiseMap)
         const resolvedValues: (componentInterface | undefined)[] = await raceAll(promises, options?.timeout || 1000, timeoutInstance);
@@ -57,7 +58,12 @@ export function filterFingerprintData(obj: componentInterface, excludeList: stri
 
     return result;
 }
-
+/**
+ * 
+ * @param includeData - if true, the function will return an object with the hash and the data
+ * @returns Promise<string | { hash: string, data: componentInterface }>
+ * @deprecated This function will be removed. Use getThumbmark() instead.
+ */
 export async function getFingerprint(includeData?: false): Promise<string>
 export async function getFingerprint(includeData: true): Promise<{ hash: string, data: componentInterface }>
 export async function getFingerprint(includeData?: boolean): Promise<string | { hash: string, data: componentInterface }> {

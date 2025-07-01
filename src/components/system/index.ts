@@ -1,7 +1,7 @@
 import { componentInterface, includeComponent } from '../../factory';
 import { getBrowser } from './browser'
 
-function getSystemDetails(): Promise<componentInterface> {
+export default function getSystem(): Promise<componentInterface> {
     return new Promise((resolve) => {
         const browser = getBrowser()
 
@@ -41,5 +41,5 @@ function getApplePayVersion(): number {
     return 0
 }
 
-includeComponent('system', getSystemDetails);
+includeComponent('system', getSystem);
 

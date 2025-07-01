@@ -1,6 +1,6 @@
 import { componentInterface, includeComponent } from '../../factory'
 
-export default function getInstalledPlugins(): Promise<componentInterface> {
+export default function getPlugins(): Promise<componentInterface> {
     const plugins: string[] = [];
   
     if (navigator.plugins) {
@@ -19,4 +19,4 @@ export default function getInstalledPlugins(): Promise<componentInterface> {
   });
   }
   
-  includeComponent('plugins', getInstalledPlugins);
+  includeComponent('plugins', getPlugins);

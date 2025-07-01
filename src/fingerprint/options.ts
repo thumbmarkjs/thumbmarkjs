@@ -1,12 +1,13 @@
 export interface optionsInterface {
-    exclude: string[],
-    include: string[],
+    exclude?: string[],
+    include?: string[],
     webgl_runs?: number,
     canvas_runs?: number,
     permissions_to_check?: PermissionName[], // new option
     retries?: number, // new option
-    timeout: number, // new option
-    logging: boolean
+    timeout?: number, // new option
+    logging?: boolean,
+    api_key?: string,
 }
 
 export let options: optionsInterface = {
@@ -15,7 +16,11 @@ export let options: optionsInterface = {
     logging: true,
     timeout: 1000
 }
-
+/**
+ * 
+ * @param key @deprecated this function will be removed
+ * @param value 
+ */
 export function setOption<K extends keyof optionsInterface>(key: K, value: optionsInterface[K]) {
     if (!['include', 'exclude', 'permissions_to_check', 'retries', 'timeout', 'logging'].includes(key))
         throw new Error('Unknown option ' + key)

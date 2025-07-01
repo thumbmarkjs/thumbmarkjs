@@ -1,6 +1,6 @@
 {
   "name": "@thumbmarkjs/thumbmarkjs",
-  "version": "0.20.6",
+  "version": "1.0.1",
   "description": "",
   "type": "module",
   "main": "./dist/thumbmark.cjs.js",
@@ -19,7 +19,8 @@
   ],
   "scripts": {
     "test": "jest",
-    "build": "rm -rf dist/* && rm -rf types/* && rollup -c"
+    "build": "rm -rf dist/* && rm -rf types/* && rollup -c",
+    "watch": "rollup -c -w"
   },
   "keywords": [
     "fingerprint",
