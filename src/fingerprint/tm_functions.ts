@@ -35,7 +35,7 @@ export const getComponentPromises = (
 let currentProPromise: Promise<componentInterface> | null = null;
 let proPromiseResult: componentInterface;
 
-export const getProPromise = (options: optionsInterface): Promise<componentInterface> => {
+export const getApiPromise = (options: optionsInterface): Promise<componentInterface> => {
     console.log("cache", options.cache_api_call);
     // By default, API calls are cached to prevent unnecessary calls.
     if (options.cache_api_call && currentProPromise) {
@@ -77,7 +77,7 @@ export async function getThumbmark(options?: optionsInterface): Promise<any> {
 
     const promiseMap = 
     (_options.api_key) ?
-        { ...getComponentPromises(tm_components, _options), ...{pro: getProPromise(_options)} }
+        { ...getComponentPromises(tm_components, _options), ...{api: getApiPromise(_options)} }
     :
         getComponentPromises(tm_components, _options);
 

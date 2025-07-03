@@ -15,7 +15,7 @@ export const defaultOptions: optionsInterface = {
     exclude: [],
     include: [],
     logging: true,
-    timeout: 3000,
+    timeout: 5000,
     cache_api_call: true
     };
 
