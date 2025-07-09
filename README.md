@@ -15,13 +15,13 @@ ThumbmarkJS is meant to be used for good. Use this to prevent scammers and spamm
 
 Have a look at the [IOS](https://github.com/thumbmarkjs/thumbmark-swift) and [Android](https://github.com/thumbmarkjs/thumbmark-android) versions as well.
 
-## Demo page
+## How well does it perform?
 
-The library works quite well to distinguish common browsers.
+Even the client library alone works adequately to distinguish common browsers. Sampled data shows a uniqueness of 90.5%-95.5% (95% confidence interval).
 
-Sampled data shows a uniqueness of 90.5%-95.5% (95% confidence interval).
+Mileage may vary though. Mac/Safari users tend to either clash more than Windows users, or be too unique (noise in the components). It does depend on your audience, too.
 
-Mileage may vary though. Mac/Safari users tend to clash more than Windows users, and it does depend on your audience.
+With the added entropy from an API call, that includes much more entropy by investigating headers, TLS handshake signatures etc, it gets veeery unique. Like 99.9%.
 
 ## Simple usage from CDN
 
@@ -59,7 +59,7 @@ import('https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs@rc/dist/thumbmark.
 
 ```
 
-## Options are... optional 😉
+## Options are... optional
 
 Options are passed to the Thumbmark constructor so:
 
