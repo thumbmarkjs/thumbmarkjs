@@ -1,5 +1,5 @@
 import { componentInterface, componentFunctionInterface, includeComponent } from '../../factory'
-import { optionsInterface } from '../../fingerprint/options';
+import { optionsInterface } from '../../options';
 import { getBrowser } from '../system/browser'
 
 export default async function getAudio(options?: optionsInterface): Promise<componentInterface | null> {

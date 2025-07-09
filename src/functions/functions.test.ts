@@ -1,6 +1,6 @@
 import { componentInterface } from '../factory'
 import { filterThumbmarkData } from '../utils/filterComponents'
-import { defaultOptions } from './options';
+import { defaultOptions } from '../options';
 
 const test_components: componentInterface = {
     'one': '1',

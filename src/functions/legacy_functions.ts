@@ -4,8 +4,8 @@
  */
 
 import { componentInterface } from '../factory'
-import { options} from './options'
-import { resolveClientComponents, getThumbmark } from './functions';
+import { options} from '../options'
+import { resolveClientComponents, getThumbmark } from '.';
 import { tm_component_promises } from "../factory";
 
 /**

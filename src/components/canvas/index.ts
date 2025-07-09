@@ -2,7 +2,7 @@ import { componentInterface, includeComponent } from '../../factory';
 import { getCommonPixels } from '../../utils/commonPixels';
 import { hash } from '../../utils/hash';
 import { getBrowser } from '../system/browser';
-import { optionsInterface } from '../../fingerprint/options';
+import { optionsInterface } from '../../options';
 
 const browser = getBrowser();
 const name = browser.name.toLowerCase();

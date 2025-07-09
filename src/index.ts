@@ -2,9 +2,9 @@ import {
     getFingerprint,
     getFingerprintData,
     getFingerprintPerformance
- } from './fingerprint/legacy_functions'
-import { getThumbmark, getVersion } from './fingerprint/functions'
-import { setOption } from './fingerprint/options'
+ } from './functions/legacy_functions'
+import { getThumbmark, getVersion } from './functions'
+import { setOption } from './options'
 import { includeComponent } from './factory'
 import { Thumbmark } from './thumbmark'
 

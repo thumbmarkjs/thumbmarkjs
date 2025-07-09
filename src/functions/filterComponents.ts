@@ -1,5 +1,5 @@
 import { componentInterface } from "../factory";
-import { optionsInterface } from "../fingerprint/options";
+import { optionsInterface } from "../options";
 
 // ===================== Data Filtering =====================
 

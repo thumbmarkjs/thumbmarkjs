@@ -1,7 +1,7 @@
 import { componentInterface, includeComponent } from '../../factory'
 import { ephemeralIFrame } from '../../utils/ephemeralIFrame'
 import { getBrowser } from '../system/browser'
-import { optionsInterface } from '../../fingerprint/options'
+import { optionsInterface } from '../../options'
 
 interface FontMetrics {[k: string]: number}
 

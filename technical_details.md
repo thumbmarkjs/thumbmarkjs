@@ -3,67 +3,114 @@
 Here's the structure of the src folder:
 
 ```
-components/
-  audio/
-    audio.ts
-  canvas/
-    canvas.ts
-  etc../
-  index.ts
-utils/
-  hash.ts
-  raceAll.ts
-declarations.d.ts
-factory.ts
-index.ts
+src/
+├── components/
+│   ├── audio/
+│   │   └── index.ts
+│   ├── canvas/
+│   │   └── index.ts
+│   ├── fonts/
+│   │   └── index.ts
+│   ├── ...
+├── functions/
+│   ├── index.ts
+│   ├── legacy_functions.ts
+│   └── ...
+├── utils/
+│   ├── hash.ts
+│   └── raceAll.ts
+│   └── ...
+├── types/
+│   └── global.d.ts
+├── factory.ts
+├── index.ts
+├── options.ts
+└── thumbmark.ts
 ```
-
-The folder structure of `components/` doesn't really matter. I just wanted it to look neat.
 
 ## How a component of the fingerprint is implemented
 
-The first thing to know to understand how the library works is to understand one single component. Let's look at a simple one 'system'. here:
+The first thing to know to understand how the library works is to understand one single component. Let's look at a simple one 'system':
 
 ```typescript
 import { componentInterface, includeComponent } from '../../factory';
+import { optionsInterface } from '../../options';
 
-function getSystemDetails(): Promise<componentInterface> {
+export default function getSystem(options?: optionsInterface): Promise<componentInterface> {
     return new Promise((resolve) => {
-        resolve( {
-        'platform': window.navigator.platform,
-        'cookieEnabled': window.navigator.cookieEnabled,
-        'productSub': navigator.productSub,
-        'product': navigator.product
+        const browser = getBrowser();
+        const result: componentInterface = {
+            'platform': window.navigator.platform,
+            'productSub': navigator.productSub,
+            'product': navigator.product,
+            'useragent': navigator.userAgent,
+            'hardwareConcurrency': navigator.hardwareConcurrency,
+            'browser': {'name': browser.name, 'version': browser.version },
+        };
+        resolve(result);
     });
-});
 }
-
-includeComponent('system', getSystemDetails);
 ```
 
-It includes a single component function `getSystemDetails()` that returns a `Promise<componentInterface>`. All components implement this same interface.
+It includes a single component function `getSystem()` that returns a `Promise<componentInterface>`. All components implement this same interface and can optionally accept an `optionsInterface` parameter for configuration.
 
-The function in question is included in the fingerprint by calling the function `includeComponent` with a name identifier, and the component function.
-
-And to do this, you just need the `componentInterface` and the `includeComponent` function by importing them from `../../factory`.
-
-The last thing to do is include the newly added file into `./components/index.ts`
+The function is included in the fingerprint by the `factory.ts`
 
 ## What the factory.ts does
 
-The purpose of the `factory.ts` is to implement the common interfaces for the fingerprint component functions and keep a list of all the components that are included.
+The purpose of the `factory.ts` is to:
 
-When you call `includeComponent` in one of the component modules, the component function gets added to a dictionary called `components`. This is a simple JSON dictionary with key->value pairs where the `key` is the name identifier given for `includeComponent` and the value is the component function.
+1. **Define common interfaces** for fingerprint component functions
+2. **Manage built-in components** by importing and mapping all component functions
+3. **Handle user-registered components** through the `includeComponent` function
+4. **Provide the component registry** that combines built-in and custom components
 
-`factory.ts` exports a function `getComponentPromises()` that then iterates over the component functions in the `components` dictionary and returns an equal kind of dictionary with the `Promises` for each respective component function.
+### Built-in Components
+`factory.ts` imports all built-in component functions and exports them as `tm_component_promises`:
 
-The `getComponentPromises()` is called in the main entry point when someone wants to create the fingerprint.
+```typescript
+export const tm_component_promises = {
+    'audio': getAudio,
+    'canvas': getCanvas,
+    'fonts': getFonts,
+    // ... all other components
+};
+```
 
-## Putting it all together
+### User Components
+When you call `includeComponent` on your instance of the `Thumbmark` class, the component function gets added to a dictionary called `customComponents`:
 
-The main entry point `index.ts` doesn't really do that much. The import of `./components` handles importing all the component scripts.
+```typescript
+export const customComponents: {[name: string]: componentFunctionInterface | null} = {};
 
-It then gets the promise map with `getComponentPromises()`. It races each promise against a timeout.
-At time out the promises that are still pending return a `timeoutInstance`.
+export const includeComponent = (name: string, creationFunction: componentFunctionInterface) => {
+    customComponents[name] = creationFunction;
+};
+```
 
-The function `getFingerprintData()` returns the promise of the component map, while the function `getFingerprint()` returns the promise of a hash based on the resolved component map.
+## Main fingerprinting logic
+
+The main fingerprinting logic is in `src/functions/index.ts`:
+
+### Component Resolution
+The `resolveClientComponents` function:
+1. Merges built-in and user-registered components
+2. Filters components based on `include`/`exclude` options
+3. Calls each component function with the current options
+4. Times each component execution
+5. Filters out null results and applies data filtering
+
+### Main Entry Point
+The `getThumbmark` function:
+1. Merges built-in and custom components
+2. Resolves all components with timing
+3. Optionally calls the API with timeout handling
+4. Returns the fingerprint with optional performance data
+
+## Key Features
+
+- **Extensible**: Users can register custom components via `includeComponent`
+- **Configurable**: Components can accept options for customization
+- **Performant**: Built-in timing and timeout handling
+- **Backward Compatible**: Legacy API still works
+- **Type Safe**: Full TypeScript support with proper interfaces

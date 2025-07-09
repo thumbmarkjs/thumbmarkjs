@@ -4,7 +4,7 @@
  * 
  */
 
-import { optionsInterface } from './fingerprint/options';
+import { optionsInterface } from './options';
 //import { getComponentPromises } from './fingerprint/tm_functions';
 
 // Import all built-in component functions
@@ -63,7 +63,6 @@ export const timeoutInstance: componentInterface = {
  * @param {string} name - the name identifier of the component
  * @param {componentFunctionInterface} creationFunction - the function that implements the component
  * @returns nothing
- * @deprecated use Thumbmark class instead
  */ 
 export const includeComponent = (name:string, creationFunction: componentFunctionInterface, options?: optionsInterface) => {
     customComponents[name] = creationFunction;

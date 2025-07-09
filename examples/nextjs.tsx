@@ -1,15 +1,16 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
-import { getFingerprint } from "@thumbmarkjs/thumbmarkjs";
+import { Thumbmark } from "@thumbmarkjs/thumbmarkjs";
 
 function Fingerprint() {
-    const [fingerprint, setFingerprint] = useState('');
+    const [thumbmark, setThumbmark] = useState('');
   
     useEffect(() => {
-      getFingerprint()
+      const tm = new Thumbmark;
+      tm.get()
         .then((result) => {
-          setFingerprint(result);
+          setThumbmark(result.thumbmark);
         })
         .catch((error) => {
           console.error('Error getting fingerprint:', error);
@@ -17,7 +18,7 @@ function Fingerprint() {
     }, []);
     
     return (
-      <>{fingerprint}</>
+      <>{thumbmark}</>
     );
   }
 

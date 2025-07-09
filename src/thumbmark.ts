@@ -1,6 +1,6 @@
-import { optionsInterface } from "./fingerprint/options";
-import { getThumbmark, getVersion, includeComponent as globalIncludeComponent } from './fingerprint/functions';
-import { defaultOptions } from "./fingerprint/options";
+import { optionsInterface } from "./options";
+import { getThumbmark, getVersion, includeComponent as globalIncludeComponent } from './functions';
+import { defaultOptions } from "./options";
 import { componentInterface } from "./factory";
 
 /**

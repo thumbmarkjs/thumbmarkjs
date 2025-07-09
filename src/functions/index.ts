@@ -15,7 +15,7 @@
  */
 
 // ===================== Imports =====================
-import { defaultOptions, optionsInterface } from "./options";
+import { defaultOptions, optionsInterface } from "../options";
 import { 
     timeoutInstance,
     componentInterface,
@@ -26,7 +26,7 @@ import {
 import { hash } from "../utils/hash";
 import { raceAllPerformance } from "../utils/raceAll";
 import * as packageJson from '../../package.json';
-import { filterThumbmarkData } from '../utils/filterComponents'
+import { filterThumbmarkData } from './filterComponents'
 
 // ===================== Types & Interfaces =====================
 
@@ -48,7 +48,8 @@ interface infoInterface {
     },
     uniqueness?: {
         score: number | string
-    }
+    },
+    timed_out?: boolean; // added for timeout handling
 }
 
 /**
@@ -106,9 +107,9 @@ export const getApiPromise = (
         return currentApiPromise;
     }
 
-    // 3. Otherwise, initiate a new API call.
+    // 3. Otherwise, initiate a new API call with timeout.
     const endpoint = 'https://api-dev.thumbmarkjs.com/thumbmark';
-    currentApiPromise = fetch(endpoint, {
+    const fetchPromise = fetch(endpoint, {
         method: 'POST',
         headers: {
             'x-api-key': options.api_key!,
@@ -135,6 +136,19 @@ export const getApiPromise = (
             return null;
         });
 
+    // Timeout logic
+    const timeoutMs = options.timeout || 5000;
+    const timeoutPromise = new Promise<apiResponse>((resolve) => {
+        setTimeout(() => {
+            resolve({
+                thumbmark: hash(JSON.stringify(components)),
+                info: { timed_out: true },
+                version: packageJson.version,
+            });
+        }, timeoutMs);
+    });
+
+    currentApiPromise = Promise.race([fetchPromise, timeoutPromise]);
     return currentApiPromise;
 };
 
@@ -201,8 +215,8 @@ export async function resolveClientComponents(
         : opts?.include?.length === 0 || opts?.include?.includes(key)
     );
   const keys = filtered.map(([key]) => key);
-  const promises = filtered.map(([_, fn]) => fn());
-  const resolvedValues = await raceAllPerformance(promises, opts?.timeout || 1000, timeoutInstance);
+  const promises = filtered.map(([_, fn]) => fn(options));
+  const resolvedValues = await raceAllPerformance(promises, opts?.timeout || 5000, timeoutInstance);
 
   const elapsed: Record<string, number> = {};
   const resolvedComponentsRaw: Record<string, componentInterface> = {};

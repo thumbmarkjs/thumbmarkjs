@@ -1,11 +1,8 @@
 export interface optionsInterface {
     exclude?: string[],
     include?: string[],
-    webgl_runs?: number,
-    canvas_runs?: number,
-    permissions_to_check?: PermissionName[], // new option
-    retries?: number, // new option
-    timeout?: number, // new option
+    permissions_to_check?: PermissionName[],
+    timeout?: number,
     logging?: boolean,
     api_key?: string,
     cache_api_call?: boolean,

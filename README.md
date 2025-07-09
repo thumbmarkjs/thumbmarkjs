@@ -5,11 +5,11 @@
 ![jsDelivr hits](https://img.shields.io/jsdelivr/npm/hm/%40thumbmarkjs%2Fthumbmarkjs)
 
 
-ThumbmarkJS is now the world's best **free** browser fingerprinting JavaScript library.
+ThumbmarkJS is now the world's best **free** browser fingerprinting JavaScript library. It is used to generate over a billion thumbmarks every month.
 
-ThumbmarkJS is open source (MIT).
+The client ThumbmarkJS library is open source (MIT). There also an API version. Learn more at [ThumbmarkJS website](https://www.thumbmarkjs.com).
 
-🙏 Please don't do evil. ThumbmarkJS is meant to be used for good. Use this to prevent scammers and spammers for example. If you see this library being used for evil, contact me.
+ThumbmarkJS is meant to be used for good. Use this to prevent scammers and spammers for example. If you see this library being used for evil, contact me.
 
 🕺 Join the [Thumbmark Discord channel](https://discord.gg/PAqxQ3TnDA)
 
@@ -17,11 +17,9 @@ Have a look at the [IOS](https://github.com/thumbmarkjs/thumbmark-swift) and [An
 
 ## Demo page
 
-You can help this project by visiting the demo page that **logs your fingerprint for analysis**. The logged fingerprint data is only used to improve this library. Visit the page from the link: [Show and log my fingerprint](https://www.thumbmarkjs.com/)
+The library works quite well to distinguish common browsers.
 
-The library works very well to distinguish common browsers.
-
-Data collected through this demo page show an accuracy of 90.5%-95.5% (95% confidence interval) in identifying a unique visitor correctly.
+Sampled data shows a uniqueness of 90.5%-95.5% (95% confidence interval).
 
 Mileage may vary though. Mac/Safari users tend to clash more than Windows users, and it does depend on your audience.
 
@@ -29,58 +27,73 @@ Mileage may vary though. Mac/Safari users tend to clash more than Windows users,
 
 Transpiled bundles are available now on [JSDelivr](https://www.jsdelivr.com/).
 
+:warning: the version 1.0.0 is has a release candidate status as of 10.7.2025. I'll be publishing the official version shortly. If you have the older 0.20 version, check [the this commit instead](https://github.com/thumbmarkjs/thumbmarkjs/tree/715016a5c510a4ea3f1e20ec969c7db73786fdba).
+
 Supported module formats:
 - UMD: https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.umd.js
 - CommonJS: https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.cjs.js
 - ESM: https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.esm.js
 
-### And on the web page:
+### And on the web page (notice the @rc):
 
 ```javascript
-<script src="https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs@rc/dist/thumbmark.umd.js'"></script>
 <script>
-ThumbmarkJS.getFingerprint().then(
-    function(fp) {
-        console.log(fp);
-    }
-);
+  const tm = new ThumbmarkJS.Thumbmark();
+  tm.get().then((res) => {
+      console.log(res)
+  })
 </script>
 
 <!-- or -->
 
 <script>
-import('https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.umd.js')
+import('https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs@rc/dist/thumbmark.umd.js')
 .then(() => {
-    ThumbmarkJS.getFingerprint().then((fp) => { console.log(fp)})
+  const tm = new ThumbmarkJS.Thumbmark();
+  tm.get().then((res) => {
+      console.log(res)
+  })
 })
 </script>
 
 ```
 
-You can also call `ThumbmarkJS.getFingerprintData()` to get a full JSON object with all its components.
+## Options are... optional 😉
 
-## Options
+Options are passed to the Thumbmark constructor so:
 
-You can use the `setOption` method to change the behavior of the library. Currently it takes only one option.
+```javascript
+const tm = new ThumbmarkJS.Thumbmark({
+  option_key: option_value
+})
+```
 
 |  option |     type |                             example | what it does |
 | - | - | - | - |
+| api_key | string | 'ae8679607bf79f......' | Setting this to a key you've obtained from [https://thumbmarkjs.com](thumbmarkjs.com) makes thumbmarks incredibly more unique
 | exclude | string[] | ['webgl', 'system.browser.version'] | Removes components from the fingerprint hash. An excluded top-level component improves performance. |
 | include | string[] | ['webgl', 'system.browser.version'] | Only includes the listed components. exclude still excludes included components. |
-| timeout | integer | 1000 | Default is 1000. Component timeout in milliseconds.
-| logging | boolean | true | Default is true. Setting to false disables the anonymous 0.001% log sampling that is used to improve the library. |
+| permissions_to_check | string[] | ['gyroscope', 'accelerometer'] | Checks only selected permissions. Like 'include', but more low-level. Permissions take the longest to resolve, so this is if you need to cut down some milliseconds. |
+| timeout | integer | 5000 | Default is 5000. Component timeout in milliseconds.
+| logging | boolean | true | Default is true. Some releases collect at most 0.01% logs to improve the library. This doesn't affect the user. |
+| cache_api_call | boolean | false | Default is false. If using the API, this caches the API response for the current page load. |
+| performance | boolean | false | Default is false. Setting to true includes millisecond performance of component resolving |
 
 example usage:
 
-```
-ThumbmarkJS.setOption('exclude', ['webgl', 'system.browser.version'])
+```javascript
+const tm_api = new ThumbmarkJS.Thumbmark({
+    api_key: 'ae8679607bf79faefe3373ec1a8305863abd6abf2dd94ecbf300fd25b8da7495',
+    exclude: ['math']
+});
 ```
 
 ## Custom components
 
 You can add custom components to the hash with `includeComponent`, which takes two parameters, the `key` being the key of the component in the JSON and the function that returns the value (a string, a number or a JSON object). So for example, if you wanted to include an IP address in the components, you could do it like so:
 
-```
+```javascript
 function fetchIpAddress() {
   return new Promise((resolve, reject) => {
     fetch('http://checkip.amazonaws.com')
@@ -98,32 +111,29 @@ function fetchIpAddress() {
   });
 }
 
-ThumbmarkJS.includeComponent('tcp', fetchIpAddress);
+const tm = new ThumbmarkJS.Thumbmark();
+tm.includeComponent('ip_address', fetchIpAddress)
 ```
 
 The function is expected to return a `Promise`, but it seems it works without, too.
 
-**NOTE** I don't recommend making calls to external websites like this, since it adds a huge lag to running the fingerprint. You can see for yourself by running `ThumbmarkJS.getFingerprintPerformance()`. But it's possible.
-
 ## Install with NPM
 
-Installing from NPM:
+Installing from NPM (note the @rc tag as of 10.7.2025 before final release):
 
 ```bash
-npm install @thumbmarkjs/thumbmarkjs
+npm install @thumbmarkjs/thumbmarkjs@rc
 ```
 
 and in your code
 
 ```javascript
-import { getFingerprint } from '@thumbmarkjs/thumbmarkjs'
+import { Thumbmark } from '@thumbmarkjs/thumbmarkjs'
 ```
 
 To implement ThumbmarkJS in a Next.js app, you can use a component [like this](examples/nextjs.tsx).
 
-:warning: note, thumbmarkjs was published up to version 0.12.1 to NPM package `thumbmarkjs` and from v0.12.1 onwards will be published under `@thumbmarkjs/thumbmarkjs`. I'll occasionally update the old location, but please update your imports.
-
-But bear in mind that the library is meant to be running in the browser. Let me know if the library fails on a server side import. However, `getFingerprint()` is not meant to be called server side.
+:warning: the library is meant to be running in the browser. Let me know if the library fails on a server side import, that shouldn't happen. Just you can't try to calculate the fingerprint server-side.
 
 ## Build it yourself
 
@@ -133,18 +143,6 @@ Clone this repo and then run
 npm run install
 npm run build
 ```
-
-## How you can help
-
-Simply going to the [Show and log my fingerprint](https://www.thumbmarkjs.com/)-page helps a lot. The logging is all anonymous and only used to develop this library. Let me know if you run into any errors by opening an issue. The discussion section is also open.
-
-Test cases you can try:
-- Check your fingerprint, then refresh the page with Ctrl + R
-- Refresh without cache
-- Move the window to another screen
-- Try in incognito
-
-if you see a fingerprint change when it shouldn't, you can use [this JSON Diff Finder tool](https://url-decode.com/tool/json-diff) to check what causes the diff.
 
 ## Components included in fingerprint
 - audio fingerprint
