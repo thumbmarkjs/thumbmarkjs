@@ -108,7 +108,7 @@ export const getApiPromise = (
     }
 
     // 3. Otherwise, initiate a new API call with timeout.
-    const endpoint = 'https://api-dev.thumbmarkjs.com/thumbmark';
+    const endpoint = 'https://api.thumbmarkjs.com/thumbmark';
     const fetchPromise = fetch(endpoint, {
         method: 'POST',
         headers: {
