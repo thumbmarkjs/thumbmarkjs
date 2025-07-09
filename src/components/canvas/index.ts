@@ -2,6 +2,7 @@ import { componentInterface, includeComponent } from '../../factory';
 import { getCommonPixels } from '../../utils/commonPixels';
 import { hash } from '../../utils/hash';
 import { getBrowser } from '../system/browser';
+import { optionsInterface } from '../../fingerprint/options';
 
 const browser = getBrowser();
 const name = browser.name.toLowerCase();
@@ -19,7 +20,15 @@ const _RUNS = 3;
 const _WIDTH = 280;
 const _HEIGHT = 20;
 
-export default function generateCanvasFingerprint(): Promise<componentInterface> {
+export default async function getCanvas(options?: optionsInterface): Promise<componentInterface | null> {
+  const browser = getBrowser()
+  if (name !== 'firefox' && !(name === 'safari' && majorVer >= 17))
+    return generateCanvasFingerprint()
+  return null;
+}
+
+
+export function generateCanvasFingerprint(): Promise<componentInterface> {
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
 
@@ -33,7 +42,7 @@ export default function generateCanvasFingerprint(): Promise<componentInterface>
     const commonImageData = getCommonPixels(imageDatas, _WIDTH, _HEIGHT);
 
     resolve({
-      commonImageDataHash: hash(commonImageData.data.toString()).toString(),
+      commonPixelsHash: hash(commonImageData.data.toString()).toString(),
     });
   });
 }
@@ -85,9 +94,4 @@ function generateCanvasImageData(): ImageData {
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   // Return data URL of the canvas
   return imageData;
-}
-
-// In Safari from version 17 in private and normal modes canvas differs
-if (name !== 'firefox' && !(name === 'safari' && majorVer === 17)) {
-  includeComponent('canvas', generateCanvasFingerprint);
 }

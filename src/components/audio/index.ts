@@ -1,5 +1,13 @@
-import { componentInterface, includeComponent } from '../../factory'
+import { componentInterface, componentFunctionInterface, includeComponent } from '../../factory'
+import { optionsInterface } from '../../fingerprint/options';
 import { getBrowser } from '../system/browser'
+
+export default async function getAudio(options?: optionsInterface): Promise<componentInterface | null> {
+  const browser = getBrowser()
+  if (!['SamsungBrowser', 'Safari'].includes(browser.name))
+    return createAudioFingerprint()
+  return null;
+}
 
 async function createAudioFingerprint(): Promise<componentInterface> {
   const resultPromise = new Promise<componentInterface>((resolve, reject) => {
@@ -7,7 +15,7 @@ async function createAudioFingerprint(): Promise<componentInterface> {
       // Set up audio parameters
       const sampleRate = 44100;
       const numSamples = 5000;
-      const audioContext = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, numSamples, sampleRate );
+      const audioContext = new ((window.OfflineAudioContext || window.webkitOfflineAudioContext))(1, numSamples, sampleRate );
       const audioBuffer = audioContext.createBufferSource();
       
       const oscillator = audioContext.createOscillator();
@@ -28,7 +36,6 @@ async function createAudioFingerprint(): Promise<componentInterface> {
         resolve(
             {
                 'sampleHash': calculateHash(samples),
-                'oscillator': oscillator.type,
                 'maxChannels': audioContext.destination.maxChannelCount,
                 'channelCountMode': audioBuffer.channelCountMode,
 
@@ -58,7 +65,3 @@ function calculateHash(samples: Float32Array) {
   }
   return hash;
 }
-
-const browser = getBrowser()
-if (!['SamsungBrowser', 'Safari'].includes(browser.name))
-  includeComponent('audio', createAudioFingerprint);

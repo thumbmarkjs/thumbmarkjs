@@ -1,5 +1,3 @@
-import { componentInterface } from '../factory'
-
 type DelayedPromise<T> = Promise<T>;
 
 export function delay<T>(t: number, val: T): DelayedPromise<T> {

@@ -9,6 +9,11 @@ import typescript from '@rollup/plugin-typescript'
 
 const config = [
   {
+    watch: {
+      include: 'src/**',
+      exclude: 'node_modules/**',
+      clearScreen: false // Prevents the console from being cleared on each rebuild
+    },
     input: 'src/index.ts', // replace with your entry file
     output: [
       {

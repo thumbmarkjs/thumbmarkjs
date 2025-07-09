@@ -1,6 +1,6 @@
 import { componentInterface, includeComponent } from '../../factory';
 
-function screenDetails(): Promise<componentInterface> {
+export default function getScreen(): Promise<componentInterface> {
     return new Promise((resolve) => {
         resolve(
             {
@@ -42,5 +42,3 @@ function matchMedias(): string[] {
     });
     return results;
 }
-
-includeComponent('screen', screenDetails);

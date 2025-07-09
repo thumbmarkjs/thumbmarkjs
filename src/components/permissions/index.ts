@@ -28,7 +28,7 @@ function initializePermissionKeys() {
     ] as PermissionName[];
 }
 
-export default async function getBrowserPermissions(): Promise<componentInterface> {
+export default async function getPermissions(): Promise<componentInterface> {
     initializePermissionKeys();
     const browser = getBrowser();
     if (browser.name.toLowerCase() === 'safari') { // removing from Safari due to iFrame handling
@@ -59,5 +59,3 @@ async function getBrowserPermissionsOnce(): Promise<componentInterface> {
 
     return permissionStatus;
 }
-
-includeComponent("permissions", getBrowserPermissions);

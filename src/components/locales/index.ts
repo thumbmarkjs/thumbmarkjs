@@ -1,6 +1,6 @@
 import { componentInterface, includeComponent } from '../../factory'
 
-function getLocales(): Promise<componentInterface> {
+export default function getLocales(): Promise<componentInterface> {
   return new Promise((resolve) => {
     resolve(
       {
@@ -19,5 +19,3 @@ function getUserLanguage(): string {
   function getUserTimezone(): string {
     return Intl.DateTimeFormat().resolvedOptions().timeZone;
   }
-
-  includeComponent('locales', getLocales);

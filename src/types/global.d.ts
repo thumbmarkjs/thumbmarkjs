@@ -5,8 +5,8 @@ interface ApplePaySession {
 }
 
 interface Window {
-    webkitAudioContext: typeof AudioContext
     webkitOfflineAudioContext: typeof OfflineAudioContext
+    webkitAudioContext: typeof AudioContext
     ApplePaySession: typeof ApplePaySession
   }
 

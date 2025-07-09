@@ -1,110 +1,238 @@
-import {componentInterface, getComponentPromises, timeoutInstance} from '../factory'
-import {hash} from '../utils/hash'
-import {raceAll, raceAllPerformance} from '../utils/raceAll'
-import {options} from './options'
-import * as packageJson from '../../package.json'
-
-export function getVersion(): string {
-    return packageJson.version
-}
-
-export async function getFingerprintData(): Promise<componentInterface>  {
-    try {
-        const promiseMap: Record<string, Promise<componentInterface>> = getComponentPromises()
-        const keys: string[] = Object.keys(promiseMap)
-        const promises: Promise<componentInterface>[] = Object.values(promiseMap)
-        const resolvedValues: (componentInterface | undefined)[] = await raceAll(promises, options?.timeout || 1000, timeoutInstance);
-        const validValues: componentInterface[] = resolvedValues.filter((value): value is componentInterface => value !== undefined);
-        const resolvedComponents: Record<string, componentInterface> = {};
-        validValues.forEach((value, index) => {
-            resolvedComponents[keys[index]] = value
-        })
-        return filterFingerprintData(resolvedComponents, options.exclude || [], options.include || [], "")
-    }
-    catch (error) {
-        throw error
-    }
-}
-
-/** 
- * This function filters the fingerprint data based on the exclude and include list
- * @param {componentInterface} obj - components objects from main componentInterface
- * @param {string[]} excludeList - elements to exclude from components objects (e.g : 'canvas', 'system.browser')
- * @param {string[]} includeList - elements to only include from components objects (e.g : 'canvas', 'system.browser')
- * @param {string} path - auto-increment path iterating on key objects from components objects
- * @returns {componentInterface} result - returns the final object before hashing in order to get fingerprint
+/**
+ * ThumbmarkJS: Main fingerprinting and API logic
+ *
+ * This module handles component collection, API calls, uniqueness scoring, and data filtering
+ * for the ThumbmarkJS browser fingerprinting library.
+ *
+ * Exports:
+ *   - getThumbmark
+ *   - getThumbmarkDataFromPromiseMap
+ *   - resolveClientComponents
+ *   - getVersion
+ *   - filterThumbmarkData
+ *
+ * Internal helpers and types are also defined here.
  */
-export function filterFingerprintData(obj: componentInterface, excludeList: string[], includeList: string[], path: string = ""): componentInterface {
-    const result: componentInterface = {};
 
-    for (const [key, value] of Object.entries(obj)) {
-        const currentPath = path + key + ".";
+// ===================== Imports =====================
+import { defaultOptions, optionsInterface } from "./options";
+import { 
+    timeoutInstance,
+    componentInterface,
+    tm_component_promises,
+    customComponents,
+    includeComponent as globalIncludeComponent
+} from "../factory";
+import { hash } from "../utils/hash";
+import { raceAllPerformance } from "../utils/raceAll";
+import * as packageJson from '../../package.json';
+import { filterThumbmarkData } from '../utils/filterComponents'
 
-        if (typeof value === "object" && !Array.isArray(value)) {
-            const filtered = filterFingerprintData(value, excludeList, includeList, currentPath);
-            if (Object.keys(filtered).length > 0) {
-                result[key] = filtered;
-            }
-        } else {
-            const isExcluded = excludeList.some(exclusion => currentPath.startsWith(exclusion));
-            const isIncluded = includeList.some(inclusion => currentPath.startsWith(inclusion));
+// ===================== Types & Interfaces =====================
 
-            if (!isExcluded || isIncluded) {
-                result[key] = value;
-            }
-        }
-    }
-
-    return result;
-}
-
-export async function getFingerprint(includeData?: false): Promise<string>
-export async function getFingerprint(includeData: true): Promise<{ hash: string, data: componentInterface }>
-export async function getFingerprint(includeData?: boolean): Promise<string | { hash: string, data: componentInterface }> {
-    try {
-        const fingerprintData = await getFingerprintData()
-        const thisHash = hash(JSON.stringify(fingerprintData))
-        if (Math.random() < 0.00001 && options.logging) logFingerprintData(thisHash, fingerprintData)
-        if (includeData) {
-            return { hash: thisHash.toString(), data: fingerprintData}
-        } else {
-            return thisHash.toString()
-        }
-    } catch (error) {
-        throw error
+/**
+ * Info returned from the API (IP, classification, uniqueness, etc)
+ */
+interface infoInterface {
+    ip_address?: {
+        ip_address: string,
+        ip_identifier: string,
+        autonomous_system_number: number,
+        ip_version: 'v6' | 'v4',
+    },
+    classification?: {
+        tor: boolean,
+        proxy: boolean, // i.e. vpn and 
+        datacenter: boolean,
+        danger_level: number, // 5 is highest and should be blocked. 0 is no danger.
+    },
+    uniqueness?: {
+        score: number | string
     }
 }
 
-export async function getFingerprintPerformance() {
-    try {
-        const promiseMap = getComponentPromises()
-        const keys = Object.keys(promiseMap)
-        const promises = Object.values(promiseMap)
-        const resolvedValues = await raceAllPerformance(promises, options?.timeout || 1000, timeoutInstance )
-        const resolvedComponents: { [key: string]: any } = {
-            elapsed: {}
-        }
-        resolvedValues.forEach((value, index) => {
-            resolvedComponents[keys[index]] = value.value
-            resolvedComponents["elapsed"][keys[index]] = value.elapsed
+/**
+ * API response structure
+ */
+interface apiResponse {
+    thumbmark?: string;
+    info?: infoInterface;
+    version?: string;
+}
+
+/**
+ * Final thumbmark response structure
+ */
+interface thumbmarkResponse {
+    components: componentInterface,
+    info: { [key: string]: any },
+    version: string,
+    thumbmark: string,
+    /**
+     * Only present if options.performance is true.
+     */
+    elapsed?: any;
+}
+
+// ===================== Version =====================
+
+/**
+ * Returns the current package version
+ */
+export function getVersion(): string {
+    return packageJson.version;
+}
+
+// ===================== API Call Logic =====================
+
+let currentApiPromise: Promise<apiResponse> | null = null;
+let apiPromiseResult: apiResponse | null = null;
+
+/**
+ * Calls the Thumbmark API with the given components, using caching and deduplication.
+ * Returns a promise for the API response or null on error.
+ */
+export const getApiPromise = (
+    options: optionsInterface,
+    components: componentInterface
+): Promise<apiResponse | null> => {
+    // 1. If a result is already cached and caching is enabled, return it.
+    if (options.cache_api_call && apiPromiseResult) {
+        return Promise.resolve(apiPromiseResult);
+    }
+
+    // 2. If a request is already in flight, return that promise to prevent duplicate calls.
+    if (currentApiPromise) {
+        return currentApiPromise;
+    }
+
+    // 3. Otherwise, initiate a new API call.
+    const endpoint = 'https://api-dev.thumbmarkjs.com/thumbmark';
+    currentApiPromise = fetch(endpoint, {
+        method: 'POST',
+        headers: {
+            'x-api-key': options.api_key!,
+            'Authorization': 'custom-authorized',
+        },
+        body: JSON.stringify({ components: components, clientHash: hash(JSON.stringify(components)) }),
+    })
+        .then(response => {
+            // Handle HTTP errors that aren't network errors
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            apiPromiseResult = data;      // Cache the successful result
+            currentApiPromise = null;     // Clear the in-flight promise
+            return data;
+        })
+        .catch(error => {
+            console.error('Error fetching pro data', error);
+            currentApiPromise = null;     // Also clear the in-flight promise on error
+            // Return null instead of a string to prevent downstream crashes
+            return null;
         });
-        return resolvedComponents
+
+    return currentApiPromise;
+};
+
+// ===================== Main Thumbmark Logic =====================
+
+/**
+ * Main entry point: collects all components, optionally calls API, and returns thumbmark data.
+ *
+ * @param options - Options for fingerprinting and API
+ * @returns thumbmarkResponse (elapsed is present only if options.performance is true)
+ */
+export async function getThumbmark(options?: optionsInterface): Promise<thumbmarkResponse> {
+    const _options = { ...defaultOptions, ...options };
+    // Merge built-in and user-registered components
+    const allComponents = { ...tm_component_promises, ...customComponents };
+    const { elapsed, resolvedComponents: clientComponentsResult } = await resolveClientComponents(allComponents, _options);
+
+    const apiPromise = _options.api_key ? getApiPromise(_options, clientComponentsResult) : null;
+    const apiResult = apiPromise ? await apiPromise : null;
+
+    // Only add 'elapsed' if performance is true
+    const maybeElapsed = _options.performance ? { elapsed } : {};
+
+    if (apiResult) {
+        const info: infoInterface = apiResult.info || {};
+        return {
+            components: clientComponentsResult,
+            info,
+            version: getVersion(),
+            thumbmark: apiResult.thumbmark || 'undefined',
+            ...maybeElapsed,
+        };
     }
-    catch (error) {
-        throw error
-    }
+    return {
+        thumbmark: hash(JSON.stringify(clientComponentsResult)),
+        components: clientComponentsResult,
+        info: {
+            uniqueness: 'api only'
+        },
+        version: getVersion(),
+        ...maybeElapsed,
+    };
 }
 
-// Function to log the fingerprint data
-async function logFingerprintData(thisHash: string, fingerprintData: componentInterface) {
-    const url = 'https://logging.thumbmarkjs.com/v1/log'
+// ===================== Component Resolution & Performance =====================
+
+/**
+ * Resolves and times all filtered component promises from a component function map.
+ *
+ * @param comps - Map of component functions
+ * @param options - Options for filtering and timing
+ * @returns Object with elapsed times and filtered resolved components
+ */
+export async function resolveClientComponents(
+  comps: { [key: string]: (options?: optionsInterface) => Promise<componentInterface | null> },
+  options?: optionsInterface
+): Promise<{ elapsed: Record<string, number>, resolvedComponents: componentInterface }> {
+  const opts = { ...defaultOptions, ...options };
+  const filtered = Object.entries(comps)
+    .filter(([key]) => !opts?.exclude?.includes(key))
+    .filter(([key]) =>
+      opts?.include?.some(e => e.includes('.'))
+        ? opts?.include?.some(e => e.startsWith(key))
+        : opts?.include?.length === 0 || opts?.include?.includes(key)
+    );
+  const keys = filtered.map(([key]) => key);
+  const promises = filtered.map(([_, fn]) => fn());
+  const resolvedValues = await raceAllPerformance(promises, opts?.timeout || 1000, timeoutInstance);
+
+  const elapsed: Record<string, number> = {};
+  const resolvedComponentsRaw: Record<string, componentInterface> = {};
+
+  resolvedValues.forEach((value, index) => {
+    if (value.value != null) {
+      resolvedComponentsRaw[keys[index]] = value.value;
+      elapsed[keys[index]] = value.elapsed ?? 0;
+    }
+  });
+
+  const resolvedComponents = filterThumbmarkData(resolvedComponentsRaw, opts, "");
+  return { elapsed, resolvedComponents };
+}
+
+// ===================== Logging (Internal) =====================
+
+/**
+ * Logs thumbmark data to remote logging endpoint (only once per session)
+ * @internal
+ */
+async function logThumbmarkData(thisHash: string, thumbmarkData: componentInterface) {
+    const url = 'https://logging.thumbmarkjs.com/v1/log';
     const payload = {
         thumbmark: thisHash,
-        components: fingerprintData,
+        components: thumbmarkData,
         version: getVersion()
     };
     if (!sessionStorage.getItem("_tmjs_l")) {
-        sessionStorage.setItem("_tmjs_l", "1")
+        sessionStorage.setItem("_tmjs_l", "1");
         try {
             await fetch(url, {
                 method: 'POST',
@@ -113,6 +241,8 @@ async function logFingerprintData(thisHash: string, fingerprintData: componentIn
                 },
                 body: JSON.stringify(payload)
             });
-        } catch { } // do nothing
+        } catch { /* do nothing */ }
     }
 }
+
+export { globalIncludeComponent as includeComponent };

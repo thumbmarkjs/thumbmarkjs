@@ -1,6 +1,7 @@
 import { componentInterface, includeComponent } from '../../factory'
 import { ephemeralIFrame } from '../../utils/ephemeralIFrame'
 import { getBrowser } from '../system/browser'
+import { optionsInterface } from '../../fingerprint/options'
 
 interface FontMetrics {[k: string]: number}
 
@@ -98,7 +99,14 @@ const availableFonts = [
 
   const baseFonts = ['monospace', 'sans-serif', 'serif'];
 
-export default function getFontMetrics(): Promise<componentInterface> {
+export default async function getFonts(options?: optionsInterface): Promise<componentInterface | null> {
+  const browser = getBrowser()
+  if (!['Firefox'].includes(browser.name))
+    return getFontMetrics()
+  return null;
+}
+
+export function getFontMetrics(): Promise<componentInterface> {
     
     return new Promise((resolve, reject) => {
         try {
@@ -140,6 +148,3 @@ function measureSingleFont(ctx: CanvasRenderingContext2D | null, font: string): 
     ctx.font = `72px ${font}`; // Set a default font size
     return ctx.measureText(text).width;
 }
-
-if (getBrowser().name != 'Firefox')
-    includeComponent('fonts', getFontMetrics);

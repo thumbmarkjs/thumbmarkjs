@@ -16,7 +16,7 @@ function initializeCanvasAndWebGL() {
   }
 }
 
-async function createWebGLFingerprint(): Promise<componentInterface> {
+export default async function getWebGL(): Promise<componentInterface> {
   initializeCanvasAndWebGL();
   
   try {
@@ -32,7 +32,7 @@ async function createWebGLFingerprint(): Promise<componentInterface> {
     //const imageData = createWebGLImageData()
 
     return {
-      'commonImageHash': hash(commonImageData.data.toString()).toString(),
+      'commonPixelsHash': hash(commonImageData.data.toString()).toString(),
     }
   } catch (error) {
     return {
@@ -144,5 +144,3 @@ function createWebGLImageData(): ImageData {
     }
   }
 }
-
-  includeComponent('webgl', createWebGLFingerprint);
