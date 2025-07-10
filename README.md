@@ -27,17 +27,15 @@ With the added entropy from an API call, that includes server-side components by
 
 Transpiled bundles are available now on [JSDelivr](https://www.jsdelivr.com/).
 
-:warning: the version 1.0.0 is has a release candidate status as of 10.7.2025. I'll be publishing the official version shortly. If you have the older 0.20 version, check [the this commit instead](https://github.com/thumbmarkjs/thumbmarkjs/tree/715016a5c510a4ea3f1e20ec969c7db73786fdba).
-
 Supported module formats:
 - UMD: https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.umd.js
 - CommonJS: https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.cjs.js
 - ESM: https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.esm.js
 
-### And on the web page (notice the @rc):
+### And on the web page:
 
 ```javascript
-<script src="https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs@rc/dist/thumbmark.umd.js'"></script>
+<script src="https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.umd.js"></script>
 <script>
   const tm = new ThumbmarkJS.Thumbmark();
   tm.get().then((res) => {
@@ -48,7 +46,7 @@ Supported module formats:
 <!-- or -->
 
 <script>
-import('https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs@rc/dist/thumbmark.umd.js')
+import('https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.umd.js')
 .then(() => {
   const tm = new ThumbmarkJS.Thumbmark();
   tm.get().then((res) => {
@@ -119,10 +117,10 @@ The function is expected to return a `Promise`, but it seems it works without, t
 
 ## Install with NPM
 
-Installing from NPM (note the @rc tag as of 10.7.2025 before final release):
+Installing from NPM:
 
 ```bash
-npm install @thumbmarkjs/thumbmarkjs@rc
+npm install @thumbmarkjs/thumbmarkjs
 ```
 
 and in your code
