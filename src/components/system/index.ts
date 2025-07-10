@@ -1,9 +1,10 @@
-import { componentInterface, includeComponent } from '../../factory';
-import { getBrowser } from './browser'
+import { componentInterface } from '../../factory';
+import { getBrowser, isMobileUserAgent } from './browser'
 
 export default function getSystem(): Promise<componentInterface> {
     return new Promise((resolve) => {
         const browser = getBrowser()
+        const ua = navigator.userAgent;
 
         const result: componentInterface = {
         'platform': window.navigator.platform,
@@ -12,6 +13,7 @@ export default function getSystem(): Promise<componentInterface> {
         'useragent': navigator.userAgent,
         'hardwareConcurrency': navigator.hardwareConcurrency,
         'browser': {'name': browser.name, 'version': browser.version },
+        'mobile': isMobileUserAgent(),
         }
         // Safari handles these differently in an iFrame so removing them from components
         if (browser.name.toLowerCase() !== 'safari') {

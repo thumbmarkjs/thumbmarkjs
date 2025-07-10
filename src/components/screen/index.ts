@@ -1,16 +1,27 @@
 import { componentInterface, includeComponent } from '../../factory';
+import { isMobileUserAgent } from '../system/browser';
 
 export default function getScreen(): Promise<componentInterface> {
     return new Promise((resolve) => {
-        resolve(
-            {
-                'is_touchscreen': navigator.maxTouchPoints > 0,
-                'maxTouchPoints': navigator.maxTouchPoints,
-                'colorDepth': screen.colorDepth,
-                'mediaMatches': matchMedias(),
-            }
-        );
+        const result: componentInterface = {
+            'is_touchscreen': navigator.maxTouchPoints > 0,
+            'maxTouchPoints': navigator.maxTouchPoints,
+            'colorDepth': screen.colorDepth,
+            'mediaMatches': matchMedias(),
+        };
+        if (isMobileUserAgent() && navigator.maxTouchPoints > 0) {
+            result['resolution'] = screenResolution()
+        }
+        resolve(result);
     });
+}
+
+function screenResolution() {
+    const w = window.screen.width;
+    const h = window.screen.height;
+    const longer = Math.max(w, h).toString();
+    const shorter = Math.min(w, h).toString();
+    return `${longer}x${shorter}`
 }
 
 function matchMedias(): string[] {

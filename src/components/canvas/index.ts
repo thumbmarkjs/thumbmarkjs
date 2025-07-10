@@ -4,11 +4,6 @@ import { hash } from '../../utils/hash';
 import { getBrowser } from '../system/browser';
 import { optionsInterface } from '../../options';
 
-const browser = getBrowser();
-const name = browser.name.toLowerCase();
-const ver = browser.version.split('.')[0] || '0';
-const majorVer = parseInt(ver, 10);
-
 const _RUNS = 3;
 
 /**
@@ -20,8 +15,11 @@ const _RUNS = 3;
 const _WIDTH = 280;
 const _HEIGHT = 20;
 
-export default async function getCanvas(options?: optionsInterface): Promise<componentInterface | null> {
-  const browser = getBrowser()
+export default async function getCanvas(): Promise<componentInterface | null> {
+  const browser = getBrowser();
+  const name = browser.name.toLowerCase();
+  const ver = browser.version.split('.')[0] || '0';
+  const majorVer = parseInt(ver, 10);
   if (name !== 'firefox' && !(name === 'safari' && majorVer >= 17))
     return generateCanvasFingerprint()
   return null;
@@ -30,7 +28,6 @@ export default async function getCanvas(options?: optionsInterface): Promise<com
 
 export function generateCanvasFingerprint(): Promise<componentInterface> {
   const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
 
   return new Promise((resolve) => {
     /**

@@ -17,11 +17,11 @@ Have a look at the [IOS](https://github.com/thumbmarkjs/thumbmark-swift) and [An
 
 ## How well does it perform?
 
-Even the client library alone works adequately to distinguish common browsers. Sampled data shows a uniqueness of 90.5%-95.5% (95% confidence interval).
+Even the client library alone works adequately to distinguish common browsers. Sampled data show a uniqueness of 90%-95%.
 
 Mileage may vary though. Mac/Safari users tend to either clash more than Windows users, or be too unique (noise in the components). It does depend on your audience, too.
 
-With the added entropy from an API call, that includes much more entropy by investigating headers, TLS handshake signatures etc, it gets veeery unique. Like 99.9%.
+With the added entropy from an API call, that includes server-side components by investigating headers, TLS handshake signatures etc, it gets veeery unique. Like 99%.
 
 ## Simple usage from CDN
 
