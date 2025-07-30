@@ -17,7 +17,7 @@ Have a look at the [IOS](https://github.com/thumbmarkjs/thumbmark-swift) and [An
 
 ## How well does it perform?
 
-Even the client library alone works adequately to distinguish common browsers. Sampled data show a uniqueness of 90%-95%.
+Even the client library alone works adequately to distinguish common browsers. Sampled data show a uniqueness of around and above 90%.
 
 Mileage may vary though. Mac/Safari users tend to either clash more than Windows users, or be too unique (noise in the components). It does depend on your audience, too.
 
@@ -35,17 +35,7 @@ Supported module formats:
 ### And on the web page:
 
 ```javascript
-<script src="https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.umd.js"></script>
-<script>
-  const tm = new ThumbmarkJS.Thumbmark();
-  tm.get().then((res) => {
-      console.log(res)
-  })
-</script>
 
-<!-- or -->
-
-<script>
 import('https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.umd.js')
 .then(() => {
   const tm = new ThumbmarkJS.Thumbmark();
@@ -53,7 +43,6 @@ import('https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.umd
       console.log(res)
   })
 })
-</script>
 
 ```
 
@@ -75,17 +64,17 @@ const tm = new ThumbmarkJS.Thumbmark({
 | permissions_to_check | string[] | ['gyroscope', 'accelerometer'] | Checks only selected permissions. Like 'include', but more low-level. Permissions take the longest to resolve, so this is if you need to cut down some milliseconds. |
 | timeout | integer | 5000 | Default is 5000. Component timeout in milliseconds.
 | logging | boolean | true | Default is true. Some releases collect at most 0.01% logs to improve the library. This doesn't affect the user. |
-| cache_api_call | boolean | false | Default is false. If using the API, this caches the API response for the current page load. |
 | performance | boolean | false | Default is false. Setting to true includes millisecond performance of component resolving |
 
 example usage:
 
 ```javascript
 const tm_api = new ThumbmarkJS.Thumbmark({
-    api_key: 'ae8679607bf79faefe3373ec1a8305863abd6abf2dd94ecbf300fd25b8da7495',
+    api_key: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     exclude: ['math']
 });
 ```
+
 
 ## Custom components
 

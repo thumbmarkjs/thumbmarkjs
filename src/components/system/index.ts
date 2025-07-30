@@ -14,11 +14,8 @@ export default function getSystem(): Promise<componentInterface> {
         'hardwareConcurrency': navigator.hardwareConcurrency,
         'browser': {'name': browser.name, 'version': browser.version },
         'mobile': isMobileUserAgent(),
-        }
-        // Safari handles these differently in an iFrame so removing them from components
-        if (browser.name.toLowerCase() !== 'safari') {
-            result['applePayVersion'] = getApplePayVersion();
-            result['cookieEnabled'] = window.navigator.cookieEnabled;
+        'applePayVersion': getApplePayVersion(),
+        'cookieEnabled': window.navigator.cookieEnabled,
         }
         resolve(result);
     });

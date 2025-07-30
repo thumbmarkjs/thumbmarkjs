@@ -58,7 +58,7 @@ export const timeoutInstance: componentInterface = {
 }
 
 /** 
- * includeComponent is the function each component function needs to call in order for the component to be included
+ * includeComponent is the function each custom component function needs to call in order for the component to be included
  * in the fingerprint.
  * @param {string} name - the name identifier of the component
  * @param {componentFunctionInterface} creationFunction - the function that implements the component

@@ -1,11 +1,7 @@
-import { componentInterface, componentFunctionInterface, includeComponent } from '../../factory'
-import { getBrowser } from '../system/browser'
+import { componentInterface } from '../../factory'
 
 export default async function getAudio(): Promise<componentInterface | null> {
-  const browser = getBrowser()
-  if (!['SamsungBrowser', 'Safari'].includes(browser.name))
-    return createAudioFingerprint()
-  return null;
+  return createAudioFingerprint()
 }
 
 async function createAudioFingerprint(): Promise<componentInterface> {

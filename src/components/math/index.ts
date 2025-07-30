@@ -1,4 +1,4 @@
-import { componentInterface, includeComponent } from '../../factory'
+import { componentInterface } from '../../factory'
 
 const integrate = (f: (x: number) => number, a: number, b: number, n: number): number => {
     const h = (b - a) / n;

@@ -8,7 +8,6 @@
  *   - getThumbmark
  *   - getThumbmarkDataFromPromiseMap
  *   - resolveClientComponents
- *   - getVersion
  *   - filterThumbmarkData
  *
  * Internal helpers and types are also defined here.
@@ -25,8 +24,10 @@ import {
 } from "../factory";
 import { hash } from "../utils/hash";
 import { raceAllPerformance } from "../utils/raceAll";
-import * as packageJson from '../../package.json';
+import { getVersion } from "../utils/version";
 import { filterThumbmarkData } from './filterComponents'
+import { logThumbmarkData } from '../utils/log';
+import { API_ENDPOINT } from "../options";
 
 // ===================== Types & Interfaces =====================
 
@@ -42,7 +43,8 @@ interface infoInterface {
     },
     classification?: {
         tor: boolean,
-        proxy: boolean, // i.e. vpn and 
+        vpn: boolean,
+        bot: boolean,
         datacenter: boolean,
         danger_level: number, // 5 is highest and should be blocked. 0 is no danger.
     },
@@ -59,6 +61,7 @@ interface apiResponse {
     thumbmark?: string;
     info?: infoInterface;
     version?: string;
+    components?: componentInterface;
 }
 
 /**
@@ -75,14 +78,7 @@ interface thumbmarkResponse {
     elapsed?: any;
 }
 
-// ===================== Version =====================
 
-/**
- * Returns the current package version
- */
-export function getVersion(): string {
-    return packageJson.version;
-}
 
 // ===================== API Call Logic =====================
 
@@ -108,14 +104,15 @@ export const getApiPromise = (
     }
 
     // 3. Otherwise, initiate a new API call with timeout.
-    const endpoint = 'https://api.thumbmarkjs.com/thumbmark';
+    const endpoint = `${API_ENDPOINT}/thumbmark`;
     const fetchPromise = fetch(endpoint, {
         method: 'POST',
         headers: {
             'x-api-key': options.api_key!,
             'Authorization': 'custom-authorized',
+            'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ components: components, clientHash: hash(JSON.stringify(components)) }),
+        body: JSON.stringify({ components, options, clientHash: hash(JSON.stringify(components)) }),
     })
         .then(response => {
             // Handle HTTP errors that aren't network errors
@@ -143,7 +140,7 @@ export const getApiPromise = (
             resolve({
                 thumbmark: hash(JSON.stringify(components)),
                 info: { timed_out: true },
-                version: packageJson.version,
+                version: getVersion(),
             });
         }, timeoutMs);
     });
@@ -153,6 +150,8 @@ export const getApiPromise = (
 };
 
 // ===================== Main Thumbmark Logic =====================
+
+
 
 /**
  * Main entry point: collects all components, optionally calls API, and returns thumbmark data.
@@ -171,24 +170,17 @@ export async function getThumbmark(options?: optionsInterface): Promise<thumbmar
 
     // Only add 'elapsed' if performance is true
     const maybeElapsed = _options.performance ? { elapsed } : {};
-
-    if (apiResult) {
-        const info: infoInterface = apiResult.info || {};
-        return {
-            components: clientComponentsResult,
-            info,
-            version: getVersion(),
-            thumbmark: apiResult.thumbmark || 'undefined',
-            ...maybeElapsed,
-        };
-    }
+    const apiComponents = filterThumbmarkData(apiResult?.components || {}, _options);
+    const components = {...clientComponentsResult, ...apiComponents};
+    const info: infoInterface = apiResult?.info || { uniqueness: { score: 'api only' } };
+    const thumbmark = hash(JSON.stringify(components));
+    const version = getVersion();
+    logThumbmarkData(thumbmark, components, _options).catch(() => { /* do nothing */ });
     return {
-        thumbmark: hash(JSON.stringify(clientComponentsResult)),
-        components: clientComponentsResult,
-        info: {
-            uniqueness: 'api only'
-        },
-        version: getVersion(),
+        thumbmark,
+        components: components,
+        info,
+        version,
         ...maybeElapsed,
     };
 }
@@ -228,35 +220,10 @@ export async function resolveClientComponents(
     }
   });
 
-  const resolvedComponents = filterThumbmarkData(resolvedComponentsRaw, opts, "");
+  const resolvedComponents = filterThumbmarkData(resolvedComponentsRaw, opts);
   return { elapsed, resolvedComponents };
 }
 
-// ===================== Logging (Internal) =====================
 
-/**
- * Logs thumbmark data to remote logging endpoint (only once per session)
- * @internal
- */
-async function logThumbmarkData(thisHash: string, thumbmarkData: componentInterface) {
-    const url = 'https://logging.thumbmarkjs.com/v1/log';
-    const payload = {
-        thumbmark: thisHash,
-        components: thumbmarkData,
-        version: getVersion()
-    };
-    if (!sessionStorage.getItem("_tmjs_l")) {
-        sessionStorage.setItem("_tmjs_l", "1");
-        try {
-            await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            });
-        } catch { /* do nothing */ }
-    }
-}
 
 export { globalIncludeComponent as includeComponent };
