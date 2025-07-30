@@ -1,8 +1,6 @@
-import { componentInterface, includeComponent } from '../../factory';
+import { componentInterface } from '../../factory';
 import { getCommonPixels } from '../../utils/commonPixels';
 import { hash } from '../../utils/hash';
-import { getBrowser } from '../system/browser';
-import { optionsInterface } from '../../options';
 
 const _RUNS = 3;
 
@@ -16,19 +14,11 @@ const _WIDTH = 280;
 const _HEIGHT = 20;
 
 export default async function getCanvas(): Promise<componentInterface | null> {
-  const browser = getBrowser();
-  const name = browser.name.toLowerCase();
-  const ver = browser.version.split('.')[0] || '0';
-  const majorVer = parseInt(ver, 10);
-  if (name !== 'firefox' && !(name === 'safari' && majorVer >= 17))
-    return generateCanvasFingerprint()
-  return null;
+  return generateCanvasFingerprint()
 }
 
 
 export function generateCanvasFingerprint(): Promise<componentInterface> {
-  const canvas = document.createElement('canvas');
-
   return new Promise((resolve) => {
     /**
      * Since some browsers fudge with the canvas pixels to prevent fingerprinting, the following

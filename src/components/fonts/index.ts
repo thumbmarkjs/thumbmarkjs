@@ -1,9 +1,8 @@
-import { componentInterface, includeComponent } from '../../factory'
+import { componentInterface } from '../../factory'
 import { ephemeralIFrame } from '../../utils/ephemeralIFrame'
-import { getBrowser } from '../system/browser'
 import { optionsInterface } from '../../options'
 
-interface FontMetrics {[k: string]: number}
+//interface FontMetrics {[k: string]: number}
 
 const availableFonts = [
     'Arial',
@@ -100,10 +99,7 @@ const availableFonts = [
   const baseFonts = ['monospace', 'sans-serif', 'serif'];
 
 export default async function getFonts(options?: optionsInterface): Promise<componentInterface | null> {
-  const browser = getBrowser()
-  if (!['Firefox'].includes(browser.name))
     return getFontMetrics()
-  return null;
 }
 
 export function getFontMetrics(): Promise<componentInterface> {
@@ -112,7 +108,6 @@ export function getFontMetrics(): Promise<componentInterface> {
         try {
 
             ephemeralIFrame(async ({ iframe }) => {
-                const textToRender = 'Hello, world!';
 
                 const canvas = iframe.createElement('canvas');
                 const ctx = canvas.getContext('2d');
@@ -144,7 +139,6 @@ function measureSingleFont(ctx: CanvasRenderingContext2D | null, font: string): 
         throw new Error('Canvas context not supported');
     }
     const text: string = "WwMmLli0Oo";
-    const defaultFont = ctx.font; // Store default font
     ctx.font = `72px ${font}`; // Set a default font size
     return ctx.measureText(text).width;
 }

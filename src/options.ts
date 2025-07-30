@@ -6,16 +6,20 @@ export interface optionsInterface {
     logging?: boolean,
     api_key?: string,
     cache_api_call?: boolean,
-    performance?: boolean, // re-added
+    performance?: boolean,
+    stabilize?: string[],
 }
+
+export const API_ENDPOINT = 'https://api.thumbmarkjs.com';
 
 export const defaultOptions: optionsInterface = {
     exclude: [],
     include: [],
+    stabilize: ['private', 'iframe'],
     logging: true,
     timeout: 5000,
     cache_api_call: true,
-    performance: false // re-added
+    performance: false
     };
 
 export let options = {...defaultOptions};
@@ -25,11 +29,30 @@ export let options = {...defaultOptions};
  * @param value 
  */
 export function setOption<K extends keyof optionsInterface>(key: K, value: optionsInterface[K]) {
-    if (!['include', 'exclude', 'permissions_to_check', 'retries', 'timeout', 'logging', 'api_key', 'cache_api_call'].includes(key))
-        throw new Error('Unknown option ' + key)
-    if (['include', 'exclude', 'permissions_to_check'].includes(key) && !(Array.isArray(value) && value.every(item => typeof item === 'string')) )
-        throw new Error('The value of the include, exclude and permissions_to_check must be an array of strings');
-    if ([ 'retries', 'timeout'].includes(key) && typeof value !== 'number')
-        throw new Error('The value of retries must be a number');
     options[key] = value;
+}
+
+export const stabilizationExclusionRules = {
+    'private': [
+        { exclude: ['canvas'], browsers: ['firefox', 'safari>=17', 'brave' ]},
+        { exclude: ['audio'], browsers: ['samsungbrowser', 'safari' ]},
+        { exclude: ['fonts'], browsers: ['firefox']},
+        { exclude: ['plugins'], browsers: ['brave']},
+    ],
+    'iframe': [
+        {
+            exclude: [
+                'permissions.camera',
+                'permission.geolocation',
+                'permissions.microphone',
+                'system.applePayVersion',
+                'system.cookieEnabled'
+            ],
+            browsers: ['safari']
+        },
+
+    ],
+    'vpn': [
+        { exclude: ['ip'] },
+    ],
 }

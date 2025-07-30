@@ -1,5 +1,6 @@
 import { optionsInterface } from "./options";
-import { getThumbmark, getVersion, includeComponent as globalIncludeComponent } from './functions';
+import { getThumbmark, includeComponent as globalIncludeComponent } from './functions';
+import { getVersion } from "./utils/version";
 import { defaultOptions } from "./options";
 import { componentInterface } from "./factory";
 

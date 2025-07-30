@@ -1,7 +1,6 @@
-import { componentInterface, includeComponent } from '../../factory';
+import { componentInterface } from '../../factory';
 import { mostFrequentValuesInArrayOfDictionaries } from '../../utils/getMostFrequent';
 import { optionsInterface } from '../../options';
-import { getBrowser } from '../system/browser';
 
 const defaultPermissionKeys: PermissionName[] = [
     'accelerometer',
@@ -27,10 +26,6 @@ const defaultPermissionKeys: PermissionName[] = [
 
 export default async function getPermissions(options?: optionsInterface): Promise<componentInterface> {
     let permission_keys = options?.permissions_to_check || defaultPermissionKeys;
-    const browser = getBrowser();
-    if (browser.name.toLowerCase() === 'safari') { // removing from Safari due to iFrame handling
-        permission_keys = permission_keys.filter((key) => !['camera', 'geolocation', 'microphone'].includes(key));
-    }
     const retries = 3;
     const permissionPromises: Promise<componentInterface>[] = Array.from({length: retries}, () => getBrowserPermissionsOnce(permission_keys) );
     return Promise.all(permissionPromises).then((resolvedPermissions) => {
