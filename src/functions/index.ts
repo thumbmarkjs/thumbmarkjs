@@ -112,7 +112,7 @@ export const getApiPromise = (
             'Authorization': 'custom-authorized',
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ components, options, clientHash: hash(JSON.stringify(components)) }),
+        body: JSON.stringify({ components, options, clientHash: hash(JSON.stringify(components)), version: getVersion()}),
     })
         .then(response => {
             // Handle HTTP errors that aren't network errors

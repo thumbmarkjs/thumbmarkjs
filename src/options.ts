@@ -37,7 +37,9 @@ export const stabilizationExclusionRules = {
         { exclude: ['canvas'], browsers: ['firefox', 'safari>=17', 'brave' ]},
         { exclude: ['audio'], browsers: ['samsungbrowser', 'safari' ]},
         { exclude: ['fonts'], browsers: ['firefox']},
-        { exclude: ['plugins'], browsers: ['brave']},
+        { exclude: ['audio.sampleHash', 'hardware.deviceMemory', 'header.acceptLanguage.q', 'system.hardwareConcurrency', 'plugins'], browsers: ['brave']},
+        { exclude: ['tls.extensions'], browsers: ['firefox']},
+        { exclude: ['header.acceptLanguage'], browsers: ['edge', 'chrome']},
     ],
     'iframe': [
         {
