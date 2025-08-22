@@ -28,6 +28,7 @@ import { getVersion } from "../utils/version";
 import { filterThumbmarkData } from './filterComponents'
 import { logThumbmarkData } from '../utils/log';
 import { API_ENDPOINT } from "../options";
+import { getVisitorId, setVisitorId } from "../utils/visitorId";
 
 // ===================== Types & Interfaces =====================
 
@@ -58,10 +59,10 @@ interface infoInterface {
  * API response structure
  */
 interface apiResponse {
-    thumbmark?: string;
     info?: infoInterface;
     version?: string;
     components?: componentInterface;
+    visitorId?: string;
 }
 
 /**
@@ -72,6 +73,7 @@ interface thumbmarkResponse {
     info: { [key: string]: any },
     version: string,
     thumbmark: string,
+    visitorId?: string,
     /**
      * Only present if options.performance is true.
      */
@@ -105,6 +107,17 @@ export const getApiPromise = (
 
     // 3. Otherwise, initiate a new API call with timeout.
     const endpoint = `${API_ENDPOINT}/thumbmark`;
+    const visitorId = getVisitorId();
+    const requestBody: any = { 
+        components, 
+        options, 
+        clientHash: hash(JSON.stringify(components)), 
+        version: getVersion()
+    };
+    if (visitorId) {
+        requestBody.visitorId = visitorId;
+    }
+    
     const fetchPromise = fetch(endpoint, {
         method: 'POST',
         headers: {
@@ -112,7 +125,7 @@ export const getApiPromise = (
             'Authorization': 'custom-authorized',
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ components, options, clientHash: hash(JSON.stringify(components)), version: getVersion()}),
+        body: JSON.stringify(requestBody),
     })
         .then(response => {
             // Handle HTTP errors that aren't network errors
@@ -122,6 +135,10 @@ export const getApiPromise = (
             return response.json();
         })
         .then(data => {
+            // Handle visitor ID from server response
+            if (data.visitorId && data.visitorId !== visitorId) {
+                setVisitorId(data.visitorId);
+            }
             apiPromiseResult = data;      // Cache the successful result
             currentApiPromise = null;     // Clear the in-flight promise
             return data;
@@ -138,7 +155,6 @@ export const getApiPromise = (
     const timeoutPromise = new Promise<apiResponse>((resolve) => {
         setTimeout(() => {
             resolve({
-                thumbmark: hash(JSON.stringify(components)),
                 info: { timed_out: true },
                 version: getVersion(),
             });
@@ -176,13 +192,17 @@ export async function getThumbmark(options?: optionsInterface): Promise<thumbmar
     const thumbmark = hash(JSON.stringify(components));
     const version = getVersion();
     logThumbmarkData(thumbmark, components, _options).catch(() => { /* do nothing */ });
-    return {
+    
+    const result: thumbmarkResponse = {
+        ...(apiResult?.visitorId && { visitorId: apiResult.visitorId }),
         thumbmark,
         components: components,
         info,
         version,
         ...maybeElapsed,
     };
+    
+    return result;
 }
 
 // ===================== Component Resolution & Performance =====================

@@ -17,7 +17,21 @@ export function filterThumbmarkData(
     options?: optionsInterface,
 ): componentInterface {
     // Get current browser name and version
-    const browser = getBrowser();
+    let browser = getBrowser();
+    
+    // Fallback to browser info from components if getBrowser() returns unknown (server-side)
+    if (browser.name === 'unknown' && obj.system && typeof obj.system === 'object' && !Array.isArray(obj.system)) {
+        const systemComponent = obj.system as componentInterface;
+        const browserInfo = systemComponent.browser;
+        if (browserInfo && typeof browserInfo === 'object' && !Array.isArray(browserInfo)) {
+            const browserComponent = browserInfo as componentInterface;
+            browser = {
+                name: (browserComponent.name as string) || 'unknown',
+                version: (browserComponent.version as string) || 'unknown'
+            };
+        }
+    }
+    
     const name = browser.name.toLowerCase();
     const ver = browser.version.split('.')[0] || '0';
     const majorVer = parseInt(ver, 10);
