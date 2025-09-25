@@ -4,22 +4,15 @@
  * This module handles component collection, API calls, uniqueness scoring, and data filtering
  * for the ThumbmarkJS browser fingerprinting library.
  *
- * Exports:
- *   - getThumbmark
- *   - getThumbmarkDataFromPromiseMap
- *   - resolveClientComponents
- *   - filterThumbmarkData
- *
- * Internal helpers and types are also defined here.
  */
 
-// ===================== Imports =====================
 import { defaultOptions, optionsInterface } from "../options";
 import { 
     timeoutInstance,
     componentInterface,
     tm_component_promises,
     customComponents,
+    tm_experimental_component_promises,
     includeComponent as globalIncludeComponent
 } from "../factory";
 import { hash } from "../utils/hash";
@@ -27,43 +20,8 @@ import { raceAllPerformance } from "../utils/raceAll";
 import { getVersion } from "../utils/version";
 import { filterThumbmarkData } from './filterComponents'
 import { logThumbmarkData } from '../utils/log';
-import { API_ENDPOINT } from "../options";
-import { getVisitorId, setVisitorId } from "../utils/visitorId";
+import { getApiPromise, infoInterface } from "./api";
 
-// ===================== Types & Interfaces =====================
-
-/**
- * Info returned from the API (IP, classification, uniqueness, etc)
- */
-interface infoInterface {
-    ip_address?: {
-        ip_address: string,
-        ip_identifier: string,
-        autonomous_system_number: number,
-        ip_version: 'v6' | 'v4',
-    },
-    classification?: {
-        tor: boolean,
-        vpn: boolean,
-        bot: boolean,
-        datacenter: boolean,
-        danger_level: number, // 5 is highest and should be blocked. 0 is no danger.
-    },
-    uniqueness?: {
-        score: number | string
-    },
-    timed_out?: boolean; // added for timeout handling
-}
-
-/**
- * API response structure
- */
-interface apiResponse {
-    info?: infoInterface;
-    version?: string;
-    components?: componentInterface;
-    visitorId?: string;
-}
 
 /**
  * Final thumbmark response structure
@@ -74,100 +32,10 @@ interface thumbmarkResponse {
     version: string,
     thumbmark: string,
     visitorId?: string,
-    /**
-     * Only present if options.performance is true.
-     */
     elapsed?: any;
+    error?: string;
+    experimental?: componentInterface;
 }
-
-
-
-// ===================== API Call Logic =====================
-
-let currentApiPromise: Promise<apiResponse> | null = null;
-let apiPromiseResult: apiResponse | null = null;
-
-/**
- * Calls the Thumbmark API with the given components, using caching and deduplication.
- * Returns a promise for the API response or null on error.
- */
-export const getApiPromise = (
-    options: optionsInterface,
-    components: componentInterface
-): Promise<apiResponse | null> => {
-    // 1. If a result is already cached and caching is enabled, return it.
-    if (options.cache_api_call && apiPromiseResult) {
-        return Promise.resolve(apiPromiseResult);
-    }
-
-    // 2. If a request is already in flight, return that promise to prevent duplicate calls.
-    if (currentApiPromise) {
-        return currentApiPromise;
-    }
-
-    // 3. Otherwise, initiate a new API call with timeout.
-    const endpoint = `${API_ENDPOINT}/thumbmark`;
-    const visitorId = getVisitorId();
-    const requestBody: any = { 
-        components, 
-        options, 
-        clientHash: hash(JSON.stringify(components)), 
-        version: getVersion()
-    };
-    if (visitorId) {
-        requestBody.visitorId = visitorId;
-    }
-    
-    const fetchPromise = fetch(endpoint, {
-        method: 'POST',
-        headers: {
-            'x-api-key': options.api_key!,
-            'Authorization': 'custom-authorized',
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-    })
-        .then(response => {
-            // Handle HTTP errors that aren't network errors
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            // Handle visitor ID from server response
-            if (data.visitorId && data.visitorId !== visitorId) {
-                setVisitorId(data.visitorId);
-            }
-            apiPromiseResult = data;      // Cache the successful result
-            currentApiPromise = null;     // Clear the in-flight promise
-            return data;
-        })
-        .catch(error => {
-            console.error('Error fetching pro data', error);
-            currentApiPromise = null;     // Also clear the in-flight promise on error
-            // Return null instead of a string to prevent downstream crashes
-            return null;
-        });
-
-    // Timeout logic
-    const timeoutMs = options.timeout || 5000;
-    const timeoutPromise = new Promise<apiResponse>((resolve) => {
-        setTimeout(() => {
-            resolve({
-                info: { timed_out: true },
-                version: getVersion(),
-            });
-        }, timeoutMs);
-    });
-
-    currentApiPromise = Promise.race([fetchPromise, timeoutPromise]);
-    return currentApiPromise;
-};
-
-// ===================== Main Thumbmark Logic =====================
-
-
 
 /**
  * Main entry point: collects all components, optionally calls API, and returns thumbmark data.
@@ -177,12 +45,41 @@ export const getApiPromise = (
  */
 export async function getThumbmark(options?: optionsInterface): Promise<thumbmarkResponse> {
     const _options = { ...defaultOptions, ...options };
+       
+    // Early logging decision
+    const shouldLog = (!sessionStorage.getItem("_tmjs_l") && Math.random() < 0.0001);
+    
     // Merge built-in and user-registered components
     const allComponents = { ...tm_component_promises, ...customComponents };
     const { elapsed, resolvedComponents: clientComponentsResult } = await resolveClientComponents(allComponents, _options);
 
+    // Resolve experimental components only when logging
+    let experimentalComponents = {};
+    if (shouldLog || _options.experimental) {
+        const { resolvedComponents } = await resolveClientComponents(tm_experimental_component_promises, _options);
+        experimentalComponents = resolvedComponents;
+    }
+
     const apiPromise = _options.api_key ? getApiPromise(_options, clientComponentsResult) : null;
-    const apiResult = apiPromise ? await apiPromise : null;
+    let apiResult = null;
+    
+    if (apiPromise) {
+        try {
+            apiResult = await apiPromise;
+        } catch (error) {
+            // Handle API key/quota errors
+            if (error instanceof Error && error.message === 'INVALID_API_KEY') {
+                return {
+                    error: 'Invalid API key or quota exceeded',
+                    components: {},
+                    info: {},
+                    version: getVersion(),
+                    thumbmark: ''
+                };
+            }
+            throw error; // Re-throw other errors
+        }
+    }
 
     // Only add 'elapsed' if performance is true
     const maybeElapsed = _options.performance ? { elapsed } : {};
@@ -191,7 +88,10 @@ export async function getThumbmark(options?: optionsInterface): Promise<thumbmar
     const info: infoInterface = apiResult?.info || { uniqueness: { score: 'api only' } };
     const thumbmark = hash(JSON.stringify(components));
     const version = getVersion();
-    logThumbmarkData(thumbmark, components, _options).catch(() => { /* do nothing */ });
+    // Only log to server when not in debug mode
+    if (shouldLog) {
+        logThumbmarkData(thumbmark, components, _options, experimentalComponents).catch(() => { /* do nothing */ });
+    }
     
     const result: thumbmarkResponse = {
         ...(apiResult?.visitorId && { visitorId: apiResult.visitorId }),
@@ -200,6 +100,7 @@ export async function getThumbmark(options?: optionsInterface): Promise<thumbmar
         info,
         version,
         ...maybeElapsed,
+        ...(Object.keys(experimentalComponents).length > 0 && _options.experimental && { experimental: experimentalComponents }),
     };
     
     return result;
@@ -243,7 +144,5 @@ export async function resolveClientComponents(
   const resolvedComponents = filterThumbmarkData(resolvedComponentsRaw, opts);
   return { elapsed, resolvedComponents };
 }
-
-
 
 export { globalIncludeComponent as includeComponent };

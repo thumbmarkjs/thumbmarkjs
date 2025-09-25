@@ -8,6 +8,7 @@ export interface optionsInterface {
     cache_api_call?: boolean,
     performance?: boolean,
     stabilize?: string[],
+    experimental?: boolean,
 }
 
 export const API_ENDPOINT = 'https://api.thumbmarkjs.com';
@@ -19,7 +20,8 @@ export const defaultOptions: optionsInterface = {
     logging: true,
     timeout: 5000,
     cache_api_call: true,
-    performance: false
+    performance: false,
+    experimental: false,
     };
 
 export let options = {...defaultOptions};

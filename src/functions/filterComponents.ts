@@ -47,7 +47,6 @@ export function filterThumbmarkData(
         if (!rules) continue;
 
         for (const rule of rules) {
-            // FIX: Use the 'in' operator as a type guard to check if 'browsers' exists.
             // A rule applies to all browsers if the 'browsers' key is not present.
             const appliesToAllBrowsers = !('browsers' in rule);
 

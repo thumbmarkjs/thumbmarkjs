@@ -26,11 +26,12 @@ The API version:
 
 ## How well does it perform?
 
-Even the client library alone works adequately to distinguish common browsers. Sampled data show a uniqueness of around and above 90%.
+Even the client library alone works adequately to distinguish common browsers. Sampled data show a uniqueness of around 80%.
 
 Mileage may vary though. Mac/Safari users tend to either clash more than Windows users, or be too unique (noise in the components). It does depend on your audience, too.
 
-With the added entropy from an API call, that includes server-side components by investigating headers, TLS handshake signatures etc, it gets veeery unique. Over 99%. The visitor ID further improves both uniqueness and especially stability. Detailed statistics coming soon.
+With the added entropy from an API call, that includes server-side components by investigating headers, TLS handshake signatures etc, it gets veeery unique. Over 99%.
+The visitor ID further improves both uniqueness and especially stability. Detailed statistics coming.
 
 
 # Documentation : [docs.thumbmarkjs.com](https://docs.thumbmarkjs.com/docs/intro)

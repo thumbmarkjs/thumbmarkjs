@@ -20,6 +20,10 @@ import getScreen from "./components/screen";
 import getSystem from "./components/system";
 import getWebGL from "./components/webgl";
 
+// Import experimental component functions
+import getWebRTC from "./components/webrtc";
+import getMathML from "./components/mathml";
+
 /**
  * @description key->function map of built-in components. Do not call the function here.
  */
@@ -35,6 +39,14 @@ export const tm_component_promises = {
     'screen': getScreen,
     'system': getSystem,
     'webgl': getWebGL
+};
+
+/**
+ * @description key->function map of experimental components. Only resolved during logging.
+ */
+export const tm_experimental_component_promises = {
+    'webrtc': getWebRTC,
+    'mathml': getMathML
 };
 
 // the component interface is the form of the JSON object the function's promise must return

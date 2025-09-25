@@ -10,11 +10,12 @@ import { API_ENDPOINT } from '../options';
  * You can disable this by setting options.logging to false.
  * @internal
  */
-export async function logThumbmarkData(thisHash: string, thumbmarkData: componentInterface, options: optionsInterface): Promise<void> {
+export async function logThumbmarkData(thisHash: string, thumbmarkData: componentInterface, options: optionsInterface, experimentalData: componentInterface = {}): Promise<void> {
     const url = `${API_ENDPOINT}/log`;
     const payload = {
         thumbmark: thisHash,
         components: thumbmarkData,
+        experimental: experimentalData,
         version: getVersion(),
         options,
         path: window?.location?.pathname,
