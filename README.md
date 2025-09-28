@@ -13,8 +13,6 @@ Use this to prevent scammers and spammers for example. If you see this library b
 
 The API version:
 - Produces significantly **more unique fingerprints** by adding server-side components
-- Adds a visitor ID that can **survive changes in the fingerprint**
-- Can **distinguish users with the same, common fingerprint**
 - Adds smart signals such as bot, vpn, tor & datacenter traffic detection, and also **threat level**
 - Provides uniqueness scoring
 
@@ -73,18 +71,11 @@ However, you get it from NPM:
 npm install @thumbmarkjs/thumbmarkjs
 ```
 
-To implement ThumbmarkJS in a React app, you can do [like this](https://docs.thumbmarkjs.com/docs/installation/usage-react).
-
 :warning: the fingerprinting needs to run in a browser context. Let me know if the library fails on a server side import, that shouldn't happen. To calculate the components though, it needs the browser APIs.
 
-## Build it yourself
+## Integrations (React, Vue)
 
-Clone this repo and then run
-
-```
-npm run install
-npm run build
-```
+React and Vue integration plugins are being worked on, [have a look](https://docs.thumbmarkjs.com/docs/category/integrations).
 
 ## Options are... optional
 
