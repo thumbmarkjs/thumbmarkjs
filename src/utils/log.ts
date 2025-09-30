@@ -20,16 +20,16 @@ export async function logThumbmarkData(thisHash: string, thumbmarkData: componen
         options,
         path: window?.location?.pathname,
     };
-    if (!sessionStorage.getItem("_tmjs_l") && Math.random() < 0.0001) { // Only log once per session and very rarely
-        sessionStorage.setItem("_tmjs_l", "1");
-        try {
-            await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            });
-        } catch { /* do nothing */ }
-    }
+
+    sessionStorage.setItem("_tmjs_l", "1");
+    try {
+        await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+    } catch { /* do nothing */ }
+
 }
