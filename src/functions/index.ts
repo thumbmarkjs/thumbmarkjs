@@ -47,7 +47,7 @@ export async function getThumbmark(options?: optionsInterface): Promise<thumbmar
     const _options = { ...defaultOptions, ...options };
        
     // Early logging decision
-    const shouldLog = (!sessionStorage.getItem("_tmjs_l") && Math.random() < 0.0001);
+    const shouldLog = (_options.logging && !sessionStorage.getItem("_tmjs_l") && Math.random() < 0.0001);
     
     // Merge built-in and user-registered components
     const allComponents = { ...tm_component_promises, ...customComponents };
