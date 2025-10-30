@@ -134,11 +134,8 @@ I wanted to create something that's easy to build, extend and use. If you're int
 
 Have a look at the [technical_details](technical_details.md)
 
-## Mobile fingerprinting
-
-Have a look at the [IOS](https://github.com/thumbmarkjs/thumbmark-swift) and [Android](https://github.com/thumbmarkjs/thumbmark-android) versions as well.
-
 ## Contact ThumbmarkJS
 
 - email: thumbmark-contact@googlegroups.com
+
 - discord: https://discord.gg/PAqxQ3TnDA
