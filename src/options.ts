@@ -50,10 +50,17 @@ export const stabilizationExclusionRules = {
                 'permission.geolocation',
                 'permissions.microphone',
                 'system.applePayVersion',
-                'system.cookieEnabled'
+                'system.cookieEnabled',
             ],
             browsers: ['safari']
         },
+        {
+            exclude: [
+                'permissions.background-fetch',
+                'permissions.storage-access',
+            ],
+            browsers: ['chrome', 'brave', 'edge', 'opera']
+        }
 
     ],
     'vpn': [
