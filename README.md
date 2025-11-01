@@ -136,6 +136,6 @@ Have a look at the [technical_details](technical_details.md)
 
 ## Contact ThumbmarkJS
 
-- email: thumbmark-contact@googlegroups.com
+- email: contact@thumbmarkjs.com
 
 - discord: https://discord.gg/PAqxQ3TnDA
