@@ -1,7 +1,6 @@
 import { componentInterface } from '../factory';
-import { optionsInterface } from '../options';
+import { optionsInterface, DEFAULT_API_ENDPOINT } from '../options';
 import { getVersion } from './version';
-import { API_ENDPOINT } from '../options';
 
 // ===================== Logging (Internal) =====================
 
@@ -11,7 +10,8 @@ import { API_ENDPOINT } from '../options';
  * @internal
  */
 export async function logThumbmarkData(thisHash: string, thumbmarkData: componentInterface, options: optionsInterface, experimentalData: componentInterface = {}): Promise<void> {
-    const url = `${API_ENDPOINT}/log`;
+    const apiEndpoint = DEFAULT_API_ENDPOINT;
+    const url = `${apiEndpoint}/log`;
     const payload = {
         thumbmark: thisHash,
         components: thumbmarkData,

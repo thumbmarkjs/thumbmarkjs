@@ -64,9 +64,19 @@ export default async function getWebRTC(): Promise<componentInterface | null> {
             }).filter(Boolean);
           };
 
-          const codecsSdp = {
-            audio: constructDescriptions('audio', getDescriptors('audio')),
-            video: constructDescriptions('video', getDescriptors('video'))
+          const audioCodecs = constructDescriptions('audio', getDescriptors('audio'));
+          const videoCodecs = constructDescriptions('video', getDescriptors('video'));
+
+          const compressedData = {
+            audio: {
+              count: audioCodecs.length,
+              hash: hash(JSON.stringify(audioCodecs))
+            },
+            video: {
+              count: videoCodecs.length,
+              hash: hash(JSON.stringify(videoCodecs))
+            },
+            extensionsHash: hash(JSON.stringify(extensions))
           };
 
           // Set up for ICE candidate collection with timeout
@@ -74,10 +84,9 @@ export default async function getWebRTC(): Promise<componentInterface | null> {
             const timeout = setTimeout(() => {
               connection.removeEventListener('icecandidate', onIceCandidate);
               connection.close();
-              resolveResult({ 
+              resolveResult({
                 supported: true,
-                codecsSdp, 
-                extensions: extensions as string[],
+                ...compressedData,
                 timeout: true
               });
             }, 3000);
@@ -90,10 +99,9 @@ export default async function getWebRTC(): Promise<componentInterface | null> {
               connection.removeEventListener('icecandidate', onIceCandidate);
               connection.close();
 
-              resolveResult({ 
+              resolveResult({
                 supported: true,
-                codecsSdp, 
-                extensions: extensions as string[],
+                ...compressedData,
                 candidateType: candidateObj.type || ''
               });
             };
@@ -102,6 +110,7 @@ export default async function getWebRTC(): Promise<componentInterface | null> {
           });
 
           resolve({
+            details: result,
             hash: hash(JSON.stringify(result)),
           });
 

@@ -55,9 +55,11 @@ export async function getThumbmark(options?: optionsInterface): Promise<thumbmar
 
     // Resolve experimental components only when logging
     let experimentalComponents = {};
+    let experimentalElapsed = {};
     if (shouldLog || _options.experimental) {
-        const { resolvedComponents } = await resolveClientComponents(tm_experimental_component_promises, _options);
+        const { elapsed: expElapsed, resolvedComponents } = await resolveClientComponents(tm_experimental_component_promises, _options);
         experimentalComponents = resolvedComponents;
+        experimentalElapsed = expElapsed;
     }
 
     const apiPromise = _options.api_key ? getApiPromise(_options, clientComponentsResult) : null;
@@ -82,7 +84,8 @@ export async function getThumbmark(options?: optionsInterface): Promise<thumbmar
     }
 
     // Only add 'elapsed' if performance is true
-    const maybeElapsed = _options.performance ? { elapsed } : {};
+    const allElapsed = { ...elapsed, ...experimentalElapsed };
+    const maybeElapsed = _options.performance ? { elapsed: allElapsed } : {};
     const apiComponents = filterThumbmarkData(apiResult?.components || {}, _options);
     const components = {...clientComponentsResult, ...apiComponents};
     const info: infoInterface = apiResult?.info || { uniqueness: { score: 'api only' } };

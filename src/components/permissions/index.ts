@@ -25,13 +25,18 @@ const defaultPermissionKeys: PermissionName[] = [
 ] as PermissionName[];
 
 export default async function getPermissions(options?: optionsInterface): Promise<componentInterface> {
-    let permission_keys = options?.permissions_to_check || defaultPermissionKeys;
+    const permission_keys = options?.permissions_to_check || defaultPermissionKeys;
     const retries = 3;
-    const permissionPromises: Promise<componentInterface>[] = Array.from({length: retries}, () => getBrowserPermissionsOnce(permission_keys) );
-    return Promise.all(permissionPromises).then((resolvedPermissions) => {
-        const permission = mostFrequentValuesInArrayOfDictionaries(resolvedPermissions, permission_keys);
-        return permission;
-    });
+
+    // Run permission checks multiple times
+    const results = await Promise.all(
+        Array.from({ length: retries }, () => getBrowserPermissionsOnce(permission_keys))
+    );
+
+    // Get most frequent values across all retries
+    const permissionStatus = mostFrequentValuesInArrayOfDictionaries(results, permission_keys);
+
+    return permissionStatus;
 }
 
 async function getBrowserPermissionsOnce(permission_keys: PermissionName[]): Promise<componentInterface> {

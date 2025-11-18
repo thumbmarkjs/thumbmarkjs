@@ -23,6 +23,7 @@ import getWebGL from "./components/webgl";
 // Import experimental component functions
 import getWebRTC from "./components/webrtc";
 import getMathML from "./components/mathml";
+import getSpeech from "./components/speech";
 
 /**
  * @description key->function map of built-in components. Do not call the function here.
@@ -46,7 +47,8 @@ export const tm_component_promises = {
  */
 export const tm_experimental_component_promises = {
     'webrtc': getWebRTC,
-    'mathml': getMathML
+    'mathml': getMathML,
+    'speech': getSpeech
 };
 
 // the component interface is the form of the JSON object the function's promise must return

@@ -5,13 +5,14 @@ export interface optionsInterface {
     timeout?: number,
     logging?: boolean,
     api_key?: string,
+    api_endpoint?: string,
     cache_api_call?: boolean,
     performance?: boolean,
     stabilize?: string[],
     experimental?: boolean,
 }
 
-export const API_ENDPOINT = 'https://api.thumbmarkjs.com';
+export const DEFAULT_API_ENDPOINT = 'https://api.thumbmarkjs.com';
 
 export const defaultOptions: optionsInterface = {
     exclude: [],
@@ -46,22 +47,14 @@ export const stabilizationExclusionRules = {
     'iframe': [
         {
             exclude: [
-                'permissions.camera',
-                'permission.geolocation',
-                'permissions.microphone',
                 'system.applePayVersion',
                 'system.cookieEnabled',
             ],
             browsers: ['safari']
         },
         {
-            exclude: [
-                'permissions.background-fetch',
-                'permissions.storage-access',
-            ],
-            browsers: ['chrome', 'brave', 'edge', 'opera']
+            exclude: ['permissions']
         }
-
     ],
     'vpn': [
         { exclude: ['ip'] },

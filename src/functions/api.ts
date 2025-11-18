@@ -1,4 +1,4 @@
-import { optionsInterface, API_ENDPOINT } from '../options';
+import { optionsInterface, DEFAULT_API_ENDPOINT } from '../options';
 import { componentInterface } from '../factory';
 import { getVisitorId, setVisitorId } from '../utils/visitorId';
 import { getVersion } from "../utils/version";
@@ -63,7 +63,8 @@ export const getApiPromise = (
     }
 
     // 3. Otherwise, initiate a new API call with timeout.
-    const endpoint = `${API_ENDPOINT}/thumbmark`;
+    const apiEndpoint = options.api_endpoint || DEFAULT_API_ENDPOINT;
+    const endpoint = `${apiEndpoint}/thumbmark`;
     const visitorId = getVisitorId();
     const requestBody: any = { 
         components, 
