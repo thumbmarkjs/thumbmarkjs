@@ -7,13 +7,13 @@
  */
 
 import { defaultOptions, optionsInterface } from "../options";
-import { 
-    timeoutInstance,
-    componentInterface,
-    tm_component_promises,
-    customComponents,
-    tm_experimental_component_promises,
-    includeComponent as globalIncludeComponent
+import {
+  timeoutInstance,
+  componentInterface,
+  tm_component_promises,
+  customComponents,
+  tm_experimental_component_promises,
+  includeComponent as globalIncludeComponent
 } from "../factory";
 import { hash } from "../utils/hash";
 import { raceAllPerformance } from "../utils/raceAll";
@@ -21,20 +21,21 @@ import { getVersion } from "../utils/version";
 import { filterThumbmarkData } from './filterComponents'
 import { logThumbmarkData } from '../utils/log';
 import { getApiPromise, infoInterface } from "./api";
+import { stableStringify } from "../utils/stableStringify";
 
 
 /**
  * Final thumbmark response structure
  */
 interface thumbmarkResponse {
-    components: componentInterface,
-    info: { [key: string]: any },
-    version: string,
-    thumbmark: string,
-    visitorId?: string,
-    elapsed?: any;
-    error?: string;
-    experimental?: componentInterface;
+  components: componentInterface,
+  info: { [key: string]: any },
+  version: string,
+  thumbmark: string,
+  visitorId?: string,
+  elapsed?: any;
+  error?: string;
+  experimental?: componentInterface;
 }
 
 /**
@@ -44,69 +45,73 @@ interface thumbmarkResponse {
  * @returns thumbmarkResponse (elapsed is present only if options.performance is true)
  */
 export async function getThumbmark(options?: optionsInterface): Promise<thumbmarkResponse> {
-    const _options = { ...defaultOptions, ...options };
-       
-    // Early logging decision
-    const shouldLog = (_options.logging && !sessionStorage.getItem("_tmjs_l") && Math.random() < 0.0001);
-    
-    // Merge built-in and user-registered components
-    const allComponents = { ...tm_component_promises, ...customComponents };
-    const { elapsed, resolvedComponents: clientComponentsResult } = await resolveClientComponents(allComponents, _options);
+  const _options = { ...defaultOptions, ...options };
 
-    // Resolve experimental components only when logging
-    let experimentalComponents = {};
-    let experimentalElapsed = {};
-    if (shouldLog || _options.experimental) {
-        const { elapsed: expElapsed, resolvedComponents } = await resolveClientComponents(tm_experimental_component_promises, _options);
-        experimentalComponents = resolvedComponents;
-        experimentalElapsed = expElapsed;
-    }
+  // Early logging decision
+  const shouldLog = (_options.logging && !sessionStorage.getItem("_tmjs_l") && Math.random() < 0.0001);
 
-    const apiPromise = _options.api_key ? getApiPromise(_options, clientComponentsResult) : null;
-    let apiResult = null;
-    
-    if (apiPromise) {
-        try {
-            apiResult = await apiPromise;
-        } catch (error) {
-            // Handle API key/quota errors
-            if (error instanceof Error && error.message === 'INVALID_API_KEY') {
-                return {
-                    error: 'Invalid API key or quota exceeded',
-                    components: {},
-                    info: {},
-                    version: getVersion(),
-                    thumbmark: ''
-                };
-            }
-            throw error; // Re-throw other errors
-        }
-    }
+  // Merge built-in and user-registered components
+  const allComponents = { ...tm_component_promises, ...customComponents };
+  const { elapsed, resolvedComponents: clientComponentsResult } = await resolveClientComponents(allComponents, _options);
 
-    // Only add 'elapsed' if performance is true
-    const allElapsed = { ...elapsed, ...experimentalElapsed };
-    const maybeElapsed = _options.performance ? { elapsed: allElapsed } : {};
-    const apiComponents = filterThumbmarkData(apiResult?.components || {}, _options);
-    const components = {...clientComponentsResult, ...apiComponents};
-    const info: infoInterface = apiResult?.info || { uniqueness: { score: 'api only' } };
-    const thumbmark = hash(JSON.stringify(components));
-    const version = getVersion();
-    // Only log to server when not in debug mode
-    if (shouldLog) {
-        logThumbmarkData(thumbmark, components, _options, experimentalComponents).catch(() => { /* do nothing */ });
+  // Resolve experimental components only when logging
+  let experimentalComponents = {};
+  let experimentalElapsed = {};
+  if (shouldLog || _options.experimental) {
+    const { elapsed: expElapsed, resolvedComponents } = await resolveClientComponents(tm_experimental_component_promises, _options);
+    experimentalComponents = resolvedComponents;
+    experimentalElapsed = expElapsed;
+  }
+
+  const apiPromise = _options.api_key ? getApiPromise(_options, clientComponentsResult) : null;
+  let apiResult = null;
+
+  if (apiPromise) {
+    try {
+      apiResult = await apiPromise;
+    } catch (error) {
+      // Handle API key/quota errors
+      if (error instanceof Error && error.message === 'INVALID_API_KEY') {
+        return {
+          error: 'Invalid API key or quota exceeded',
+          components: {},
+          info: {},
+          version: getVersion(),
+          thumbmark: ''
+        };
+      }
+      throw error; // Re-throw other errors
     }
-    
-    const result: thumbmarkResponse = {
-        ...(apiResult?.visitorId && { visitorId: apiResult.visitorId }),
-        thumbmark,
-        components: components,
-        info,
-        version,
-        ...maybeElapsed,
-        ...(Object.keys(experimentalComponents).length > 0 && _options.experimental && { experimental: experimentalComponents }),
-    };
-    
-    return result;
+  }
+
+  // Only add 'elapsed' if performance is true
+  const allElapsed = { ...elapsed, ...experimentalElapsed };
+  const maybeElapsed = _options.performance ? { elapsed: allElapsed } : {};
+  const apiComponents = filterThumbmarkData(apiResult?.components || {}, _options);
+  const components = { ...clientComponentsResult, ...apiComponents };
+  const info: infoInterface = apiResult?.info || { uniqueness: { score: 'api only' } };
+
+  // Use API thumbmark if available to ensure API/client sync, otherwise calculate locally
+  console.log(apiResult);
+  const thumbmark = apiResult?.thumbmark ?? hash(stableStringify(components));
+  const version = getVersion();
+
+  // Only log to server when not in debug mode
+  if (shouldLog) {
+    logThumbmarkData(thumbmark, components, _options, experimentalComponents).catch(() => { /* do nothing */ });
+  }
+
+  const result: thumbmarkResponse = {
+    ...(apiResult?.visitorId && { visitorId: apiResult.visitorId }),
+    thumbmark,
+    components: components,
+    info,
+    version,
+    ...maybeElapsed,
+    ...(Object.keys(experimentalComponents).length > 0 && _options.experimental && { experimental: experimentalComponents }),
+  };
+
+  return result;
 }
 
 // ===================== Component Resolution & Performance =====================

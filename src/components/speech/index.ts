@@ -1,5 +1,6 @@
 import { componentInterface } from '../../factory';
 import { hash } from '../../utils/hash';
+import { stableStringify } from '../../utils/stableStringify';
 
 const VOICE_LOAD_TIMEOUT = 800; // milliseconds to wait for voices to load
 
@@ -53,12 +54,12 @@ export default async function getSpeech(): Promise<componentInterface | null> {
           // Create details object with count and hash
           const details = {
             voiceCount: voices.length,
-            voicesHash: hash(JSON.stringify(voiceSignatures))
+            voicesHash: hash(stableStringify(voiceSignatures))
           };
 
           resolve({
             details,
-            hash: hash(JSON.stringify(details))
+            hash: hash(stableStringify(details))
           });
 
         } catch (error) {

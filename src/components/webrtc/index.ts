@@ -1,5 +1,6 @@
 import { componentInterface } from '../../factory';
 import { hash } from '../../utils/hash';
+import { stableStringify } from '../../utils/stableStringify';
 
 export default async function getWebRTC(): Promise<componentInterface | null> {
   return new Promise((resolve) => {
@@ -29,7 +30,7 @@ export default async function getWebRTC(): Promise<componentInterface | null> {
           await connection.setLocalDescription(offer);
 
           const sdp = offer.sdp || '';
-          
+
           // Extract RTP extensions
           const extensions = [...new Set((sdp.match(/extmap:\d+ [^\n\r]+/g) || []).map((x: string) => x.replace(/extmap:\d+ /, '')))].sort();
 
@@ -70,13 +71,13 @@ export default async function getWebRTC(): Promise<componentInterface | null> {
           const compressedData = {
             audio: {
               count: audioCodecs.length,
-              hash: hash(JSON.stringify(audioCodecs))
+              hash: hash(stableStringify(audioCodecs))
             },
             video: {
               count: videoCodecs.length,
-              hash: hash(JSON.stringify(videoCodecs))
+              hash: hash(stableStringify(videoCodecs))
             },
-            extensionsHash: hash(JSON.stringify(extensions))
+            extensionsHash: hash(stableStringify(extensions))
           };
 
           // Set up for ICE candidate collection with timeout
@@ -111,7 +112,7 @@ export default async function getWebRTC(): Promise<componentInterface | null> {
 
           resolve({
             details: result,
-            hash: hash(JSON.stringify(result)),
+            hash: hash(stableStringify(result)),
           });
 
         } catch (error) {

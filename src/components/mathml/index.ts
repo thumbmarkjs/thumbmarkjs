@@ -1,6 +1,7 @@
 import { componentInterface } from '../../factory';
 import { hash } from '../../utils/hash';
 import { ephemeralIFrame } from '../../utils/ephemeralIFrame';
+import { stableStringify } from '../../utils/stableStringify';
 
 const BLACKBOARD_BOLD = ['\uD835\uDD04', '\uD835\uDD05', '\u212D', '\uD835\uDD07', '\uD835\uDD08', '\uD835\uDD09', '\uD835\uDD38', '\uD835\uDD39', '\u2102', '\uD835\uDD3B', '\uD835\uDD3C', '\uD835\uDD3D'];
 const GREEK_SYMBOLS = ['\u03B2', '\u03C8', '\u03BB', '\u03B5', '\u03B6', '\u03B1', '\u03BE', '\u03BC', '\u03C1', '\u03C6', '\u03BA', '\u03C4', '\u03B7', '\u03C3', '\u03B9', '\u03C9', '\u03B3', '\u03BD', '\u03C7', '\u03B4', '\u03B8', '\u03C0', '\u03C5', '\u03BF'];
@@ -38,7 +39,7 @@ export default async function getMathML(): Promise<componentInterface | null> {
             });
             // Capture font style hash from the first structure (it's the same for all)
             if (i === 0 && measurement.fontInfo) {
-              fontStyleHash = hash(JSON.stringify(measurement.fontInfo));
+              fontStyleHash = hash(stableStringify(measurement.fontInfo));
             }
           });
 
@@ -50,7 +51,7 @@ export default async function getMathML(): Promise<componentInterface | null> {
           resolve({
             //supported: true,
             details,
-            hash: hash(JSON.stringify(details))
+            hash: hash(stableStringify(details))
           });
 
         } catch (error) {
@@ -92,7 +93,7 @@ function createMathML(name: string, content: string): string {
 
 function createComplexNestedStructure(): string {
   let nestedContent = '<mo>\u220F</mo>'; // Product symbol (∏)
-  
+
   // Add all symbol combinations inside the main structure
   BLACKBOARD_BOLD.forEach((bbSymbol, bbIndex) => {
     const startIdx = bbIndex * 2;
@@ -102,7 +103,7 @@ function createComplexNestedStructure(): string {
       nestedContent += `<mmultiscripts><mi>${bbSymbol}</mi><none/><mi>${greekSet[1]}</mi><mprescripts></mprescripts><mi>${greekSet[0]}</mi><none/></mmultiscripts>`;
     }
   });
-  
+
   return createMathML('complex_nested',
     `<munderover><mmultiscripts>${nestedContent}</mmultiscripts></munderover>`
   );
@@ -110,7 +111,7 @@ function createComplexNestedStructure(): string {
 
 function createSymbolStructures(): string[] {
   const structures: string[] = [];
-  
+
   // Use blackboard bold as base symbols with Greek symbols as subscripts/superscripts
   BLACKBOARD_BOLD.forEach((bbSymbol, bbIndex) => {
     // Get 2 Greek symbols for this blackboard bold symbol (lower left, top right)
@@ -123,7 +124,7 @@ function createSymbolStructures(): string[] {
       ));
     }
   });
-  
+
   return structures;
 }
 
