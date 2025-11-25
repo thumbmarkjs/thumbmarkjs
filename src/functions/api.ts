@@ -3,6 +3,7 @@ import { componentInterface } from '../factory';
 import { getVisitorId, setVisitorId } from '../utils/visitorId';
 import { getVersion } from "../utils/version";
 import { hash } from '../utils/hash';
+import { stableStringify } from '../utils/stableStringify';
 
 // ===================== Types & Interfaces =====================
 
@@ -37,6 +38,7 @@ interface apiResponse {
     version?: string;
     components?: componentInterface;
     visitorId?: string;
+    thumbmark?: string;
 }
 
 // ===================== API Call Logic =====================
@@ -66,16 +68,16 @@ export const getApiPromise = (
     const apiEndpoint = options.api_endpoint || DEFAULT_API_ENDPOINT;
     const endpoint = `${apiEndpoint}/thumbmark`;
     const visitorId = getVisitorId();
-    const requestBody: any = { 
-        components, 
-        options, 
-        clientHash: hash(JSON.stringify(components)), 
+    const requestBody: any = {
+        components,
+        options,
+        clientHash: hash(stableStringify(components)),
         version: getVersion()
     };
     if (visitorId) {
         requestBody.visitorId = visitorId;
     }
-    
+
     const fetchPromise = fetch(endpoint, {
         method: 'POST',
         headers: {
