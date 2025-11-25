@@ -107,17 +107,13 @@ export const getApiPromise = (
             return data;
         })
         .catch(error => {
-            currentApiPromise = null;     // Clear the in-flight promise on error
-
-            // For 403 errors (invalid API key), propagate without logging (expected in tests)
+            console.error('Error fetching pro data', error);
+            currentApiPromise = null;     // Also clear the in-flight promise on error
+            // For 403 errors, propagate the error instead of returning null
             if (error.message === 'INVALID_API_KEY') {
                 throw error;
             }
-
-            // Log other unexpected errors
-            console.error('Error fetching pro data', error);
-
-            // Return null for other errors to prevent downstream crashes
+            // Return null instead of a string to prevent downstream crashes
             return null;
         });
 
