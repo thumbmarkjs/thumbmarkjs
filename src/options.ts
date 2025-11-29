@@ -1,4 +1,5 @@
 export interface optionsInterface {
+    storage_property_name: string,
     exclude?: string[],
     include?: string[],
     permissions_to_check?: PermissionName[],
@@ -23,9 +24,10 @@ export const defaultOptions: optionsInterface = {
     cache_api_call: true,
     performance: false,
     experimental: false,
-    };
+    storage_property_name: 'thumbmark_visitor_id',
+};
 
-export let options = {...defaultOptions};
+export let options = { ...defaultOptions };
 /**
  * 
  * @param key @deprecated this function will be removed
@@ -37,12 +39,12 @@ export function setOption<K extends keyof optionsInterface>(key: K, value: optio
 
 export const stabilizationExclusionRules = {
     'private': [
-        { exclude: ['canvas'], browsers: ['firefox', 'safari>=17', 'brave' ]},
-        { exclude: ['audio'], browsers: ['samsungbrowser', 'safari' ]},
-        { exclude: ['fonts'], browsers: ['firefox']},
-        { exclude: ['audio.sampleHash', 'hardware.deviceMemory', 'header.acceptLanguage.q', 'system.hardwareConcurrency', 'plugins'], browsers: ['brave']},
-        { exclude: ['tls.extensions'], browsers: ['firefox', 'chrome', 'safari']},
-        { exclude: ['header.acceptLanguage'], browsers: ['edge', 'chrome']},
+        { exclude: ['canvas'], browsers: ['firefox', 'safari>=17', 'brave'] },
+        { exclude: ['audio'], browsers: ['samsungbrowser', 'safari'] },
+        { exclude: ['fonts'], browsers: ['firefox'] },
+        { exclude: ['audio.sampleHash', 'hardware.deviceMemory', 'header.acceptLanguage.q', 'system.hardwareConcurrency', 'plugins'], browsers: ['brave'] },
+        { exclude: ['tls.extensions'], browsers: ['firefox', 'chrome', 'safari'] },
+        { exclude: ['header.acceptLanguage'], browsers: ['edge', 'chrome'] },
     ],
     'iframe': [
         {

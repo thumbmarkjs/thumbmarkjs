@@ -67,7 +67,7 @@ export const getApiPromise = (
     // 3. Otherwise, initiate a new API call with timeout.
     const apiEndpoint = options.api_endpoint || DEFAULT_API_ENDPOINT;
     const endpoint = `${apiEndpoint}/thumbmark`;
-    const visitorId = getVisitorId();
+    const visitorId = getVisitorId(options);
     const requestBody: any = {
         components,
         options,
@@ -100,7 +100,7 @@ export const getApiPromise = (
         .then(data => {
             // Handle visitor ID from server response
             if (data.visitorId && data.visitorId !== visitorId) {
-                setVisitorId(data.visitorId);
+                setVisitorId(data.visitorId, options);
             }
             apiPromiseResult = data;      // Cache the successful result
             currentApiPromise = null;     // Clear the in-flight promise
