@@ -1,15 +1,15 @@
+import { optionsInterface } from "../options";
+
 /**
  * Visitor ID storage utilities - localStorage only, server generates IDs
  */
 
-const VISITOR_ID_KEY = 'thumbmark_visitor_id';
-
 /**
  * Gets visitor ID from localStorage, returns null if unavailable
  */
-export function getVisitorId(): string | null {
+export function getVisitorId(_options: optionsInterface): string | null {
     try {
-        return localStorage.getItem(VISITOR_ID_KEY);
+        return localStorage.getItem(_options.storage_property_name);
     } catch {
         return null;
     }
@@ -18,9 +18,9 @@ export function getVisitorId(): string | null {
 /**
  * Sets visitor ID in localStorage
  */
-export function setVisitorId(visitorId: string): void {
+export function setVisitorId(visitorId: string, _options: optionsInterface): void {
     try {
-        localStorage.setItem(VISITOR_ID_KEY, visitorId);
+        localStorage.setItem(_options.storage_property_name, visitorId);
     } catch {
         // Ignore storage errors
     }
