@@ -1,5 +1,5 @@
 export interface optionsInterface {
-    storage_property_name: string,
+    storage_property_name?: string,
     exclude?: string[],
     include?: string[],
     permissions_to_check?: PermissionName[],
@@ -24,7 +24,6 @@ export const defaultOptions: optionsInterface = {
     cache_api_call: true,
     performance: false,
     experimental: false,
-    storage_property_name: 'thumbmark_visitor_id',
 };
 
 export let options = { ...defaultOptions };
