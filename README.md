@@ -38,7 +38,7 @@ This GitHub repository provides the very basic information on usage and installa
 
 ## Import from jsDelivr
 
-Do [check the documentation](https://docs.thumbmarkjs.com/docs/category/installing) for how to install and use ThumbmarkJS whether it is by importing from CDN or installing from NPM.
+Do [check the documentation](https://docs.thumbmarkjs.com/docs/category/installing--usage) for how to install and use ThumbmarkJS whether it is by importing from CDN or installing from NPM.
 
 Transpiled bundles are available on [JSDelivr](https://www.jsdelivr.com/package/npm/@thumbmarkjs/thumbmarkjs).
 
@@ -63,7 +63,7 @@ import('https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.umd
 
 ## Install with NPM
 
-‼️ Please refer to the [documentation](https://docs.thumbmarkjs.com/docs/category/installing)
+‼️ Please refer to the [documentation](https://docs.thumbmarkjs.com/docs/installation/usage-npm)
 
 However, you get it from NPM:
 
@@ -79,7 +79,7 @@ React and Vue integration plugins are being worked on, [have a look](https://doc
 
 ## Options are... optional
 
-Thorough documentation about options are at [docs.thumbmarkjs.com](https://docs.thumbmarkjs.com/docs/options/usage).
+Thorough documentation about options are at [docs.thumbmarkjs.com](https://docs.thumbmarkjs.com/docs/configuration/options).
 
 Options are passed to the Thumbmark class constructor, like so:
 
@@ -111,7 +111,7 @@ const tm_api = new ThumbmarkJS.Thumbmark({
 
 ## Custom components
 
-You can add custom components to the hash with `includeComponent`, which takes two parameters, the `key` being the key of the component in the JSON and the function that returns the value (a string, a number or a JSON object). Custom components are described in [here in the documentation](https://docs.thumbmarkjs.com/docs/options/custom-components).
+You can add custom components to the hash with `includeComponent`, which takes two parameters, the `key` being the key of the component in the JSON and the function that returns the value (a string, a number or a JSON object). Custom components are described in [here in the documentation](https://docs.thumbmarkjs.com/docs/configuration/custom-components).
 
 
 ## Components included in fingerprint
