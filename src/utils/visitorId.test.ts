@@ -1,5 +1,5 @@
 import { getVisitorId, setVisitorId } from './visitorId';
-import { optionsInterface, defaultOptions } from '../options';
+import { defaultOptions, options, OptionsAfterDefaults } from '../options';
 
 describe('visitorId storage tests', () => {
     beforeEach(() => {
@@ -21,7 +21,7 @@ describe('visitorId storage tests', () => {
 
         test('should use custom storage property name', () => {
             const visitorId = 'custom-visitor-456';
-            const customOptions: optionsInterface = {
+            const customOptions: OptionsAfterDefaults = {
                 ...defaultOptions,
                 storage_property_name: 'my_custom_visitor_key'
             };
@@ -37,7 +37,7 @@ describe('visitorId storage tests', () => {
         });
 
         test('should return null when storage property does not exist', () => {
-            const options: optionsInterface = {
+            const options: OptionsAfterDefaults = {
                 ...defaultOptions,
                 storage_property_name: 'nonexistent_key'
             };
@@ -56,6 +56,15 @@ describe('visitorId storage tests', () => {
             setVisitorId(newVisitorId, options);
             expect(getVisitorId(options)).toBe(newVisitorId);
         });
+
+        test('should migrate from old value in case new prefix is set', () => {
+            const visitorId = 'test-visitor-123';
+            setVisitorId(visitorId, options);
+            expect(getVisitorId({
+                property_name_factory: (name) => `custom_prefix_${name}`,
+            } as OptionsAfterDefaults)).toBe(visitorId);
+            expect(localStorage.getItem(`custom_prefix_visitor_id`)).toBe(visitorId);
+        })
     });
 
     describe('error handling', () => {

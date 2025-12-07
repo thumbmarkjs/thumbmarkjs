@@ -1,9 +1,10 @@
-import { optionsInterface, DEFAULT_API_ENDPOINT } from '../options';
+import { optionsInterface, DEFAULT_API_ENDPOINT, OptionsAfterDefaults} from '../options';
 import { componentInterface } from '../factory';
 import { getVisitorId, setVisitorId } from '../utils/visitorId';
 import { getVersion } from "../utils/version";
 import { hash } from '../utils/hash';
 import { stableStringify } from '../utils/stableStringify';
+import { getCache, getApiResponseExpiry, setCache } from "../utils/cache";
 
 // ===================== Types & Interfaces =====================
 
@@ -33,7 +34,7 @@ export interface infoInterface {
 /**
  * API response structure
  */
-interface apiResponse {
+export interface apiResponse {
     info?: infoInterface;
     version?: string;
     components?: componentInterface;
@@ -51,12 +52,21 @@ let apiPromiseResult: apiResponse | null = null;
  * Returns a promise for the API response or null on error.
  */
 export const getApiPromise = (
-    options: optionsInterface,
+    options: OptionsAfterDefaults,
     components: componentInterface
 ): Promise<apiResponse | null> => {
     // 1. If a result is already cached and caching is enabled, return it.
-    if (options.cache_api_call && apiPromiseResult) {
-        return Promise.resolve(apiPromiseResult);
+    if (options.cache_api_call) {
+        // Check the in-memory cache
+        if(apiPromiseResult) {
+            return Promise.resolve(apiPromiseResult);
+        }
+
+        // Check the localStorage cache
+        const cached = getCachedApiResponse(options);
+        if(cached) {
+            return Promise.resolve(cached);
+        }
     }
 
     // 2. If a request is already in flight, return that promise to prevent duplicate calls.
@@ -103,6 +113,7 @@ export const getApiPromise = (
                 setVisitorId(data.visitorId, options);
             }
             apiPromiseResult = data;      // Cache the successful result
+            setCachedApiResponse(options, data); // Cache to localStorage according to options
             currentApiPromise = null;     // Clear the in-flight promise
             return data;
         })
@@ -131,3 +142,36 @@ export const getApiPromise = (
     currentApiPromise = Promise.race([fetchPromise, timeoutPromise]);
     return currentApiPromise;
 };
+
+/**
+ * If a valid cached api response exists, returns it
+ * @param options
+ */
+export function getCachedApiResponse(
+    options: Pick<OptionsAfterDefaults, 'property_name_factory'>,
+): apiResponse | undefined {
+    const cache = getCache(options);
+    if (cache && cache.apiResponse && cache.apiResponseExpiry && Date.now() <= cache.apiResponseExpiry) {
+        return cache.apiResponse;
+    }
+
+    return;
+}
+
+/**
+ * Writes the api response to the cache according to the options
+ * @param options
+ * @param response
+ */
+export function setCachedApiResponse(
+    options: Pick<OptionsAfterDefaults, 'cache_api_call' | 'cache_lifetime_in_ms' | 'property_name_factory'>, response: apiResponse
+): void {
+    if(!options.cache_api_call || !options.cache_lifetime_in_ms) {
+        return;
+    }
+
+    setCache(options, {
+        apiResponseExpiry: getApiResponseExpiry(options),
+        apiResponse: response,
+    });
+}

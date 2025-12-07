@@ -6,7 +6,7 @@
  *
  */
 
-import { defaultOptions, optionsInterface } from "../options";
+import {defaultOptions, OptionsAfterDefaults, optionsInterface} from "../options";
 import {
   timeoutInstance,
   componentInterface,
@@ -45,7 +45,7 @@ interface thumbmarkResponse {
  * @returns thumbmarkResponse (elapsed is present only if options.performance is true)
  */
 export async function getThumbmark(options?: optionsInterface): Promise<thumbmarkResponse> {
-  const _options = { ...defaultOptions, ...options };
+  const _options = { ...defaultOptions, ...options } as OptionsAfterDefaults;
 
   // Early logging decision
   const shouldLog = (_options.logging && !sessionStorage.getItem("_tmjs_l") && Math.random() < 0.0001);
