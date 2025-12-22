@@ -92,7 +92,6 @@ export async function getThumbmark(options?: optionsInterface): Promise<thumbmar
   const info: infoInterface = apiResult?.info || { uniqueness: { score: 'api only' } };
 
   // Use API thumbmark if available to ensure API/client sync, otherwise calculate locally
-  console.log(apiResult);
   const thumbmark = apiResult?.thumbmark ?? hash(stableStringify(components));
   const version = getVersion();
 
