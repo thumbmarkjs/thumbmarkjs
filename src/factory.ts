@@ -39,7 +39,7 @@ export const tm_component_promises = {
     'plugins': getPlugins,
     'screen': getScreen,
     'system': getSystem,
-    'webgl': getWebGL
+    'webgl': getWebGL,
 };
 
 /**
@@ -48,7 +48,7 @@ export const tm_component_promises = {
 export const tm_experimental_component_promises = {
     'webrtc': getWebRTC,
     'mathml': getMathML,
-    'speech': getSpeech
+    'speech': getSpeech,
 };
 
 // the component interface is the form of the JSON object the function's promise must return

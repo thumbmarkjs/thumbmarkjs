@@ -14,18 +14,25 @@ const _WIDTH = 280;
 const _HEIGHT = 20;
 
 export default async function getCanvas(): Promise<componentInterface | null> {
-  return generateCanvasFingerprint()
+  return generateCanvasFingerprint();
 }
 
 
-export function generateCanvasFingerprint(): Promise<componentInterface> {
+export function generateCanvasFingerprint(): Promise<componentInterface | null> {
   return new Promise((resolve) => {
     /**
      * Since some browsers fudge with the canvas pixels to prevent fingerprinting, the following
      * creates the canvas three times and getCommonPixels picks the most common byte for each
      * channel of each pixel.
      */
-    const imageDatas: ImageData[] = Array.from({ length: _RUNS }, () => generateCanvasImageData());
+    const imageDatas = Array.from({ length: _RUNS }, () => generateCanvasImageData())
+      .filter((data): data is ImageData => data !== null);
+
+    if (imageDatas.length === 0) {
+      resolve(null);
+      return;
+    }
+
     const commonImageData = getCommonPixels(imageDatas, _WIDTH, _HEIGHT);
 
     resolve({
@@ -34,12 +41,12 @@ export function generateCanvasFingerprint(): Promise<componentInterface> {
   });
 }
 
-function generateCanvasImageData(): ImageData {
+function generateCanvasImageData(): ImageData | null {
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
 
   if (!ctx) {
-    return new ImageData(1, 1);
+    return null;
   }
 
   // Set canvas dimensions

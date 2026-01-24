@@ -1,7 +1,16 @@
 import { componentInterface } from '../../factory'
 
+// Get the OfflineAudioContext constructor if available
+const OfflineAudioContextClass = typeof window !== 'undefined'
+  ? (window.OfflineAudioContext || (window as any).webkitOfflineAudioContext)
+  : null;
+
 export default async function getAudio(): Promise<componentInterface | null> {
-  return createAudioFingerprint()
+  // Check if OfflineAudioContext is available
+  if (!OfflineAudioContextClass) {
+    return null;
+  }
+  return createAudioFingerprint();
 }
 
 async function createAudioFingerprint(): Promise<componentInterface> {
@@ -10,7 +19,7 @@ async function createAudioFingerprint(): Promise<componentInterface> {
       // Set up audio parameters
       const sampleRate = 44100;
       const numSamples = 5000;
-      const audioContext = new ((window.OfflineAudioContext || window.webkitOfflineAudioContext))(1, numSamples, sampleRate );
+      const audioContext = new OfflineAudioContextClass!(1, numSamples, sampleRate);
       const audioBuffer = audioContext.createBufferSource();
       
       const oscillator = audioContext.createOscillator();
