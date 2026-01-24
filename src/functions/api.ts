@@ -67,11 +67,12 @@ export const getApiPromise = (
         if(cached) {
             return Promise.resolve(cached);
         }
-    }
 
-    // 2. If a request is already in flight, return that promise to prevent duplicate calls.
-    if (currentApiPromise) {
-        return currentApiPromise;
+        // 2. If a request is already in flight, return that promise to prevent duplicate calls.
+        // Moved inside the cache_api_call check to avoid holding onto promises when caching is disabled.
+        if (currentApiPromise) {
+            return currentApiPromise;
+        }
     }
 
     // 3. Otherwise, initiate a new API call with timeout.
@@ -132,10 +133,16 @@ export const getApiPromise = (
     const timeoutMs = options.timeout || 5000;
     const timeoutPromise = new Promise<apiResponse>((resolve) => {
         setTimeout(() => {
-            resolve({
-                info: { timed_out: true },
-                version: getVersion(),
-            });
+            // On timeout, try to return expired cache as fallback
+            // Note: getCache() returns cache regardless of expiry
+            const cache = getCache(options);
+            if (cache && cache.apiResponse) {
+                resolve(cache.apiResponse);
+            } else {
+                resolve({
+                    info: { timed_out: true },
+                });
+            }
         }, timeoutMs);
     });
 
