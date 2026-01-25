@@ -1,4 +1,4 @@
-import { componentInterface, includeComponent } from '../../factory'
+import { componentInterface } from '../../factory'
 
 export default function getLocales(): Promise<componentInterface> {
   return new Promise((resolve) => {
@@ -7,15 +7,13 @@ export default function getLocales(): Promise<componentInterface> {
         'languages': getUserLanguage(),
         'timezone': getUserTimezone()
       });
-    });
+  });
 }
 
 function getUserLanguage(): string {
-    const userLanguages: string[] = [];
+  return navigator.language;
+}
 
-    return navigator.language;
-  }
-
-  function getUserTimezone(): string {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
-  }
+function getUserTimezone(): string {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone;
+}

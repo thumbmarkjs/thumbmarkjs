@@ -1,8 +1,14 @@
 import { componentInterface, includeComponent } from '../../factory';
 import { isMobileUserAgent } from '../system/browser';
 
-export default function getScreen(): Promise<componentInterface> {
+export default function getScreen(): Promise<componentInterface | null> {
     return new Promise((resolve) => {
+        // Check if required browser APIs are available
+        if (typeof matchMedia === 'undefined' || typeof screen === 'undefined') {
+            resolve(null);
+            return;
+        }
+
         const result: componentInterface = {
             'is_touchscreen': navigator.maxTouchPoints > 0,
             'maxTouchPoints': navigator.maxTouchPoints,

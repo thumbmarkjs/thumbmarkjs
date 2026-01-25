@@ -6,3 +6,4 @@ bld:
 	npm run build
 	rm -rf dist/types
 	cp dist/thumbmark.umd.js ../static/thumbmark.umd.js
+	cp dist/thumbmark.umd.js ./testpage/thumbmark.umd.js

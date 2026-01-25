@@ -1,4 +1,4 @@
-import { optionsInterface, DEFAULT_API_ENDPOINT, OptionsAfterDefaults} from '../options';
+import { optionsInterface, DEFAULT_API_ENDPOINT, OptionsAfterDefaults } from '../options';
 import { componentInterface } from '../factory';
 import { getVisitorId, setVisitorId } from '../utils/visitorId';
 import { getVersion } from "../utils/version";
@@ -40,6 +40,7 @@ export interface apiResponse {
     components?: componentInterface;
     visitorId?: string;
     thumbmark?: string;
+    requestId?: string;
 }
 
 // ===================== API Call Logic =====================
@@ -58,13 +59,13 @@ export const getApiPromise = (
     // 1. If a result is already cached and caching is enabled, return it.
     if (options.cache_api_call) {
         // Check the in-memory cache
-        if(apiPromiseResult) {
+        if (apiPromiseResult) {
             return Promise.resolve(apiPromiseResult);
         }
 
         // Check the localStorage cache
         const cached = getCachedApiResponse(options);
-        if(cached) {
+        if (cached) {
             return Promise.resolve(cached);
         }
 
@@ -139,8 +140,11 @@ export const getApiPromise = (
             if (cache && cache.apiResponse) {
                 resolve(cache.apiResponse);
             } else {
+                // Even without caching, return the visitor ID if available
+                // (visitorId was already retrieved at the start of this function)
                 resolve({
                     info: { timed_out: true },
+                    ...(visitorId && { visitorId }),
                 });
             }
         }, timeoutMs);
@@ -173,7 +177,7 @@ export function getCachedApiResponse(
 export function setCachedApiResponse(
     options: Pick<OptionsAfterDefaults, 'cache_api_call' | 'cache_lifetime_in_ms' | 'property_name_factory'>, response: apiResponse
 ): void {
-    if(!options.cache_api_call || !options.cache_lifetime_in_ms) {
+    if (!options.cache_api_call || !options.cache_lifetime_in_ms) {
         return;
     }
 

@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('ThumbmarkJS Headless Browser Tests', () => {
   test('should generate fingerprint in headless Chrome', async ({ page }) => {
-    await page.goto('http://localhost:3333/iframe.html');
+    await page.goto('http://localhost:3333/index.html');
 
     // Wait for ThumbmarkJS to load and get fingerprint
     const result = await page.evaluate(async () => {
@@ -24,7 +24,7 @@ test.describe('ThumbmarkJS Headless Browser Tests', () => {
     // Override canvas to return null context (simulating disabled canvas)
     await page.addInitScript(() => {
       const originalGetContext = HTMLCanvasElement.prototype.getContext;
-      HTMLCanvasElement.prototype.getContext = function (type: string) {
+      (HTMLCanvasElement.prototype as any).getContext = function (type: string) {
         if (type === '2d' || type === 'webgl' || type === 'webgl2') {
           return null;
         }
@@ -32,7 +32,7 @@ test.describe('ThumbmarkJS Headless Browser Tests', () => {
       };
     });
 
-    await page.goto('http://localhost:3333/iframe.html');
+    await page.goto('http://localhost:3333/index.html');
 
     // Should not throw, should still complete
     const result = await page.evaluate(async () => {
@@ -57,6 +57,83 @@ test.describe('ThumbmarkJS Headless Browser Tests', () => {
     await context.close();
   });
 
+  test('should handle missing 2D canvas context while keeping other components', async ({ browser }) => {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+
+    // Disable ONLY 2D canvas context
+    await page.addInitScript(() => {
+      const originalGetContext = HTMLCanvasElement.prototype.getContext;
+      (HTMLCanvasElement.prototype as any).getContext = function (type: string) {
+        if (type === '2d') {
+          return null;
+        }
+        return originalGetContext.call(this, type);
+      };
+    });
+
+    await page.goto('http://localhost:3333/index.html');
+
+    const result = await page.evaluate(async () => {
+      // @ts-ignore
+      const thumbmark = new ThumbmarkJS.Thumbmark();
+      const data = await thumbmark.get();
+      return {
+        thumbmark: data.thumbmark,
+        components: data.components
+      };
+    });
+
+    expect(result.thumbmark).toBeDefined();
+    expect(typeof result.thumbmark).toBe('string');
+
+    // Verify canvas is missing/undefined but others are present
+    expect(result.components.canvas).toBeUndefined();
+    expect(result.components.system).toBeDefined();
+    expect(result.components.hardware).toBeDefined();
+
+    await context.close();
+  });
+
+  test('should handle missing WebGL context while keeping other components', async ({ browser }) => {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+
+    // Disable ONLY webgl context
+    await page.addInitScript(() => {
+      const originalGetContext = HTMLCanvasElement.prototype.getContext;
+      (HTMLCanvasElement.prototype as any).getContext = function (type: string) {
+        if (type === 'webgl' || type === 'experimental-webgl' || type === 'webgl2') {
+          return null;
+        }
+        return originalGetContext.call(this, type);
+      };
+    });
+
+    await page.goto('http://localhost:3333/index.html');
+
+    const result = await page.evaluate(async () => {
+      // @ts-ignore
+      const thumbmark = new ThumbmarkJS.Thumbmark();
+      const data = await thumbmark.get();
+      return {
+        thumbmark: data.thumbmark,
+        components: data.components
+      };
+    });
+
+    expect(result.thumbmark).toBeDefined();
+    expect(typeof result.thumbmark).toBe('string');
+
+    // WebGL should return 'unsupported' info object or be omitted if null (based on implementation)
+    // Actually webgl returns { webgl: 'unsupported' } inside the components map
+    expect(result.components.webgl).toEqual({ webgl: 'unsupported' });
+    expect(result.components.system).toBeDefined();
+    expect(result.components.canvas).toBeDefined(); // Canvas 2D should still work
+
+    await context.close();
+  });
+
   test('should handle missing AudioContext gracefully', async ({ browser }) => {
     const context = await browser.newContext();
     const page = await context.newPage();
@@ -73,7 +150,7 @@ test.describe('ThumbmarkJS Headless Browser Tests', () => {
       window.webkitOfflineAudioContext = undefined;
     });
 
-    await page.goto('http://localhost:3333/iframe.html');
+    await page.goto('http://localhost:3333/index.html');
 
     const result = await page.evaluate(async () => {
       try {
@@ -111,7 +188,7 @@ test.describe('ThumbmarkJS Headless Browser Tests', () => {
       };
     });
 
-    await page.goto('http://localhost:3333/iframe.html');
+    await page.goto('http://localhost:3333/index.html');
 
     const result = await page.evaluate(async () => {
       try {
@@ -154,7 +231,7 @@ test.describe('ThumbmarkJS Headless Browser Tests', () => {
       window.webkitOfflineAudioContext = undefined;
     });
 
-    await page.goto('http://localhost:3333/iframe.html');
+    await page.goto('http://localhost:3333/index.html');
 
     const result = await page.evaluate(async () => {
       try {

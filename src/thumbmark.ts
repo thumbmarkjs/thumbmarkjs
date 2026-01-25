@@ -1,5 +1,5 @@
 import { optionsInterface } from "./options";
-import { getThumbmark, includeComponent as globalIncludeComponent } from './functions';
+import { getThumbmark, includeComponent as globalIncludeComponent, ThumbmarkResponse } from './functions';
 import { getVersion } from "./utils/version";
 import { defaultOptions } from "./options";
 import { componentInterface } from "./factory";
@@ -22,9 +22,9 @@ export class Thumbmark {
     /**
      * Generates a thumbmark using the instance's configuration.
      * @param overrideOptions - Options to override for this specific call.
-     * @returns The thumbmark result.
+     * @returns The thumbmark result containing the fingerprint hash, components, and metadata.
      */
-    public async get(overrideOptions?: optionsInterface): Promise<any> {
+    public async get(overrideOptions?: optionsInterface): Promise<ThumbmarkResponse> {
       const finalOptions = { ...this.options, ...overrideOptions };
       return getThumbmark(finalOptions);
     }

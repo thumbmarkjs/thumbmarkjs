@@ -6,7 +6,7 @@
  *
  */
 
-import {defaultOptions, OptionsAfterDefaults, optionsInterface} from "../options";
+import { defaultOptions, OptionsAfterDefaults, optionsInterface } from "../options";
 import {
   timeoutInstance,
   componentInterface,
@@ -27,24 +27,45 @@ import { stableStringify } from "../utils/stableStringify";
 /**
  * Final thumbmark response structure
  */
-interface thumbmarkResponse {
-  components: componentInterface,
-  info: { [key: string]: any },
-  version: string,
-  thumbmark: string,
-  visitorId?: string,
-  elapsed?: any;
+export interface ThumbmarkResponse {
+  /** Hash of all components - the main fingerprint identifier */
+  thumbmark: string;
+  /** All resolved fingerprint components */
+  components: componentInterface;
+  /** Information from the API (IP, classification, uniqueness score) */
+  info: infoInterface;
+  /** Library version */
+  version: string;
+  /** Persistent visitor identifier (requires API key) */
+  visitorId?: string;
+  /** Performance timing for each component (only when options.performance is true) */
+  elapsed?: Record<string, number>;
+  /** Error message if something went wrong */
   error?: string;
+  /** Experimental components (only when options.experimental is true) */
   experimental?: componentInterface;
+  /** Unique identifier for this API request */
+  requestId?: string;
 }
 
 /**
  * Main entry point: collects all components, optionally calls API, and returns thumbmark data.
  *
  * @param options - Options for fingerprinting and API
- * @returns thumbmarkResponse (elapsed is present only if options.performance is true)
+ * @returns ThumbmarkResponse (elapsed is present only if options.performance is true)
  */
-export async function getThumbmark(options?: optionsInterface): Promise<thumbmarkResponse> {
+export async function getThumbmark(options?: optionsInterface): Promise<ThumbmarkResponse> {
+  // Early exit for non-browser environments (Node.js, Jest, SSR)
+  if (typeof document === 'undefined' || typeof window === 'undefined') {
+    return {
+      thumbmark: '',
+      components: {},
+      info: {},
+      version: getVersion(),
+      error: 'Browser environment required'
+    };
+  }
+
   const _options = { ...defaultOptions, ...options } as OptionsAfterDefaults;
 
   // Early logging decision
@@ -100,7 +121,7 @@ export async function getThumbmark(options?: optionsInterface): Promise<thumbmar
     logThumbmarkData(thumbmark, components, _options, experimentalComponents).catch(() => { /* do nothing */ });
   }
 
-  const result: thumbmarkResponse = {
+  const result: ThumbmarkResponse = {
     ...(apiResult?.visitorId && { visitorId: apiResult.visitorId }),
     thumbmark,
     components: components,
@@ -108,6 +129,7 @@ export async function getThumbmark(options?: optionsInterface): Promise<thumbmar
     version,
     ...maybeElapsed,
     ...(Object.keys(experimentalComponents).length > 0 && _options.experimental && { experimental: experimentalComponents }),
+    ...(apiResult?.requestId && { requestId: apiResult.requestId }),
   };
 
   return result;

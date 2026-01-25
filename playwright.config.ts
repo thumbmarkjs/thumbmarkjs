@@ -17,7 +17,7 @@ export default defineConfig({
     // { name: 'webkit', use: { browserName: 'webkit' } },
   ],
   webServer: {
-    command: 'npx serve ../static -p 3333',
+    command: 'npx serve ./testpage -p 3333',
     port: 3333,
     reuseExistingServer: true,
   },

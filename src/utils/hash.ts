@@ -4,8 +4,35 @@
  */
 
 function encodeUtf8(text: string): ArrayBuffer {
-  const encoder = new TextEncoder();
-  return encoder.encode(text).buffer;
+  // Use TextEncoder if available (browser, modern Node.js)
+  if (typeof TextEncoder !== 'undefined') {
+    const encoder = new TextEncoder();
+    return encoder.encode(text).buffer;
+  }
+
+  // Fallback for environments without TextEncoder (older Node.js, some test runners)
+  const utf8: number[] = [];
+  for (let i = 0; i < text.length; i++) {
+    let charCode = text.charCodeAt(i);
+    if (charCode < 0x80) {
+      utf8.push(charCode);
+    } else if (charCode < 0x800) {
+      utf8.push(0xc0 | (charCode >> 6), 0x80 | (charCode & 0x3f));
+    } else if (charCode < 0xd800 || charCode >= 0xe000) {
+      utf8.push(0xe0 | (charCode >> 12), 0x80 | ((charCode >> 6) & 0x3f), 0x80 | (charCode & 0x3f));
+    } else {
+      // Surrogate pair
+      i++;
+      charCode = 0x10000 + (((charCode & 0x3ff) << 10) | (text.charCodeAt(i) & 0x3ff));
+      utf8.push(
+        0xf0 | (charCode >> 18),
+        0x80 | ((charCode >> 12) & 0x3f),
+        0x80 | ((charCode >> 6) & 0x3f),
+        0x80 | (charCode & 0x3f)
+      );
+    }
+  }
+  return new Uint8Array(utf8).buffer;
 }
 
 function fmix (input : number) : number {

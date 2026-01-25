@@ -1,6 +1,7 @@
-import {apiResponse, getCachedApiResponse, setCachedApiResponse, getApiPromise} from "./api";
+import { apiResponse, getCachedApiResponse, setCachedApiResponse, getApiPromise } from "./api";
 import { defaultOptions } from "../options";
-import {getCache, setCache} from "../utils/cache";
+import { getCache, setCache } from "../utils/cache";
+import { setVisitorId } from "../utils/visitorId";
 import type { componentInterface } from "../factory";
 import * as hashModule from "../utils/hash";
 import * as stringifyModule from "../utils/stableStringify";
@@ -138,6 +139,7 @@ describe('getApiPromise timeout behavior', () => {
                 version: '1.2.3',
                 visitorId: 'test-visitor-id',
                 thumbmark: 'test-thumbmark',
+                requestId: 'test-request-id',
                 info: {
                     ip_address: {
                         ip_address: '1.2.3.4',
@@ -159,6 +161,7 @@ describe('getApiPromise timeout behavior', () => {
         expect(result?.version).toBe('1.2.3');
         expect(result?.info?.timed_out).toBeUndefined();
         expect(result?.thumbmark).toBe('test-thumbmark');
+        expect(result?.requestId).toBe('test-request-id');
     });
 
     test('returns expired cache when timeout occurs and cache exists', async () => {
@@ -187,7 +190,7 @@ describe('getApiPromise timeout behavior', () => {
         setCache(noCacheOptions, expiredCachedValue);
 
         // Mock fetch to never resolve (hanging request)
-        mockFetch.mockReturnValueOnce(new Promise(() => {}));
+        mockFetch.mockReturnValueOnce(new Promise(() => { }));
 
         const promise = getApiPromise(noCacheOptions, testComponents);
 
@@ -210,7 +213,7 @@ describe('getApiPromise timeout behavior', () => {
 
         expect(getCache(noCacheOptions)).toEqual({});
 
-        mockFetch.mockReturnValueOnce(new Promise(() => {}));
+        mockFetch.mockReturnValueOnce(new Promise(() => { }));
 
         const promise = getApiPromise(noCacheOptions, testComponents);
 
@@ -222,5 +225,91 @@ describe('getApiPromise timeout behavior', () => {
 
         const cached = getCache(noCacheOptions);
         expect(cached.apiResponse).toBeUndefined();
+    });
+
+    test('returns timeout response without visitorId when no cache and no stored visitorId', async () => {
+        const noCacheOptions = {
+            ...testOptions,
+            cache_api_call: false,
+        };
+
+        // Ensure no cache and no visitor ID
+        expect(getCache(noCacheOptions)).toEqual({});
+        expect(localStorage.getItem('thumbmark_visitor_id')).toBeNull();
+
+        mockFetch.mockReturnValueOnce(new Promise(() => { }));
+
+        const promise = getApiPromise(noCacheOptions, testComponents);
+
+        await jest.runAllTimersAsync();
+        const result = await promise;
+
+        expect(result).toBeDefined();
+        expect(result?.info?.timed_out).toBe(true);
+        expect(result?.visitorId).toBeUndefined();
+    });
+
+    test('returns timeout response with visitorId when no cache but visitorId exists in localStorage', async () => {
+        const noCacheOptions = {
+            ...testOptions,
+            cache_api_call: false,
+        };
+
+        // Set up visitor ID in localStorage (no cache)
+        const storedVisitorId = 'stored-visitor-id-123';
+        setVisitorId(storedVisitorId, noCacheOptions);
+
+        // Verify setup: no cache, but visitor ID exists
+        expect(getCache(noCacheOptions)).toEqual({});
+        expect(localStorage.getItem('thumbmark_visitor_id')).toBe(storedVisitorId);
+
+        mockFetch.mockReturnValueOnce(new Promise(() => { }));
+
+        const promise = getApiPromise(noCacheOptions, testComponents);
+
+        await jest.runAllTimersAsync();
+        const result = await promise;
+
+        expect(result).toBeDefined();
+        expect(result?.info?.timed_out).toBe(true);
+        expect(result?.visitorId).toBe(storedVisitorId);
+    });
+
+    test('returns full cached response (not just visitorId) when cache exists on timeout', async () => {
+        const noCacheOptions = {
+            ...testOptions,
+            cache_api_call: false,
+        };
+
+        // Set up both: expired cache AND visitor ID in localStorage
+        const storedVisitorId = 'stored-visitor-id-456';
+        setVisitorId(storedVisitorId, noCacheOptions);
+
+        const expiredCachedValue = {
+            apiResponseExpiry: Date.now() - 100, // Expired
+            apiResponse: {
+                version: '1.2.3',
+                thumbmark: 'cached-thumbmark',
+                visitorId: 'cached-visitor-id',
+                info: {
+                    uniqueness: { score: 0.95 }
+                }
+            }
+        };
+        setCache(noCacheOptions, expiredCachedValue);
+
+        mockFetch.mockReturnValueOnce(new Promise(() => { }));
+
+        const promise = getApiPromise(noCacheOptions, testComponents);
+
+        await jest.runAllTimersAsync();
+        const result = await promise;
+
+        // Should return full cached response, not just visitor ID fallback
+        expect(result).toBeDefined();
+        expect(result?.info?.timed_out).toBeUndefined();
+        expect(result?.thumbmark).toBe('cached-thumbmark');
+        expect(result?.visitorId).toBe('cached-visitor-id'); // From cache, not localStorage
+        expect(result?.version).toBe('1.2.3');
     });
 })

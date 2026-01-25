@@ -102,15 +102,21 @@ export default async function getFonts(options?: optionsInterface): Promise<comp
     return getFontMetrics()
 }
 
-export function getFontMetrics(): Promise<componentInterface> {
-    
-    return new Promise((resolve, reject) => {
+export function getFontMetrics(): Promise<componentInterface | null> {
+
+    return new Promise((resolve) => {
         try {
 
             ephemeralIFrame(async ({ iframe }) => {
 
                 const canvas = iframe.createElement('canvas');
                 const ctx = canvas.getContext('2d');
+
+                // Return null if canvas context is not available
+                if (!ctx) {
+                    resolve(null);
+                    return;
+                }
 
                 const defaultWidths: number[] = baseFonts.map((font) => {
                     return measureSingleFont(ctx, font)
@@ -122,22 +128,19 @@ export function getFontMetrics(): Promise<componentInterface> {
                     if (!defaultWidths.includes(fontWidth))
                         results[font] = fontWidth;
                 });
-    
+
                 resolve(results);
             })
 
 
         } catch (error) {
-            reject({'error': 'unsupported'})
+            resolve(null);
         }
     });
 };
 
 
-function measureSingleFont(ctx: CanvasRenderingContext2D | null, font: string): number {
-    if (!ctx) {
-        throw new Error('Canvas context not supported');
-    }
+function measureSingleFont(ctx: CanvasRenderingContext2D, font: string): number {
     const text: string = "WwMmLli0Oo";
     ctx.font = `72px ${font}`; // Set a default font size
     return ctx.measureText(text).width;
