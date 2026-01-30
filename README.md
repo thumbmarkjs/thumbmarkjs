@@ -99,6 +99,7 @@ const tm = new ThumbmarkJS.Thumbmark({
 | logging | boolean | true | Default is true. Some releases collect at most 0.01% logs to improve the library. This doesn't affect the user. |
 | performance | boolean | false | Default is false. Setting to true includes millisecond performance of component resolving |
 | stabilize | string[] | ['private', 'iframe'] | A preset exclusion list for different scenarios. Default is `['private', 'iframe']` which means thumbmark uses settings designed to stabilize for private browsing and iframes (i.e. thumbmark should be stable over those situations).
+| metadata | varies | 'event-123' | Passes metadata to webhooks. Does not affect thumbmark. |
 
 example usage:
 

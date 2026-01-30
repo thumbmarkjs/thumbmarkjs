@@ -40,15 +40,15 @@ export const tm_component_promises = {
     'screen': getScreen,
     'system': getSystem,
     'webgl': getWebGL,
+    'webrtc': getWebRTC,
+    'speech': getSpeech,
 };
 
 /**
  * @description key->function map of experimental components. Only resolved during logging.
  */
 export const tm_experimental_component_promises = {
-    'webrtc': getWebRTC,
     'mathml': getMathML,
-    'speech': getSpeech,
 };
 
 // the component interface is the form of the JSON object the function's promise must return
@@ -64,7 +64,7 @@ export interface componentFunctionInterface {
 
 // components include a dictionary of name: function.
 // Renamed to customComponents for clarity; this is for user-registered components.
-export const customComponents: {[name: string]: componentFunctionInterface | null} = {};
+export const customComponents: { [name: string]: componentFunctionInterface | null } = {};
 
 //In case a promise time-outs, this is what we use as the value in place
 export const timeoutInstance: componentInterface = {
@@ -77,7 +77,7 @@ export const timeoutInstance: componentInterface = {
  * @param {string} name - the name identifier of the component
  * @param {componentFunctionInterface} creationFunction - the function that implements the component
  * @returns nothing
- */ 
-export const includeComponent = (name:string, creationFunction: componentFunctionInterface, options?: optionsInterface) => {
+ */
+export const includeComponent = (name: string, creationFunction: componentFunctionInterface, options?: optionsInterface) => {
     customComponents[name] = creationFunction;
 };

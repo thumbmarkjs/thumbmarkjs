@@ -41,6 +41,7 @@ export interface apiResponse {
     visitorId?: string;
     thumbmark?: string;
     requestId?: string;
+    metadata?: string | object;
 }
 
 // ===================== API Call Logic =====================
@@ -88,6 +89,24 @@ export const getApiPromise = (
     };
     if (visitorId) {
         requestBody.visitorId = visitorId;
+    }
+    // Resolve metadata if it's a function, otherwise use as-is
+    if (options.metadata) {
+        const resolvedMetadata = typeof options.metadata === 'function'
+            ? options.metadata()
+            : options.metadata;
+
+        if (resolvedMetadata) {
+            const metadataLength = typeof resolvedMetadata === 'string'
+                ? resolvedMetadata.length
+                : JSON.stringify(resolvedMetadata).length;
+
+            if (metadataLength > 1000) {
+                console.error('ThumbmarkJS: Metadata exceeds 1000 characters. Skipping metadata.');
+            } else {
+                requestBody.metadata = resolvedMetadata;
+            }
+        }
     }
 
     const fetchPromise = fetch(endpoint, {

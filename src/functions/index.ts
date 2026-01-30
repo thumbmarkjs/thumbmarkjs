@@ -46,6 +46,8 @@ export interface ThumbmarkResponse {
   experimental?: componentInterface;
   /** Unique identifier for this API request */
   requestId?: string;
+  /** Metadata echoed back from the API */
+  metadata?: string | object;
 }
 
 /**
@@ -130,6 +132,7 @@ export async function getThumbmark(options?: optionsInterface): Promise<Thumbmar
     ...maybeElapsed,
     ...(Object.keys(experimentalComponents).length > 0 && _options.experimental && { experimental: experimentalComponents }),
     ...(apiResult?.requestId && { requestId: apiResult.requestId }),
+    ...(apiResult?.metadata && { metadata: apiResult.metadata }),
   };
 
   return result;
