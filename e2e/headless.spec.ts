@@ -250,4 +250,124 @@ test.describe('ThumbmarkJS Headless Browser Tests', () => {
 
     await context.close();
   });
+
+  test('should handle static metadata in API call', async ({ page }) => {
+    // Mock API response
+    await page.route('**/thumbmark', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          thumbmark: 'mock-thumbmark',
+          metadata: '{"eventId": "12345", "sessionId": "abc"}',
+          visitorId: 'mock-visitor'
+        })
+      });
+    });
+
+    await page.goto('http://localhost:3333/index.html');
+
+    const result = await page.evaluate(async () => {
+      // @ts-ignore
+      const thumbmark = new ThumbmarkJS.Thumbmark({
+        api_key: 'test-key',
+        metadata: '{"eventId": "12345", "sessionId": "abc"}'
+      });
+      const data = await thumbmark.get();
+      return {
+        thumbmark: data.thumbmark,
+        metadata: data.metadata
+      };
+    });
+
+    expect(result.metadata).toBe('{"eventId": "12345", "sessionId": "abc"}');
+    expect(result.thumbmark).toBeDefined();
+  });
+
+  test('should handle dynamic metadata function', async ({ page }) => {
+    // Mock API response
+    await page.route('**/thumbmark', async route => {
+      const request = route.request();
+      const body = request.postDataJSON();
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          thumbmark: 'mock-thumbmark',
+          metadata: body.metadata, // Echo back what was sent
+          visitorId: 'mock-visitor'
+        })
+      });
+    });
+
+    await page.goto('http://localhost:3333/index.html');
+
+    const result = await page.evaluate(async () => {
+      let counter = 0;
+      // @ts-ignore
+      const thumbmark = new ThumbmarkJS.Thumbmark({
+        api_key: 'test-key',
+        cache_api_call: false, // Ensure multiple calls fire
+        metadata: () => `call-${++counter}`
+      });
+
+      const first = await thumbmark.get();
+      const second = await thumbmark.get();
+
+      return {
+        firstMetadata: first.metadata,
+        secondMetadata: second.metadata,
+        sameThumbmark: first.thumbmark === second.thumbmark
+      };
+    });
+
+    expect(result.firstMetadata).toBe('call-1');
+    expect(result.secondMetadata).toBe('call-2');
+    expect(result.sameThumbmark).toBe(true);
+  });
+
+  test('should not include metadata in thumbmark when not provided', async ({ page }) => {
+    await page.goto('http://localhost:3333/index.html');
+
+    const result = await page.evaluate(async () => {
+      // @ts-ignore
+      const thumbmark = new ThumbmarkJS.Thumbmark({
+        api_key: 'test-key'
+      });
+      const data = await thumbmark.get();
+      return {
+        thumbmark: data.thumbmark,
+        hasMetadata: 'metadata' in data
+      };
+    });
+
+    expect(result.thumbmark).toBeDefined();
+    expect(result.hasMetadata).toBe(false);
+  });
+  test('should work E2E with sandbox API', async ({ page }) => {
+    await page.goto('http://localhost:3333/index.html');
+
+    const result = await page.evaluate(async (apiConfig) => {
+      // @ts-ignore
+      const thumbmark = new ThumbmarkJS.Thumbmark({
+        api_endpoint: apiConfig.endpoint,
+        api_key: apiConfig.key,
+        cache_api_call: false
+      });
+
+      const data = await thumbmark.get();
+      return {
+        thumbmark: data.thumbmark,
+        visitorId: data.visitorId
+      };
+    }, {
+      endpoint: process.env.API_ENDPOINT || '',
+      key: process.env.SANDBOX_API_KEY || ''
+    });
+
+    // Verify API call works with environment variables from .env file
+    expect(result.thumbmark).toBeDefined();
+    expect(result.thumbmark).not.toBe('');
+    expect(result.thumbmark).toMatch(/^[a-f0-9]{32}$/); // Valid thumbmark format
+  });
 });

@@ -1,3 +1,5 @@
+type JSONValue = string | number | boolean | null | JSONValue[] | { [key: string]: JSONValue };
+
 export interface OptionsAfterDefaults {
     /**
      * A function to customise localStorage names used by thumbmark
@@ -27,6 +29,15 @@ export interface OptionsAfterDefaults {
     performance?: boolean,
     stabilize?: string[],
     experimental?: boolean,
+    /**
+     * Optional metadata to pass through to the API and webhooks.
+     * Can be a static JSON object or a function that returns a JSON object (evaluated at request time).
+     * This field is excluded from fingerprint calculation.
+     * Maximum length: 1000 characters when stringified.
+     * @example metadata: { userId: "123", eventType: "login" }
+     * @example metadata: () => ({ timestamp: Date.now(), sessionId: "abc" })
+     */
+    metadata?: JSONValue | (() => JSONValue),
 }
 
 export type optionsInterface = Partial<OptionsAfterDefaults>;

@@ -1,8 +1,9 @@
 import { componentInterface } from '../../factory';
+import { optionsInterface } from '../../options';
 import { hash } from '../../utils/hash';
 import { stableStringify } from '../../utils/stableStringify';
 
-export default async function getWebRTC(): Promise<componentInterface | null> {
+export default async function getWebRTC(options?: optionsInterface): Promise<componentInterface | null> {
   return new Promise((resolve) => {
     try {
       // Check if WebRTC is supported
@@ -81,6 +82,10 @@ export default async function getWebRTC(): Promise<componentInterface | null> {
           };
 
           // Set up for ICE candidate collection with timeout
+          // Use 60% of the total timeout to ensure this completes before the global timeout
+          const totalTimeout = options?.timeout || 5000;
+          const iceTimeout = Math.floor(totalTimeout * 0.9);
+
           const result = await new Promise<componentInterface>((resolveResult) => {
             const timeout = setTimeout(() => {
               connection.removeEventListener('icecandidate', onIceCandidate);
@@ -90,7 +95,7 @@ export default async function getWebRTC(): Promise<componentInterface | null> {
                 ...compressedData,
                 timeout: true
               });
-            }, 3000);
+            }, iceTimeout);
 
             const onIceCandidate = (event: RTCPeerConnectionIceEvent) => {
               const candidateObj = event.candidate;
