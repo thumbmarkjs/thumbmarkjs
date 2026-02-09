@@ -1,5 +1,6 @@
 import { componentInterface } from '../factory'
 import { filterThumbmarkData } from './filterComponents'
+import { resolveClientComponents } from '.';
 import { defaultOptions } from '../options';
 
 const test_components: componentInterface = {
@@ -35,5 +36,24 @@ describe('component filtering tests', () => {
             'one': '1',
             'three': {'b': false}
         })
+    });
+});
+
+describe('resolveClientComponents runtime stability', () => {
+    test('continues resolving when one component promise rejects', async () => {
+        const components = {
+            stable: async () => ({ value: 'ok' } as componentInterface),
+            unstable: async () => Promise.reject(new Error('component failed')),
+        };
+
+        const { resolvedComponents, elapsed } = await resolveClientComponents(components, {
+            ...defaultOptions,
+            stabilize: [],
+        });
+
+        expect(resolvedComponents.stable).toEqual({ value: 'ok' });
+        expect(resolvedComponents.unstable).toEqual({ timeout: 'true' });
+        expect(elapsed.stable).toBeGreaterThanOrEqual(0);
+        expect(elapsed.unstable).toBeGreaterThanOrEqual(0);
     });
 });
