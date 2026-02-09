@@ -24,6 +24,11 @@ export function raceAllPerformance<T>(
         p.then((value) => ({
           value,
           elapsed: performance.now() - startTime,
+        })).catch(() => ({
+          // Keep behavior aligned with timeout: a failed component falls back
+          // to timeoutVal instead of rejecting the entire Promise.all.
+          value: timeoutVal,
+          elapsed: performance.now() - startTime,
         })),
         delay(timeoutTime, timeoutVal).then((value) => ({
           value,
