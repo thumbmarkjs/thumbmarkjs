@@ -24,6 +24,11 @@ export function raceAllPerformance<T>(
         p.then((value) => ({
           value,
           elapsed: performance.now() - startTime,
+        })).catch(() => ({
+          // Keep behavior aligned with timeout: a failed component falls back
+          // to timeoutVal instead of rejecting the entire Promise.all.
+          value: timeoutVal,
+          elapsed: performance.now() - startTime,
         })),
         delay(timeoutTime, timeoutVal).then((value) => ({
           value,
@@ -38,6 +43,6 @@ export function raceAllPerformance<T>(
 
 export function raceAll<T>(promises: Promise<T>[], timeoutTime: number, timeoutVal: T): Promise<(T | undefined)[]> {
   return Promise.all(promises.map((p) => {
-    return Promise.race([p, delay(timeoutTime, timeoutVal)]);
+    return Promise.race([p.catch(() => timeoutVal), delay(timeoutTime, timeoutVal)]);
   }));
 }
