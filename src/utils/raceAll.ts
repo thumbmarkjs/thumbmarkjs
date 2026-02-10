@@ -43,6 +43,6 @@ export function raceAllPerformance<T>(
 
 export function raceAll<T>(promises: Promise<T>[], timeoutTime: number, timeoutVal: T): Promise<(T | undefined)[]> {
   return Promise.all(promises.map((p) => {
-    return Promise.race([p, delay(timeoutTime, timeoutVal)]);
+    return Promise.race([p.catch(() => timeoutVal), delay(timeoutTime, timeoutVal)]);
   }));
 }
