@@ -344,6 +344,30 @@ test.describe('ThumbmarkJS Headless Browser Tests', () => {
     expect(result.thumbmark).toBeDefined();
     expect(result.hasMetadata).toBe(false);
   });
+  test('should return api_unauthorized error with invalid API key', async ({ page }) => {
+    await page.goto('http://localhost:3333/index.html');
+
+    const result = await page.evaluate(async () => {
+      // @ts-ignore
+      const thumbmark = new ThumbmarkJS.Thumbmark({
+        api_key: 'fake-invalid-key',
+        cache_api_call: false,
+      });
+      const data = await thumbmark.get();
+      return {
+        thumbmark: data.thumbmark,
+        error: data.error,
+      };
+    });
+
+    expect(result.error).toBeDefined();
+    expect(result.error).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: 'api_unauthorized' })
+      ])
+    );
+  });
+
   test('should work E2E with sandbox API', async ({ page }) => {
     await page.goto('http://localhost:3333/index.html');
 

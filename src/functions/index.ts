@@ -27,6 +27,12 @@ import { stableStringify } from "../utils/stableStringify";
 /**
  * Final thumbmark response structure
  */
+export interface ThumbmarkError {
+  type: 'component_timeout' | 'component_error' | 'api_timeout' | 'api_error' | 'api_unauthorized' | 'fatal';
+  message: string;
+  component?: string;
+}
+
 export interface ThumbmarkResponse {
   /** Hash of all components - the main fingerprint identifier */
   thumbmark: string;
@@ -40,8 +46,8 @@ export interface ThumbmarkResponse {
   visitorId?: string;
   /** Performance timing for each component (only when options.performance is true) */
   elapsed?: Record<string, number>;
-  /** Error message if something went wrong */
-  error?: string;
+  /** Structured error array. Present only when errors occurred. */
+  error?: ThumbmarkError[];
   /** Experimental components (only when options.experimental is true) */
   experimental?: componentInterface;
   /** Unique identifier for this API request */
@@ -64,78 +70,100 @@ export async function getThumbmark(options?: optionsInterface): Promise<Thumbmar
       components: {},
       info: {},
       version: getVersion(),
-      error: 'Browser environment required'
+      error: [{ type: 'fatal', message: 'Browser environment required' }]
     };
   }
 
-  const _options = { ...defaultOptions, ...options } as OptionsAfterDefaults;
+  try {
+    const _options = { ...defaultOptions, ...options } as OptionsAfterDefaults;
+    const allErrors: ThumbmarkError[] = [];
 
-  // Early logging decision
-  const shouldLog = (_options.logging && !sessionStorage.getItem("_tmjs_l") && Math.random() < 0.0001);
+    // Early logging decision
+    const shouldLog = (_options.logging && !sessionStorage.getItem("_tmjs_l") && Math.random() < 0.0001);
 
-  // Merge built-in and user-registered components
-  const allComponents = { ...tm_component_promises, ...customComponents };
-  const { elapsed, resolvedComponents: clientComponentsResult } = await resolveClientComponents(allComponents, _options);
+    // Merge built-in and user-registered components
+    const allComponents = { ...tm_component_promises, ...customComponents };
+    const { elapsed, resolvedComponents: clientComponentsResult, errors: componentErrors } = await resolveClientComponents(allComponents, _options);
+    allErrors.push(...componentErrors);
 
-  // Resolve experimental components only when logging
-  let experimentalComponents = {};
-  let experimentalElapsed = {};
-  if (shouldLog || _options.experimental) {
-    const { elapsed: expElapsed, resolvedComponents } = await resolveClientComponents(tm_experimental_component_promises, _options);
-    experimentalComponents = resolvedComponents;
-    experimentalElapsed = expElapsed;
-  }
-
-  const apiPromise = _options.api_key ? getApiPromise(_options, clientComponentsResult) : null;
-  let apiResult = null;
-
-  if (apiPromise) {
-    try {
-      apiResult = await apiPromise;
-    } catch (error) {
-      // Handle API key/quota errors
-      if (error instanceof Error && error.message === 'INVALID_API_KEY') {
-        return {
-          error: 'Invalid API key or quota exceeded',
-          components: {},
-          info: {},
-          version: getVersion(),
-          thumbmark: ''
-        };
-      }
-      throw error; // Re-throw other errors
+    // Resolve experimental components only when logging
+    let experimentalComponents = {};
+    let experimentalElapsed = {};
+    if (shouldLog || _options.experimental) {
+      const { elapsed: expElapsed, resolvedComponents, errors: expErrors } = await resolveClientComponents(tm_experimental_component_promises, _options);
+      experimentalComponents = resolvedComponents;
+      experimentalElapsed = expElapsed;
+      allErrors.push(...expErrors);
     }
+
+    const apiPromise = _options.api_key ? getApiPromise(_options, clientComponentsResult) : null;
+    let apiResult = null;
+
+    if (apiPromise) {
+      try {
+        apiResult = await apiPromise;
+      } catch (error) {
+        if (error instanceof Error && error.message === 'INVALID_API_KEY') {
+          return {
+            error: [{ type: 'api_unauthorized', message: 'Invalid API key or quota exceeded' }],
+            components: {},
+            info: {},
+            version: getVersion(),
+            thumbmark: ''
+          };
+        }
+        // Non-auth API errors (5xx, network): log error and continue without API data
+        allErrors.push({
+          type: 'api_error',
+          message: error instanceof Error ? error.message : String(error)
+        });
+      }
+    }
+
+    // Surface API timeout as a structured error
+    if (apiResult?.info?.timed_out) {
+      allErrors.push({ type: 'api_timeout', message: 'API request timed out' });
+    }
+
+    // Only add 'elapsed' if performance is true
+    const allElapsed = { ...elapsed, ...experimentalElapsed };
+    const maybeElapsed = _options.performance ? { elapsed: allElapsed } : {};
+    const apiComponents = filterThumbmarkData(apiResult?.components || {}, _options);
+    const components = { ...clientComponentsResult, ...apiComponents };
+    const info: infoInterface = apiResult?.info || { uniqueness: { score: 'api only' } };
+
+    // Use API thumbmark if available to ensure API/client sync, otherwise calculate locally
+    const thumbmark = apiResult?.thumbmark ?? hash(stableStringify(components));
+    const version = getVersion();
+
+    // Only log to server when not in debug mode
+    if (shouldLog) {
+      logThumbmarkData(thumbmark, components, _options, experimentalComponents).catch(() => { /* do nothing */ });
+    }
+
+    const result: ThumbmarkResponse = {
+      ...(apiResult?.visitorId && { visitorId: apiResult.visitorId }),
+      thumbmark,
+      components: components,
+      info,
+      version,
+      ...maybeElapsed,
+      ...(allErrors.length > 0 && { error: allErrors }),
+      ...(Object.keys(experimentalComponents).length > 0 && _options.experimental && { experimental: experimentalComponents }),
+      ...(apiResult?.requestId && { requestId: apiResult.requestId }),
+      ...(apiResult?.metadata && { metadata: apiResult.metadata }),
+    };
+
+    return result;
+  } catch (e) {
+    return {
+      thumbmark: '',
+      components: {},
+      info: {},
+      version: getVersion(),
+      error: [{ type: 'fatal', message: e instanceof Error ? e.message : String(e) }],
+    };
   }
-
-  // Only add 'elapsed' if performance is true
-  const allElapsed = { ...elapsed, ...experimentalElapsed };
-  const maybeElapsed = _options.performance ? { elapsed: allElapsed } : {};
-  const apiComponents = filterThumbmarkData(apiResult?.components || {}, _options);
-  const components = { ...clientComponentsResult, ...apiComponents };
-  const info: infoInterface = apiResult?.info || { uniqueness: { score: 'api only' } };
-
-  // Use API thumbmark if available to ensure API/client sync, otherwise calculate locally
-  const thumbmark = apiResult?.thumbmark ?? hash(stableStringify(components));
-  const version = getVersion();
-
-  // Only log to server when not in debug mode
-  if (shouldLog) {
-    logThumbmarkData(thumbmark, components, _options, experimentalComponents).catch(() => { /* do nothing */ });
-  }
-
-  const result: ThumbmarkResponse = {
-    ...(apiResult?.visitorId && { visitorId: apiResult.visitorId }),
-    thumbmark,
-    components: components,
-    info,
-    version,
-    ...maybeElapsed,
-    ...(Object.keys(experimentalComponents).length > 0 && _options.experimental && { experimental: experimentalComponents }),
-    ...(apiResult?.requestId && { requestId: apiResult.requestId }),
-    ...(apiResult?.metadata && { metadata: apiResult.metadata }),
-  };
-
-  return result;
 }
 
 // ===================== Component Resolution & Performance =====================
@@ -150,7 +178,7 @@ export async function getThumbmark(options?: optionsInterface): Promise<Thumbmar
 export async function resolveClientComponents(
   comps: { [key: string]: (options?: optionsInterface) => Promise<componentInterface | null> },
   options?: optionsInterface
-): Promise<{ elapsed: Record<string, number>, resolvedComponents: componentInterface }> {
+): Promise<{ elapsed: Record<string, number>, resolvedComponents: componentInterface, errors: ThumbmarkError[] }> {
   const opts = { ...defaultOptions, ...options };
   const filtered = Object.entries(comps)
     .filter(([key]) => !opts?.exclude?.includes(key))
@@ -165,16 +193,25 @@ export async function resolveClientComponents(
 
   const elapsed: Record<string, number> = {};
   const resolvedComponentsRaw: Record<string, componentInterface> = {};
+  const errors: ThumbmarkError[] = [];
 
-  resolvedValues.forEach((value, index) => {
-    if (value.value != null) {
-      resolvedComponentsRaw[keys[index]] = value.value;
-      elapsed[keys[index]] = value.elapsed ?? 0;
+  resolvedValues.forEach((result, index) => {
+    const key = keys[index];
+    elapsed[key] = result.elapsed ?? 0;
+
+    if (result.error === 'timeout') {
+      errors.push({ type: 'component_timeout', message: `Component '${key}' timed out`, component: key });
+    } else if (result.error) {
+      errors.push({ type: 'component_error', message: result.error, component: key });
+    }
+
+    if (result.value != null) {
+      resolvedComponentsRaw[key] = result.value;
     }
   });
 
   const resolvedComponents = filterThumbmarkData(resolvedComponentsRaw, opts);
-  return { elapsed, resolvedComponents };
+  return { elapsed, resolvedComponents, errors };
 }
 
 export { globalIncludeComponent as includeComponent };

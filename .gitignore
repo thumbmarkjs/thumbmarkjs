@@ -6,3 +6,6 @@ dist
 .idea
 fingerprint-ideas.md
 test-results
+.claude
+.vscode
+.serena

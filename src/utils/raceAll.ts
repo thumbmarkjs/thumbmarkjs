@@ -10,6 +10,7 @@ export function delay<T>(t: number, val: T): DelayedPromise<T> {
 export interface RaceResult<T> {
   value: T;
   elapsed?: number;
+  error?: string;
 }
 
 export function raceAllPerformance<T>(
@@ -24,15 +25,15 @@ export function raceAllPerformance<T>(
         p.then((value) => ({
           value,
           elapsed: performance.now() - startTime,
-        })).catch(() => ({
-          // Keep behavior aligned with timeout: a failed component falls back
-          // to timeoutVal instead of rejecting the entire Promise.all.
+        })).catch((err: unknown) => ({
           value: timeoutVal,
           elapsed: performance.now() - startTime,
+          error: err instanceof Error ? err.message : String(err),
         })),
         delay(timeoutTime, timeoutVal).then((value) => ({
           value,
           elapsed: performance.now() - startTime,
+          error: 'timeout' as string,
         })),
       ]);
     })

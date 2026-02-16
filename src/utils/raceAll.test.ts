@@ -51,6 +51,7 @@ describe('raceAllPerformance', () => {
         expect(results).toHaveLength(1);
         expect(results[0].value).toBe('ok');
         expect(typeof results[0].elapsed).toBe('number');
+        expect(results[0].error).toBeUndefined();
     });
 
     test('returns timeout fallback when promise does not settle in time', async () => {
@@ -63,6 +64,7 @@ describe('raceAllPerformance', () => {
 
         expect(results).toHaveLength(1);
         expect(results[0].value).toBe('timeout');
+        expect(results[0].error).toBe('timeout');
     });
 
     test('does not reject the whole batch when one promise rejects', async () => {
@@ -77,6 +79,8 @@ describe('raceAllPerformance', () => {
 
         expect(results).toHaveLength(2);
         expect(results[0].value).toBe('timeout');
+        expect(results[0].error).toBe('component failed');
         expect(results[1].value).toBe('ok');
+        expect(results[1].error).toBeUndefined();
     });
 });

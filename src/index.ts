@@ -3,7 +3,7 @@ import {
     getFingerprintData,
     getFingerprintPerformance
 } from './functions/legacy_functions'
-import { getThumbmark, ThumbmarkResponse } from './functions'
+import { getThumbmark, ThumbmarkResponse, ThumbmarkError } from './functions'
 import { getVersion } from './utils/version';
 import { setOption, optionsInterface, stabilizationExclusionRules } from './options'
 import { includeComponent } from './factory'
@@ -12,7 +12,7 @@ import { filterThumbmarkData } from './functions/filterComponents'
 import { stableStringify } from './utils/stableStringify'
 
 export {
-    Thumbmark, getThumbmark, getVersion, ThumbmarkResponse,
+    Thumbmark, getThumbmark, getVersion, ThumbmarkResponse, ThumbmarkError,
 
     // Filtering functions for server-side use
     filterThumbmarkData, optionsInterface, stabilizationExclusionRules,
