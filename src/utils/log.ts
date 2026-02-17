@@ -1,6 +1,7 @@
 import { componentInterface } from '../factory';
 import { optionsInterface, DEFAULT_API_ENDPOINT } from '../options';
 import { getVersion } from './version';
+import type { ThumbmarkError } from '../functions';
 
 // ===================== Logging (Internal) =====================
 
@@ -9,7 +10,7 @@ import { getVersion } from './version';
  * You can disable this by setting options.logging to false.
  * @internal
  */
-export async function logThumbmarkData(thisHash: string, thumbmarkData: componentInterface, options: optionsInterface, experimentalData: componentInterface = {}): Promise<void> {
+export async function logThumbmarkData(thisHash: string, thumbmarkData: componentInterface, options: optionsInterface, experimentalData: componentInterface = {}, errors: ThumbmarkError[] = []): Promise<void> {
     const apiEndpoint = DEFAULT_API_ENDPOINT;
     const url = `${apiEndpoint}/log`;
     const payload = {
@@ -19,6 +20,7 @@ export async function logThumbmarkData(thisHash: string, thumbmarkData: componen
         version: getVersion(),
         options,
         path: window?.location?.pathname,
+        ...(errors.length > 0 && { errors }),
     };
 
     sessionStorage.setItem("_tmjs_l", "1");

@@ -138,7 +138,7 @@ export async function getThumbmark(options?: optionsInterface): Promise<Thumbmar
 
     // Only log to server when not in debug mode
     if (shouldLog) {
-      logThumbmarkData(thumbmark, components, _options, experimentalComponents).catch(() => { /* do nothing */ });
+      logThumbmarkData(thumbmark, components, _options, experimentalComponents, allErrors).catch(() => { /* do nothing */ });
     }
 
     const result: ThumbmarkResponse = {
