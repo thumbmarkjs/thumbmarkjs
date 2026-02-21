@@ -90,11 +90,6 @@ describe('getBrowser', () => {
       ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.110 Safari/537.36 Vivaldi/6.4.3160.49',
       expected: { name: 'Vivaldi', version: '6.4.3160.49' },
     },
-    // Brave (Windows)
-    {
-      ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.110 Safari/537.36 Brave/1.62.153',
-      expected: { name: 'Brave', version: '1.62.153' },
-    },
     // Unknown
     {
       ua: 'SomeRandomUserAgent/1.0',

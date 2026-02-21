@@ -4,7 +4,13 @@ interface BrowserResult {
     version: string;
   }
 
-  // Define a function to parse the user agent string and return the browser name and version
+// Browser detection strategy for privacy browsers that mask their user agent
+interface BrowserDetectionStrategy {
+  name: string;
+  detect: () => boolean;
+}
+
+// Define a function to parse the user agent string and return the browser name and version
 export function getBrowser(): BrowserResult {
   if (typeof navigator === 'undefined') {
     return {
@@ -12,7 +18,28 @@ export function getBrowser(): BrowserResult {
       version: "unknown"
     }
   }
-  const ua = navigator.userAgent;
+
+  // Check for privacy browsers first (these mask their user agent)
+  const privacyBrowserStrategies: BrowserDetectionStrategy[] = [
+    {
+      name: 'Brave',
+      detect: () => !!(navigator as any).brave
+    }
+  ];
+
+  for (const strategy of privacyBrowserStrategies) {
+    if (strategy.detect()) {
+      const result = parseBrowserFromUA(navigator.userAgent);
+      return { name: strategy.name, version: result.version };
+    }
+  }
+
+  // Fall back to user agent parsing for standard browsers
+  return parseBrowserFromUA(navigator.userAgent);
+}
+
+// Parse browser from user agent string
+function parseBrowserFromUA(ua: string): BrowserResult {
   // DeviceAtlas authoritative regex order and patterns
   const regexes = [
     // Samsung Internet (Android)
@@ -26,8 +53,6 @@ export function getBrowser(): BrowserResult {
     /Opera Mobi\/(?<version>\d+(?:\.\d+)+)/,
     // Vivaldi
     /(?<name>Vivaldi)\/(?<version>\d+(?:\.\d+)+)/,
-    // Brave (Brave/1.62.153)
-    /(?<name>Brave)\/(?<version>\d+(?:\.\d+)+)/,
     // Chrome iOS (CriOS)
     /(?<name>CriOS)\/(?<version>\d+(?:\.\d+)+)/,
     // Firefox iOS (FxiOS)
@@ -55,7 +80,6 @@ export function getBrowser(): BrowserResult {
     'fxios': 'Firefox',
     'samsung': 'SamsungBrowser',
     'vivaldi': 'Vivaldi',
-    'brave': 'Brave',
   };
 
   for (const regex of regexes) {
