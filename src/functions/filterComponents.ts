@@ -12,61 +12,47 @@ import { getBrowser } from "../components/system/browser";
  * @param options - Filtering options
  * @returns Filtered object
  */
-export function filterThumbmarkData(
-    obj: componentInterface,
-    options?: optionsInterface,
-): componentInterface {
-    // Get current browser name and version
+/**
+ * Builds the full exclusion list from user options and stabilization rules,
+ * taking browser detection into account.
+ */
+export function getExcludeList(options?: optionsInterface, obj?: componentInterface): string[] {
     let browser = getBrowser();
-    
-    // Fallback to browser info from components if getBrowser() returns unknown (server-side)
-    if (browser.name === 'unknown' && obj.system && typeof obj.system === 'object' && !Array.isArray(obj.system)) {
-        const systemComponent = obj.system as componentInterface;
-        const browserInfo = systemComponent.browser;
-        if (browserInfo && typeof browserInfo === 'object' && !Array.isArray(browserInfo)) {
-            const browserComponent = browserInfo as componentInterface;
-            browser = {
-                name: (browserComponent.name as string) || 'unknown',
-                version: (browserComponent.version as string) || 'unknown'
-            };
-        }
+
+    // Fallback to component data when getBrowser() returns unknown (server-side)
+    if (browser.name === 'unknown' && obj) {
+        const b = (obj.system as componentInterface)?.browser as componentInterface | undefined;
+        if (b?.name) browser = { name: String(b.name), version: String(b.version || 'unknown') };
     }
-    
+
     const name = browser.name.toLowerCase();
-    const ver = browser.version.split('.')[0] || '0';
-    const majorVer = parseInt(ver, 10);
-
-    // Initialize excludeList with user-defined exclusions from options
+    const majorVer = parseInt(browser.version.split('.')[0] || '0', 10);
     const excludeList = [...(options?.exclude || [])];
-    const stabilizationOptions = options?.stabilize || [];
-    const includeList = options?.include || [];
+    const stabilizationOptions = [...new Set([...(options?.stabilize || []), 'always'])];
 
-    // Expand the excludeList based on stabilization rules
     for (const option of stabilizationOptions) {
         const rules = stabilizationExclusionRules[option as keyof typeof stabilizationExclusionRules];
         if (!rules) continue;
 
         for (const rule of rules) {
-            // A rule applies to all browsers if the 'browsers' key is not present.
-            const appliesToAllBrowsers = !('browsers' in rule);
-
-            // The 'rule.browsers?' optional chaining here safely handles the case where 'browsers' is missing.
-            const browserMatch = !appliesToAllBrowsers && rule.browsers?.some(browserRule => {
-                const match = browserRule.match(/(.+?)(>=)(\d+)/);
-                
-                if (match) {
-                    const [, ruleName, , ruleVersionStr] = match;
-                    const ruleVersion = parseInt(ruleVersionStr, 10);
-                    return name === ruleName && majorVer >= ruleVersion;
-                }
-                return name === browserRule;
-            });
-
-            if (appliesToAllBrowsers || browserMatch) {
+            if (!('browsers' in rule) || rule.browsers?.some(br => {
+                const m = br.match(/(.+?)(>=)(\d+)/);
+                return m ? name === m[1] && majorVer >= +m[3] : name === br;
+            })) {
                 excludeList.push(...rule.exclude);
             }
         }
     }
+
+    return excludeList;
+}
+
+export function filterThumbmarkData(
+    obj: componentInterface,
+    options?: optionsInterface,
+): componentInterface {
+    const excludeList = getExcludeList(options, obj);
+    const includeList = options?.include || [];
 
     /**
      * Inner recursive function to perform the actual filtering.

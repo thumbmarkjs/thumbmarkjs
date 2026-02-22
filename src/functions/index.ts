@@ -18,7 +18,7 @@ import {
 import { hash } from "../utils/hash";
 import { raceAllPerformance } from "../utils/raceAll";
 import { getVersion } from "../utils/version";
-import { filterThumbmarkData } from './filterComponents'
+import { filterThumbmarkData, getExcludeList } from './filterComponents'
 import { logThumbmarkData } from '../utils/log';
 import { getApiPromise, infoInterface } from "./api";
 import { stableStringify } from "../utils/stableStringify";
@@ -180,8 +180,10 @@ export async function resolveClientComponents(
   options?: optionsInterface
 ): Promise<{ elapsed: Record<string, number>, resolvedComponents: componentInterface, errors: ThumbmarkError[] }> {
   const opts = { ...defaultOptions, ...options };
+  const topLevelExcludes = getExcludeList(opts).filter(e => !e.includes('.'));
   const filtered = Object.entries(comps)
     .filter(([key]) => !opts?.exclude?.includes(key))
+    .filter(([key]) => !topLevelExcludes.includes(key))
     .filter(([key]) =>
       opts?.include?.some(e => e.includes('.'))
         ? opts?.include?.some(e => e.startsWith(key))

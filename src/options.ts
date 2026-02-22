@@ -78,7 +78,6 @@ export const stabilizationExclusionRules = {
         { exclude: ['canvas'], browsers: ['firefox', 'safari>=17', 'brave'] },
         { exclude: ['audio'], browsers: ['samsungbrowser', 'safari'] },
         { exclude: ['fonts'], browsers: ['firefox'] },
-        { exclude: ['speech'], browsers: ['brave'] },
         { exclude: ['audio.sampleHash', 'hardware.deviceMemory', 'header.acceptLanguage.q', 'system.hardwareConcurrency', 'plugins'], browsers: ['brave'] },
         { exclude: ['tls.extensions'], browsers: ['firefox', 'chrome', 'safari'] },
         { exclude: ['header.acceptLanguage'], browsers: ['edge', 'chrome'] },
@@ -97,5 +96,8 @@ export const stabilizationExclusionRules = {
     ],
     'vpn': [
         { exclude: ['ip'] },
+    ],
+    'always': [
+        { exclude: ['speech'], browsers: ['brave', 'firefox'] },
     ],
 }
