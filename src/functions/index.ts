@@ -63,16 +63,7 @@ export interface ThumbmarkResponse {
  * @param options - Options for fingerprinting and API
  * @returns ThumbmarkResponse (elapsed is present only if options.performance is true)
  */
-export async function getThumbmark(options?: optionsInterface): Promise<ThumbmarkResponse> {
-  return getThumbmarkWithCustomComponents(options);
-}
-
-/**
- * Internal helper used by Thumbmark instances so instance-scoped custom components
- * can be merged with the deprecated global custom component registry.
- * This is not intended as a stable public API.
- */
-export async function getThumbmarkWithCustomComponents(
+export async function getThumbmark(
   options?: optionsInterface,
   instanceCustomComponents: Record<string, componentFunctionInterface | null> = {}
 ): Promise<ThumbmarkResponse> {

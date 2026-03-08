@@ -1,5 +1,5 @@
 import { optionsInterface } from "./options";
-import { getThumbmarkWithCustomComponents, ThumbmarkResponse } from './functions';
+import { getThumbmark, ThumbmarkResponse } from './functions';
 import { getVersion } from "./utils/version";
 import { defaultOptions } from "./options";
 import { componentFunctionInterface, componentInterface } from "./factory";
@@ -28,7 +28,7 @@ export class Thumbmark {
      */
     public async get(overrideOptions?: optionsInterface): Promise<ThumbmarkResponse> {
       const finalOptions = { ...this.options, ...overrideOptions };
-      return getThumbmarkWithCustomComponents(finalOptions, this.customComponents);
+      return getThumbmark(finalOptions, this.customComponents);
     }
     public getVersion(): string {
       return getVersion()

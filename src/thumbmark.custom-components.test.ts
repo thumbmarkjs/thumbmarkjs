@@ -37,6 +37,19 @@ describe('Thumbmark custom components', () => {
         expect(result.components.legacyGlobal).toEqual({ value: 'global' });
     });
 
+    test('getThumbmark accepts an optional custom component registry', async () => {
+        const result = await getThumbmark({
+            logging: false,
+            include: ['directCustom']
+        }, {
+            directCustom: async () => ({
+                value: 'direct'
+            })
+        });
+
+        expect(result.components.directCustom).toEqual({ value: 'direct' });
+    });
+
     test('deprecated global includeComponent still registers components for Thumbmark.get()', async () => {
         includeGlobalComponent('legacyGlobal', async () => ({
             value: 'global'
