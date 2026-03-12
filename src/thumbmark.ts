@@ -1,8 +1,8 @@
 import { optionsInterface } from "./options";
-import { getThumbmark, includeComponent as globalIncludeComponent, ThumbmarkResponse } from './functions';
+import { getThumbmark, ThumbmarkResponse } from './functions';
 import { getVersion } from "./utils/version";
 import { defaultOptions } from "./options";
-import { componentInterface } from "./factory";
+import { componentFunctionInterface, componentInterface } from "./factory";
 
 /**
  * A client for generating thumbmarks with a persistent configuration.
@@ -10,6 +10,7 @@ import { componentInterface } from "./factory";
     
 export class Thumbmark {
     private options: optionsInterface;
+    private customComponents: Record<string, componentFunctionInterface | null>;
   
     /**
      * Creates a new Thumbmarker client instance.
@@ -17,6 +18,7 @@ export class Thumbmark {
      */
     constructor(options?: optionsInterface) {
       this.options = { ...defaultOptions, ...options };
+      this.customComponents = {};
     }
   
     /**
@@ -26,7 +28,7 @@ export class Thumbmark {
      */
     public async get(overrideOptions?: optionsInterface): Promise<ThumbmarkResponse> {
       const finalOptions = { ...this.options, ...overrideOptions };
-      return getThumbmark(finalOptions);
+      return getThumbmark(finalOptions, this.customComponents);
     }
     public getVersion(): string {
       return getVersion()
@@ -37,6 +39,6 @@ export class Thumbmark {
      * @param fn - The component function
      */
     public includeComponent(key: string, fn: (options?: optionsInterface) => Promise<componentInterface | null>) {
-      globalIncludeComponent(key, fn);
+      this.customComponents[key] = fn;
     }
 }

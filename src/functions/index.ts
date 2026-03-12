@@ -10,6 +10,7 @@ import { defaultOptions, OptionsAfterDefaults, optionsInterface } from "../optio
 import {
   timeoutInstance,
   componentInterface,
+  componentFunctionInterface,
   tm_component_promises,
   customComponents,
   tm_experimental_component_promises,
@@ -62,7 +63,10 @@ export interface ThumbmarkResponse {
  * @param options - Options for fingerprinting and API
  * @returns ThumbmarkResponse (elapsed is present only if options.performance is true)
  */
-export async function getThumbmark(options?: optionsInterface): Promise<ThumbmarkResponse> {
+export async function getThumbmark(
+  options?: optionsInterface,
+  instanceCustomComponents: Record<string, componentFunctionInterface | null> = {}
+): Promise<ThumbmarkResponse> {
   // Early exit for non-browser environments (Node.js, Jest, SSR)
   if (typeof document === 'undefined' || typeof window === 'undefined') {
     return {
@@ -82,7 +86,11 @@ export async function getThumbmark(options?: optionsInterface): Promise<Thumbmar
     const shouldLog = (_options.logging && !sessionStorage.getItem("_tmjs_l") && Math.random() < 0.0001);
 
     // Merge built-in and user-registered components
-    const allComponents = { ...tm_component_promises, ...customComponents };
+    const allComponents = {
+      ...tm_component_promises,
+      ...customComponents,
+      ...instanceCustomComponents,
+    } as Record<string, componentFunctionInterface>;
     const { elapsed, resolvedComponents: clientComponentsResult, errors: componentErrors } = await resolveClientComponents(allComponents, _options);
     allErrors.push(...componentErrors);
 

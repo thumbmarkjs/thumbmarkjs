@@ -113,6 +113,9 @@ const tm_api = new ThumbmarkJS.Thumbmark({
 ## Custom components
 
 You can add custom components to the hash with `includeComponent`, which takes two parameters, the `key` being the key of the component in the JSON and the function that returns the value (a string, a number or a JSON object). Custom components are described in [here in the documentation](https://docs.thumbmarkjs.com/docs/configuration/custom-components).
+`Thumbmark#includeComponent()` stores the component on that instance.
+For legacy compatibility, deprecated top-level `includeComponent()` registrations are still merged during execution.
+If both define the same key, the instance registration wins.
 
 
 ## Components included in fingerprint
