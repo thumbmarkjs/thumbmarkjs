@@ -46,8 +46,61 @@ export interface apiResponse {
 
 // ===================== API Call Logic =====================
 
+export class ApiError extends Error {
+    constructor(public status: number) {
+        super(`HTTP error! status: ${status}`);
+    }
+}
+
 let currentApiPromise: Promise<apiResponse> | null = null;
 let apiPromiseResult: apiResponse | null = null;
+
+const MAX_RETRIES = 3;
+const RETRY_BACKOFF_MS = 200;
+
+/**
+ * Calls the API endpoint once. Returns the response data on success.
+ * Throws ApiError on HTTP errors, or a native error on network failures.
+ */
+async function callApi(
+    endpoint: string, body: any, options: OptionsAfterDefaults, visitorId: string | null,
+): Promise<apiResponse> {
+    const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+            'x-api-key': options.api_key!,
+            'Authorization': 'custom-authorized',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+    });
+
+    if (!response.ok) throw new ApiError(response.status);
+
+    const data = await response.json();
+    if (data.visitorId && data.visitorId !== visitorId) setVisitorId(data.visitorId, options);
+    apiPromiseResult = data;
+    setCachedApiResponse(options, data);
+    return data;
+}
+
+/**
+ * Calls callApi with retries on network errors.
+ * HTTP errors (ApiError) are not retried — only network failures.
+ */
+async function callApiWithRetry(
+    endpoint: string, body: any, options: OptionsAfterDefaults, visitorId: string | null,
+): Promise<apiResponse> {
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+        if (attempt > 0) await new Promise(r => setTimeout(r, attempt * RETRY_BACKOFF_MS));
+        try {
+            return await callApi(endpoint, body, options, visitorId);
+        } catch (error) {
+            if (error instanceof ApiError || attempt === MAX_RETRIES - 1) throw error;
+        }
+    }
+    throw new Error('Unreachable');
+}
 
 /**
  * Calls the Thumbmark API with the given components, using caching and deduplication.
@@ -109,61 +162,19 @@ export const getApiPromise = (
         }
     }
 
-    const fetchPromise = fetch(endpoint, {
-        method: 'POST',
-        headers: {
-            'x-api-key': options.api_key!,
-            'Authorization': 'custom-authorized',
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-    })
-        .then(response => {
-            // Handle HTTP errors that aren't network errors
-            if (!response.ok) {
-                if (response.status === 403) {
-                    throw new Error('INVALID_API_KEY');
-                }
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            // Handle visitor ID from server response
-            if (data.visitorId && data.visitorId !== visitorId) {
-                setVisitorId(data.visitorId, options);
-            }
-            apiPromiseResult = data;      // Cache the successful result
-            setCachedApiResponse(options, data); // Cache to localStorage according to options
-            currentApiPromise = null;     // Clear the in-flight promise
-            return data;
-        })
-        .catch(error => {
-            currentApiPromise = null;     // Clear the in-flight promise on error
-            throw error;                  // Propagate all errors to caller
-        });
-
-    // Timeout logic
     const timeoutMs = options.timeout || 5000;
-    const timeoutPromise = new Promise<apiResponse>((resolve) => {
+
+    const apiCall = callApiWithRetry(endpoint, requestBody, options, visitorId)
+        .finally(() => { currentApiPromise = null; });
+
+    const timeout = new Promise<apiResponse>((resolve) => {
         setTimeout(() => {
-            // On timeout, try to return expired cache as fallback
-            // Note: getCache() returns cache regardless of expiry
             const cache = getCache(options);
-            if (cache && cache.apiResponse) {
-                resolve(cache.apiResponse);
-            } else {
-                // Even without caching, return the visitor ID if available
-                // (visitorId was already retrieved at the start of this function)
-                resolve({
-                    info: { timed_out: true },
-                    ...(visitorId && { visitorId }),
-                });
-            }
+            resolve(cache?.apiResponse || { info: { timed_out: true }, ...(visitorId && { visitorId }) });
         }, timeoutMs);
     });
 
-    currentApiPromise = Promise.race([fetchPromise, timeoutPromise]);
+    currentApiPromise = Promise.race([apiCall, timeout]);
     return currentApiPromise;
 };
 
