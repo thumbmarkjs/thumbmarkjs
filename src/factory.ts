@@ -14,6 +14,7 @@ import getFonts from "./components/fonts";
 import getHardware from "./components/hardware";
 import getLocales from "./components/locales";
 import getMath from "./components/math";
+import getMediaDevices from "./components/mediaDevices";
 import getPermissions from "./components/permissions";
 import getPlugins from "./components/plugins";
 import getScreen from "./components/screen";
@@ -35,6 +36,7 @@ export const tm_component_promises = {
     'hardware': getHardware,
     'locales': getLocales,
     'math': getMath,
+    'mediadevices': getMediaDevices,
     'permissions': getPermissions,
     'plugins': getPlugins,
     'screen': getScreen,
