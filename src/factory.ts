@@ -12,6 +12,7 @@ import getAudio from "./components/audio";
 import getCanvas from "./components/canvas";
 import getFonts from "./components/fonts";
 import getHardware from "./components/hardware";
+import getIntl from "./components/intl";
 import getLocales from "./components/locales";
 import getMath from "./components/math";
 import getPermissions from "./components/permissions";
@@ -33,6 +34,7 @@ export const tm_component_promises = {
     'canvas': getCanvas,
     'fonts': getFonts,
     'hardware': getHardware,
+    'intl': getIntl,
     'locales': getLocales,
     'math': getMath,
     'permissions': getPermissions,
