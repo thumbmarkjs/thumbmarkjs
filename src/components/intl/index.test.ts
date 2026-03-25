@@ -92,7 +92,7 @@ describe('intl component tests', () => {
   test('returns null when Intl constructor throws', async () => {
     const mockIntl = Object.create(originalIntl);
     Object.defineProperty(mockIntl, 'DateTimeFormat', {
-      value: () => { throw new Error('broken'); },
+      value: function() { throw new Error('broken'); },
       configurable: true,
     });
     Object.defineProperty(globalThis, 'Intl', {
