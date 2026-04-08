@@ -1,4 +1,6 @@
 import { componentInterface } from '../../factory';
+import { hash } from '../../utils/hash';
+import { stableStringify } from '../../utils/stableStringify';
 
 export default async function getIntl(): Promise<componentInterface | null> {
   if (typeof Intl === 'undefined') {
@@ -8,7 +10,7 @@ export default async function getIntl(): Promise<componentInterface | null> {
   try {
     const date = new Date(Date.UTC(2024, 0, 15, 12, 30, 45));
 
-    const result: componentInterface = {
+    const details: componentInterface = {
       dateFullFormat: new Intl.DateTimeFormat('en-US', { dateStyle: 'full', timeZone: 'UTC' } as any).format(date),
       dateMediumFormat: new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeZone: 'UTC' } as any).format(date),
       timeFormat: new Intl.DateTimeFormat('en-US', { timeStyle: 'long', timeZone: 'UTC' } as any).format(date),
@@ -22,14 +24,17 @@ export default async function getIntl(): Promise<componentInterface | null> {
     const IntlAny = Intl as any;
 
     if (typeof IntlAny.ListFormat === 'function') {
-      result.listFormat = new IntlAny.ListFormat('en', { type: 'conjunction' }).format(['a', 'b', 'c']);
+      details.listFormat = new IntlAny.ListFormat('en', { type: 'conjunction' }).format(['a', 'b', 'c']);
     }
 
     if (typeof IntlAny.DisplayNames === 'function') {
-      result.displayNames = new IntlAny.DisplayNames('en', { type: 'region' }).of('US') || '';
+      details.displayNames = new IntlAny.DisplayNames('en', { type: 'region' }).of('US') || '';
     }
 
-    return result;
+    return {
+      details,
+      hash: hash(stableStringify(details)),
+    };
   } catch {
     return null;
   }

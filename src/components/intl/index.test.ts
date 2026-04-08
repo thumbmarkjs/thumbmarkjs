@@ -15,14 +15,18 @@ describe('intl component tests', () => {
     const result = await getIntl();
 
     expect(result).not.toBeNull();
+    expect(result).toHaveProperty('hash');
+    expect(result).toHaveProperty('details');
+    expect(typeof result!.hash).toBe('string');
+    const details = result!.details as Record<string, unknown>;
     const coreKeys = [
       'dateFullFormat', 'dateMediumFormat', 'timeFormat',
       'numberFormat', 'currencyFormat', 'percentFormat',
       'nonLatinDate', 'nonLatinNumber',
     ];
     for (const key of coreKeys) {
-      expect(result).toHaveProperty(key);
-      expect(typeof result![key]).toBe('string');
+      expect(details).toHaveProperty(key);
+      expect(typeof details[key]).toBe('string');
     }
   });
 
@@ -50,10 +54,11 @@ describe('intl component tests', () => {
     });
 
     const result = await getIntl();
+    const details = result!.details as Record<string, unknown>;
 
     expect(result).not.toBeNull();
-    expect(result).toHaveProperty('dateFullFormat');
-    expect(result).not.toHaveProperty('listFormat');
+    expect(details).toHaveProperty('dateFullFormat');
+    expect(details).not.toHaveProperty('listFormat');
   });
 
   test('omits displayNames when DisplayNames is unavailable', async () => {
@@ -69,23 +74,25 @@ describe('intl component tests', () => {
     });
 
     const result = await getIntl();
+    const details = result!.details as Record<string, unknown>;
 
     expect(result).not.toBeNull();
-    expect(result).toHaveProperty('dateFullFormat');
-    expect(result).not.toHaveProperty('displayNames');
+    expect(details).toHaveProperty('dateFullFormat');
+    expect(details).not.toHaveProperty('displayNames');
   });
 
   test('includes guarded probes when available', async () => {
     const result = await getIntl();
+    const details = result!.details as Record<string, unknown>;
 
     expect(result).not.toBeNull();
     if (typeof (Intl as any).ListFormat === 'function') {
-      expect(result).toHaveProperty('listFormat');
-      expect(typeof result!.listFormat).toBe('string');
+      expect(details).toHaveProperty('listFormat');
+      expect(typeof details.listFormat).toBe('string');
     }
     if (typeof (Intl as any).DisplayNames === 'function') {
-      expect(result).toHaveProperty('displayNames');
-      expect(typeof result!.displayNames).toBe('string');
+      expect(details).toHaveProperty('displayNames');
+      expect(typeof details.displayNames).toBe('string');
     }
   });
 
@@ -107,10 +114,11 @@ describe('intl component tests', () => {
 
   test('produces deterministic number format output', async () => {
     const result = await getIntl();
+    const details = result!.details as Record<string, unknown>;
 
     expect(result).not.toBeNull();
-    expect(result!.numberFormat).toBe('123,456.789');
-    expect(result!.currencyFormat).toBe('$123,456.79');
-    expect(result!.percentFormat).toBe('46%');
+    expect(details.numberFormat).toBe('123,456.789');
+    expect(details.currencyFormat).toBe('$123,456.79');
+    expect(details.percentFormat).toBe('46%');
   });
 });
