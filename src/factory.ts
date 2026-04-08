@@ -21,6 +21,7 @@ import getSystem from "./components/system";
 import getWebGL from "./components/webgl";
 
 // Import experimental component functions
+import getIntl from "./components/intl";
 import getMediaDevices from "./components/mediaDevices";
 import getWebRTC from "./components/webrtc";
 import getMathML from "./components/mathml";
@@ -49,6 +50,7 @@ export const tm_component_promises = {
  * @description key->function map of experimental components. Only resolved during logging.
  */
 export const tm_experimental_component_promises = {
+    'intl': getIntl,
     'mathml': getMathML,
     'mediadevices': getMediaDevices,
 };
