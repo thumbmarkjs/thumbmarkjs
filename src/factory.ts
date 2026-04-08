@@ -22,6 +22,7 @@ import getWebGL from "./components/webgl";
 
 // Import experimental component functions
 import getIntl from "./components/intl";
+import getMediaDevices from "./components/mediaDevices";
 import getWebRTC from "./components/webrtc";
 import getMathML from "./components/mathml";
 import getSpeech from "./components/speech";
@@ -51,6 +52,7 @@ export const tm_component_promises = {
 export const tm_experimental_component_promises = {
     'intl': getIntl,
     'mathml': getMathML,
+    'mediadevices': getMediaDevices,
 };
 
 // the component interface is the form of the JSON object the function's promise must return

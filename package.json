@@ -1,6 +1,6 @@
 {
   "name": "@thumbmarkjs/thumbmarkjs",
-  "version": "1.7.5",
+  "version": "1.7.6",
   "description": "",
   "type": "module",
   "main": "./dist/thumbmark.cjs.js",

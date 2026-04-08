@@ -275,6 +275,57 @@ describe('getApiPromise timeout behavior', () => {
         expect(result?.visitorId).toBe(storedVisitorId);
     });
 
+    test('retries on network error and succeeds on second attempt', async () => {
+        jest.useRealTimers();
+        const noCacheOptions = { ...testOptions, cache_api_call: false, timeout: 5000 };
+
+        mockFetch
+            .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+            .mockResolvedValueOnce({
+                ok: true, status: 200,
+                json: async () => ({ version: '1.0', thumbmark: 'retry-ok' }),
+            });
+
+        const result = await getApiPromise(noCacheOptions, testComponents);
+
+        expect(mockFetch).toHaveBeenCalledTimes(2);
+        expect(result?.thumbmark).toBe('retry-ok');
+        jest.useFakeTimers();
+    });
+
+    test('does not retry on 500 server error', async () => {
+        jest.useRealTimers();
+        const noCacheOptions = { ...testOptions, cache_api_call: false, timeout: 5000 };
+
+        mockFetch.mockResolvedValueOnce({ ok: false, status: 500 });
+
+        await expect(getApiPromise(noCacheOptions, testComponents)).rejects.toThrow('HTTP error! status: 500');
+        expect(mockFetch).toHaveBeenCalledTimes(1);
+        jest.useFakeTimers();
+    });
+
+    test('does not retry on 403 auth error', async () => {
+        jest.useRealTimers();
+        const noCacheOptions = { ...testOptions, cache_api_call: false, timeout: 5000 };
+
+        mockFetch.mockResolvedValueOnce({ ok: false, status: 403 });
+
+        await expect(getApiPromise(noCacheOptions, testComponents)).rejects.toThrow('HTTP error! status: 403');
+        expect(mockFetch).toHaveBeenCalledTimes(1);
+        jest.useFakeTimers();
+    });
+
+    test('network errors exhaust retries then throw', async () => {
+        jest.useRealTimers();
+        const noCacheOptions = { ...testOptions, cache_api_call: false, timeout: 5000 };
+
+        mockFetch.mockRejectedValue(new TypeError('Failed to fetch'));
+
+        await expect(getApiPromise(noCacheOptions, testComponents)).rejects.toThrow('Failed to fetch');
+        expect(mockFetch).toHaveBeenCalledTimes(3);
+        jest.useFakeTimers();
+    });
+
     test('returns full cached response (not just visitorId) when cache exists on timeout', async () => {
         const noCacheOptions = {
             ...testOptions,

@@ -21,7 +21,7 @@ import { raceAllPerformance } from "../utils/raceAll";
 import { getVersion } from "../utils/version";
 import { filterThumbmarkData, getExcludeList } from './filterComponents'
 import { logThumbmarkData } from '../utils/log';
-import { getApiPromise, infoInterface } from "./api";
+import { getApiPromise, ApiError, infoInterface } from "./api";
 import { stableStringify } from "../utils/stableStringify";
 
 
@@ -29,7 +29,7 @@ import { stableStringify } from "../utils/stableStringify";
  * Final thumbmark response structure
  */
 export interface ThumbmarkError {
-  type: 'component_timeout' | 'component_error' | 'api_timeout' | 'api_error' | 'api_unauthorized' | 'fatal';
+  type: 'component_timeout' | 'component_error' | 'api_timeout' | 'api_error' | 'api_unauthorized' | 'network_error' | 'fatal';
   message: string;
   component?: string;
 }
@@ -111,7 +111,7 @@ export async function getThumbmark(
       try {
         apiResult = await apiPromise;
       } catch (error) {
-        if (error instanceof Error && error.message === 'INVALID_API_KEY') {
+        if (error instanceof ApiError && error.status === 403) {
           return {
             error: [{ type: 'api_unauthorized', message: 'Invalid API key or quota exceeded' }],
             components: {},
@@ -120,9 +120,8 @@ export async function getThumbmark(
             thumbmark: ''
           };
         }
-        // Non-auth API errors (5xx, network): log error and continue without API data
         allErrors.push({
-          type: 'api_error',
+          type: error instanceof ApiError ? 'api_error' : 'network_error',
           message: error instanceof Error ? error.message : String(error)
         });
       }
