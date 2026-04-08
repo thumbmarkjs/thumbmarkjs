@@ -1,4 +1,5 @@
 import { componentInterface } from '../../factory'
+import { hash } from '../../utils/hash';
 
 // Get the OfflineAudioContext constructor if available
 const OfflineAudioContextClass = typeof window !== 'undefined'
@@ -39,7 +40,7 @@ async function createAudioFingerprint(): Promise<componentInterface> {
         samples = event.renderedBuffer.getChannelData(0);
         resolve(
             {
-                'sampleHash': calculateHash(samples),
+                'sampleHash': hash(samples.toString()),
                 'maxChannels': audioContext.destination.maxChannelCount,
                 'channelCountMode': audioBuffer.channelCountMode,
 
@@ -59,13 +60,4 @@ async function createAudioFingerprint(): Promise<componentInterface> {
   
   return resultPromise;
 
-}
-
-
-function calculateHash(samples: Float32Array) {
-  let hash = 0;
-  for (let i = 0; i < samples.length; ++i) {
-    hash += Math.abs(samples[i]);
-  }
-  return hash;
 }
