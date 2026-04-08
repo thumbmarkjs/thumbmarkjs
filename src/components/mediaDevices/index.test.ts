@@ -32,7 +32,10 @@ describe('mediaDevices component tests', () => {
 
     const result = await getMediaDevices();
 
-    expect(result).toEqual({
+    expect(result).toHaveProperty('hash');
+    expect(result).toHaveProperty('details');
+    expect(typeof result!.hash).toBe('string');
+    expect(result!.details).toEqual({
       audioinput: 1,
       audiooutput: 1,
       videoinput: 1,
@@ -66,7 +69,7 @@ describe('mediaDevices component tests', () => {
 
     const result = await getMediaDevices();
 
-    expect(result).toEqual({
+    expect(result!.details).toEqual({
       audioinput: 0,
       audiooutput: 0,
       videoinput: 0,
@@ -82,7 +85,7 @@ describe('mediaDevices component tests', () => {
 
     const result = await getMediaDevices();
 
-    expect(result).toEqual({
+    expect(result!.details).toEqual({
       audioinput: 1,
       audiooutput: 0,
       videoinput: 2,
@@ -99,7 +102,7 @@ describe('mediaDevices component tests', () => {
 
     const result = await getMediaDevices();
 
-    expect(result).toEqual({
+    expect(result!.details).toEqual({
       audioinput: 1,
       audiooutput: 0,
       videoinput: 1,
