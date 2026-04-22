@@ -28,6 +28,23 @@ export interface infoInterface {
     uniqueness?: {
         score: number | string
     },
+    country?: {
+        iso_code: string,
+        name: string,
+        continent: {
+            code: string,
+            name: string,
+        },
+    },
+    visitor?: {
+        id: string,
+        isNew: boolean,
+        firstSeen: string,
+        lastSeen: string,
+    },
+    signals?: {
+        timezone_country_mismatch?: boolean,
+    },
     timed_out?: boolean; // added for timeout handling
 }
 
