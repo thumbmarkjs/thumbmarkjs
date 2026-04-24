@@ -31,6 +31,11 @@ Mileage may vary though. Mac/Safari users tend to either clash more than Windows
 With the added entropy from an API call, that includes server-side components by investigating headers, TLS handshake signatures etc, it gets veeery unique. Over 99%.
 The visitor ID further improves both uniqueness and especially stability. Detailed statistics coming.
 
+## Share your experience
+
+Using ThumbmarkJS in your project? We'd love to hear about it!
+
+[Share your testimonial →](https://form.jotform.com/261132396063352)
 
 # Documentation : [docs.thumbmarkjs.com](https://docs.thumbmarkjs.com/docs/intro)
 
