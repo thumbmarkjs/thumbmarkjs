@@ -1,4 +1,29 @@
 export function getCommonPixels(images: ImageData[], width: number, height: number ): ImageData {
+    // Short-circuit: single image — every byte is trivially its own mode.
+    if (images.length === 1) {
+        return images[0];
+    }
+
+    // Fast path: exactly 3 images — inline 3-way comparison that mirrors
+    // getMostFrequent's tie-breaking exactly for all 5 value-combination cases:
+    //   all-equal → that value
+    //   a===b     → a (freq 2)
+    //   a===c     → a (freq 2)
+    //   b===c     → b (freq 2)
+    //   all-diff  → a (mostFrequent stays arr[0], no key beats freq 1)
+    if (images.length === 3) {
+        const a = images[0].data;
+        const b = images[1].data;
+        const c = images[2].data;
+        const out = new Uint8ClampedArray(a.length);
+        for (let i = 0; i < a.length; i++) {
+            const x = a[i], y = b[i], z = c[i];
+            out[i] = (x === y) ? x : (x === z) ? x : (y === z) ? y : x;
+        }
+        return new ImageData(out, width, height);
+    }
+
+    // Generic fallback for any other length (no current caller uses this path).
     let finalData: number[] = [];
     for (let i = 0; i < images[0].data.length; i++) {
         let indice: number[] = [];
