@@ -21,21 +21,31 @@ export function raceAllPerformance<T>(
   return Promise.all(
     promises.map((p) => {
       const startTime = performance.now();
-      return Promise.race([
-        p.then((value) => ({
-          value,
-          elapsed: performance.now() - startTime,
-        })).catch((err: unknown) => ({
+      let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+      const resultPromise = p.then((value) => {
+        if (timeoutId !== undefined) clearTimeout(timeoutId);
+        return { value, elapsed: performance.now() - startTime };
+      }).catch((err: unknown) => {
+        if (timeoutId !== undefined) clearTimeout(timeoutId);
+        return {
           value: timeoutVal,
           elapsed: performance.now() - startTime,
           error: err instanceof Error ? err.message : String(err),
-        })),
-        delay(timeoutTime, timeoutVal).then((value) => ({
-          value,
-          elapsed: performance.now() - startTime,
-          error: 'timeout' as string,
-        })),
-      ]);
+        };
+      });
+
+      const timeoutPromise = new Promise<RaceResult<T>>((resolve) => {
+        timeoutId = setTimeout(() => {
+          resolve({
+            value: timeoutVal,
+            elapsed: performance.now() - startTime,
+            error: 'timeout',
+          });
+        }, timeoutTime);
+      });
+
+      return Promise.race([resultPromise, timeoutPromise]);
     })
   );
 }
