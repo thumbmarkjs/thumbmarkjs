@@ -10,6 +10,15 @@ interface BrowserDetectionStrategy {
   detect: () => boolean;
 }
 
+// Module-scoped cache keyed on brave-marker + UA string.
+// Brave masks its UA so we must distinguish brave vs non-brave for the same UA.
+const browserCache = new Map<string, BrowserResult>();
+
+/** Test-only: reset the memoization cache between test runs. */
+export function __resetBrowserCache(): void {
+  browserCache.clear();
+}
+
 // Define a function to parse the user agent string and return the browser name and version
 export function getBrowser(): BrowserResult {
   if (typeof navigator === 'undefined') {
@@ -19,23 +28,34 @@ export function getBrowser(): BrowserResult {
     }
   }
 
+  const isBrave = !!(navigator as any).brave;
+  const cacheKey = (isBrave ? 'B|' : 'N|') + navigator.userAgent;
+  const cached = browserCache.get(cacheKey);
+  if (cached) return cached;
+
   // Check for privacy browsers first (these mask their user agent)
   const privacyBrowserStrategies: BrowserDetectionStrategy[] = [
     {
       name: 'Brave',
-      detect: () => !!(navigator as any).brave
+      detect: () => isBrave
     }
   ];
 
+  let result: BrowserResult;
+
   for (const strategy of privacyBrowserStrategies) {
     if (strategy.detect()) {
-      const result = parseBrowserFromUA(navigator.userAgent);
-      return { name: strategy.name, version: result.version };
+      const parsed = parseBrowserFromUA(navigator.userAgent);
+      result = { name: strategy.name, version: parsed.version };
+      browserCache.set(cacheKey, result);
+      return result;
     }
   }
 
   // Fall back to user agent parsing for standard browsers
-  return parseBrowserFromUA(navigator.userAgent);
+  result = parseBrowserFromUA(navigator.userAgent);
+  browserCache.set(cacheKey, result);
+  return result;
 }
 
 // Parse browser from user agent string
