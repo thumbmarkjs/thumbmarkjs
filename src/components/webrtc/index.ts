@@ -5,6 +5,7 @@ import { stableStringify } from '../../utils/stableStringify';
 
 export default async function getWebRTC(options?: optionsInterface): Promise<componentInterface | null> {
   return new Promise((resolve) => {
+    let connection: RTCPeerConnection | undefined;
     try {
       // Check if WebRTC is supported
       const RTCPeerConnection = (window as any).RTCPeerConnection || (window as any).webkitRTCPeerConnection || (window as any).mozRTCPeerConnection;
@@ -21,14 +22,17 @@ export default async function getWebRTC(options?: optionsInterface): Promise<com
         iceServers: []
       };
 
-      const connection = new RTCPeerConnection(config);
-      connection.createDataChannel(''); // trigger ICE gathering
+      connection = new RTCPeerConnection(config);
+      // Non-null assertion: connection was just assigned above; if the constructor
+      // had thrown we would not reach this line.
+      const conn: RTCPeerConnection = connection!;
+      conn.createDataChannel(''); // trigger ICE gathering
 
       const processOffer = async () => {
         try {
           const offerOptions = { offerToReceiveAudio: true, offerToReceiveVideo: true };
-          const offer = await connection.createOffer(offerOptions);
-          await connection.setLocalDescription(offer);
+          const offer = await conn.createOffer(offerOptions);
+          await conn.setLocalDescription(offer);
 
           const sdp = offer.sdp || '';
 
@@ -81,39 +85,11 @@ export default async function getWebRTC(options?: optionsInterface): Promise<com
             extensionsHash: hash(stableStringify(extensions))
           };
 
-          // Set up for ICE candidate collection with timeout
-          // Use 60% of the total timeout to ensure this completes before the global timeout
-          const totalTimeout = options?.timeout || 5000;
-          const iceTimeout = Math.floor(totalTimeout * 0.9);
-
-          const result = await new Promise<componentInterface>((resolveResult) => {
-            const timeout = setTimeout(() => {
-              connection.removeEventListener('icecandidate', onIceCandidate);
-              connection.close();
-              resolveResult({
-                supported: true,
-                ...compressedData,
-                timeout: true
-              });
-            }, iceTimeout);
-
-            const onIceCandidate = (event: RTCPeerConnectionIceEvent) => {
-              const candidateObj = event.candidate;
-              if (!candidateObj || !candidateObj.candidate) return;
-
-              clearTimeout(timeout);
-              connection.removeEventListener('icecandidate', onIceCandidate);
-              connection.close();
-
-              resolveResult({
-                supported: true,
-                ...compressedData,
-                candidateType: candidateObj.type || ''
-              });
-            };
-
-            connection.addEventListener('icecandidate', onIceCandidate);
-          });
+          // With iceServers:[] only "host" candidates are generated, so waiting for
+          // the icecandidate event adds latency without any entropy gain. Close
+          // immediately and hard-code the known value to keep the hash stable.
+          conn.close();
+          const result = { supported: true, ...compressedData, candidateType: 'host' };
 
           resolve({
             details: result,
@@ -121,7 +97,7 @@ export default async function getWebRTC(options?: optionsInterface): Promise<com
           });
 
         } catch (error) {
-          connection.close();
+          conn.close();
           resolve({
             supported: true,
             error: `WebRTC offer failed: ${(error as Error).message}`
@@ -132,6 +108,7 @@ export default async function getWebRTC(options?: optionsInterface): Promise<com
       processOffer();
 
     } catch (error) {
+      connection?.close();
       resolve({
         supported: false,
         error: `WebRTC error: ${(error as Error).message}`
