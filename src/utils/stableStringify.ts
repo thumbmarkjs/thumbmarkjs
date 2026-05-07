@@ -22,7 +22,9 @@
  */
 export function stableStringify(data: any): string {
 
-    const seen: any[] = [];
+    // Use a Set for O(1) cycle detection instead of O(N) array indexOf.
+    // The serialisation logic (key sorting, value recursion, output format) is unchanged.
+    const seen = new Set<any>();
 
     return (function stringify(node: any): string | undefined {
         if (node && node.toJSON && typeof node.toJSON === 'function') {
@@ -47,11 +49,11 @@ export function stableStringify(data: any): string {
 
         if (node === null) return 'null';
 
-        if (seen.indexOf(node) !== -1) {
+        if (seen.has(node)) {
             throw new TypeError('Converting circular structure to JSON');
         }
 
-        const seenIndex = seen.push(node) - 1;
+        seen.add(node);
         const keys = Object.keys(node).sort();
         out = '';
 
@@ -64,7 +66,7 @@ export function stableStringify(data: any): string {
             out += JSON.stringify(key) + ':' + value;
         }
 
-        seen.splice(seenIndex, 1);
+        seen.delete(node);
         return '{' + out + '}';
     })(data) || '';
 }
