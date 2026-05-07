@@ -51,7 +51,6 @@ async function createAudioFingerprint(): Promise<componentInterface> {
       
   
     } catch (error) {
-      console.error('Error creating audio fingerprint:', error);
       reject(error);
     }
   
