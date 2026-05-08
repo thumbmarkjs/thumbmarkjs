@@ -52,6 +52,16 @@ interface WebGLCache {
 // Module-scope cache — only populated when _USE_CACHE is true (non-Brave).
 let _cache: WebGLCache | null = null;
 
+/** Test-only: reset the module-scope cache between test runs. */
+export function __resetWebGLCache(): void {
+    _cache = null;
+}
+
+/** Test-only: read the current cache reference without mutating it. */
+export function __getWebGLCache(): WebGLCache | null {
+    return _cache;
+}
+
 /**
  * Create a canvas, compile shaders, link program, and upload vertex data.
  * Returns null if any step fails so callers can degrade gracefully.
@@ -66,6 +76,15 @@ function setupWebGL(): WebGLCache | null {
 
         const gl = canvas.getContext('webgl');
         if (!gl) return null;
+
+        // When the browser invalidates GPU resources it fires webglcontextlost.
+        // Null the cache so the next getOrInitCache() rebuilds via a fresh setupWebGL().
+        // { once: true } ensures the listener self-removes after firing so the old
+        // canvas does not keep the WebGLCache object alive after recovery.
+        canvas.addEventListener('webglcontextlost', (event) => {
+            event.preventDefault();
+            _cache = null;
+        }, { once: true });
 
         const vertexShader = gl.createShader(gl.VERTEX_SHADER);
         const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
@@ -137,6 +156,9 @@ function renderImage(cache: WebGLCache): ImageData {
         gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, pixelData);
         return new ImageData(pixelData, canvas.width, canvas.height);
     } catch (_) {
+        // Belt-and-suspenders: any render failure (context loss, GPU driver glitch, etc.)
+        // invalidates the cache so the next call rebuilds rather than retrying with a stale context.
+        _cache = null;
         return new ImageData(1, 1);
     } finally {
         // Reset WebGL state to match pre-cache behaviour.
