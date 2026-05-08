@@ -91,16 +91,18 @@ export async function getThumbmark(
       ...customComponents,
       ...instanceCustomComponents,
     } as Record<string, componentFunctionInterface>;
-    const { elapsed, resolvedComponents: clientComponentsResult, errors: componentErrors } = await resolveClientComponents(allComponents, _options);
+    const { elapsed, resolvedComponents: clientComponentsResult, errors: componentErrors, pipelineTimings: mainPipelineTimings } = await resolveClientComponents(allComponents, _options);
     allErrors.push(...componentErrors);
 
     // Resolve experimental components only when logging
     let experimentalComponents = {};
     let experimentalElapsed = {};
+    let expPipelineTimings: Record<string, number> = {};
     if (shouldLog || _options.experimental) {
-      const { elapsed: expElapsed, resolvedComponents, errors: expErrors } = await resolveClientComponents(tm_experimental_component_promises, _options);
+      const { elapsed: expElapsed, resolvedComponents, errors: expErrors, pipelineTimings: expTimings } = await resolveClientComponents(tm_experimental_component_promises, _options);
       experimentalComponents = resolvedComponents;
       experimentalElapsed = expElapsed;
+      expPipelineTimings = expTimings;
       allErrors.push(...expErrors);
     }
 
@@ -132,15 +134,29 @@ export async function getThumbmark(
       allErrors.push({ type: 'api_timeout', message: 'API request timed out' });
     }
 
-    // Only add 'elapsed' if performance is true
-    const allElapsed = { ...elapsed, ...experimentalElapsed };
-    const maybeElapsed = _options.performance ? { elapsed: allElapsed } : {};
+    const filterStart = performance.now();
     const apiComponents = filterThumbmarkData(apiResult?.components || {}, _options);
+    const filterMs = performance.now() - filterStart;
+
     const components = { ...clientComponentsResult, ...apiComponents };
     const info: infoInterface = apiResult?.info || { uniqueness: { score: 'api only' } };
 
     // Use API thumbmark if available to ensure API/client sync, otherwise calculate locally
-    const thumbmark = apiResult?.thumbmark ?? hash(stableStringify(components));
+    let thumbmark: string;
+    let stringifyMs = 0;
+    let hashMs = 0;
+    if (apiResult?.thumbmark) {
+      thumbmark = apiResult.thumbmark;
+    } else {
+      const stringifyStart = performance.now();
+      const stringified = stableStringify(components);
+      stringifyMs = performance.now() - stringifyStart;
+
+      const hashStart = performance.now();
+      thumbmark = hash(stringified);
+      hashMs = performance.now() - hashStart;
+    }
+
     const version = getVersion();
 
     // Only log to server when not in debug mode
@@ -148,6 +164,26 @@ export async function getThumbmark(
       logThumbmarkData(thumbmark, components, _options, experimentalComponents, allErrors).catch(() => { /* do nothing */ });
     }
 
+    // Accumulate _pipeline timings from both the main and (if run) experimental component phases.
+    // Filter time includes: main component filter + optional experimental filter + apiComponents filter.
+    const expFilterMs = expPipelineTimings['_pipeline.filter'] ?? 0;
+    const _pipelineTimings: Record<string, number> = {
+      '_pipeline.dispatch': mainPipelineTimings['_pipeline.dispatch'],
+      '_pipeline.resolve': mainPipelineTimings['_pipeline.resolve'],
+      '_pipeline.filter': mainPipelineTimings['_pipeline.filter'] + expFilterMs + filterMs,
+      '_pipeline.stringify': stringifyMs,
+      '_pipeline.hash': hashMs,
+      '_pipeline.assembly': 0, // placeholder, updated below after result construction
+    };
+
+    // Only add 'elapsed' if performance is true
+    // allElapsed holds a live reference to _pipelineTimings entries via spread — we update assembly after.
+    // mainPipelineTimings contains both _pipeline.* keys (overridden by _pipelineTimings below) and
+    // _dispatch.<name> keys (per-component sync prelude timings) that flow through unchanged.
+    const allElapsed: Record<string, number> = { ...elapsed, ...experimentalElapsed, ...mainPipelineTimings, ..._pipelineTimings };
+    const maybeElapsed = _options.performance ? { elapsed: allElapsed } : {};
+
+    const assemblyStart = performance.now();
     const result: ThumbmarkResponse = {
       ...(apiResult?.visitorId && { visitorId: apiResult.visitorId }),
       thumbmark,
@@ -160,6 +196,8 @@ export async function getThumbmark(
       ...(apiResult?.requestId && { requestId: apiResult.requestId }),
       ...(apiResult?.metadata && { metadata: apiResult.metadata }),
     };
+    // Update assembly timing in allElapsed directly (allElapsed is the same object referenced by result.elapsed).
+    allElapsed['_pipeline.assembly'] = performance.now() - assemblyStart;
 
     return result;
   } catch (e) {
@@ -180,12 +218,12 @@ export async function getThumbmark(
  *
  * @param comps - Map of component functions
  * @param options - Options for filtering and timing
- * @returns Object with elapsed times and filtered resolved components
+ * @returns Object with elapsed times, filtered resolved components, errors, and pipeline phase timings
  */
 export async function resolveClientComponents(
   comps: { [key: string]: (options?: optionsInterface) => Promise<componentInterface | null> },
   options?: optionsInterface
-): Promise<{ elapsed: Record<string, number>, resolvedComponents: componentInterface, errors: ThumbmarkError[] }> {
+): Promise<{ elapsed: Record<string, number>, resolvedComponents: componentInterface, errors: ThumbmarkError[], pipelineTimings: Record<string, number> }> {
   const opts = { ...defaultOptions, ...options };
   const topLevelExcludes = getExcludeList(opts).filter(e => !e.includes('.'));
   const filtered = Object.entries(comps)
@@ -197,8 +235,20 @@ export async function resolveClientComponents(
         : opts?.include?.length === 0 || opts?.include?.includes(key)
     );
   const keys = filtered.map(([key]) => key);
-  const promises = filtered.map(([_, fn]) => fn(options));
+
+  const perComponentDispatch: Record<string, number> = {};
+  const dispatchStart = performance.now();
+  const promises = filtered.map(([key, fn]) => {
+    const t0 = performance.now();
+    const p = fn(options);
+    perComponentDispatch[`_dispatch.${key}`] = performance.now() - t0;
+    return p;
+  });
+  const dispatchMs = performance.now() - dispatchStart;
+
+  const resolveStart = performance.now();
   const resolvedValues = await raceAllPerformance(promises, opts?.timeout || 5000, timeoutInstance);
+  const resolveMs = performance.now() - resolveStart;
 
   const elapsed: Record<string, number> = {};
   const resolvedComponentsRaw: Record<string, componentInterface> = {};
@@ -219,8 +269,18 @@ export async function resolveClientComponents(
     }
   });
 
+  const filterStart = performance.now();
   const resolvedComponents = filterThumbmarkData(resolvedComponentsRaw, opts);
-  return { elapsed, resolvedComponents, errors };
+  const filterMs = performance.now() - filterStart;
+
+  const pipelineTimings: Record<string, number> = {
+    '_pipeline.dispatch': dispatchMs,
+    '_pipeline.resolve': resolveMs,
+    '_pipeline.filter': filterMs,
+    ...perComponentDispatch,
+  };
+
+  return { elapsed, resolvedComponents, errors, pipelineTimings };
 }
 
 export { globalIncludeComponent as includeComponent };

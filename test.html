@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>thumbmarkjs — local perf harness</title>
+<style>
+  body { font: 14px/1.45 -apple-system, system-ui, sans-serif; margin: 24px; color: #222; max-width: 920px; }
+  h1   { font-size: 18px; margin: 0 0 4px; }
+  .sub { color: #666; margin-bottom: 16px; word-break: break-all; }
+  .hint { background: #fff8e1; border-left: 3px solid #f5a623; padding: 10px 12px; margin: 12px 0; border-radius: 0 4px 4px 0; }
+  .hint code { background: #fff3c4; padding: 1px 5px; border-radius: 3px; }
+  .controls { margin: 12px 0; }
+  .controls > * { margin-right: 6px; }
+  button, select { font: inherit; padding: 6px 10px; border: 1px solid #888; border-radius: 4px; background: #fff; cursor: pointer; }
+  button:hover, select:hover { background: #f0f0f0; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  label { margin-left: 12px; }
+  input[type=number] { width: 50px; }
+  input[type=text]   { width: 80px; }
+  table { border-collapse: collapse; margin-top: 12px; min-width: 640px; }
+  th, td { padding: 4px 10px; border-bottom: 1px solid #eee; text-align: right; }
+  th:first-child, td:first-child { text-align: left; }
+  tbody tr:hover { background: #fafafa; }
+  .total { font-weight: 600; background: #f5f5f5; }
+  pre  { background: #f7f7f7; padding: 10px; border-radius: 4px; overflow: auto; max-height: 300px; }
+  .ok   { color: #0a7d28; }
+  .err  { color: #b00020; }
+  .warn { color: #b06000; }
+  .src-local { color: #1a5fb4; font-weight: 600; }
+  .src-cdn   { color: #813d9c; font-weight: 600; }
+</style>
+</head>
+<body>
+  <h1>thumbmarkjs perf harness</h1>
+  <div class="sub" id="meta">Loading…</div>
+
+  <div class="hint">
+    <strong>To emulate a mid-tier Android device:</strong><br>
+    Open DevTools (<code>⌘⌥I</code> / <code>F12</code>) → <strong>Performance</strong> tab → <strong>CPU</strong> dropdown → choose
+    <code>4× slowdown</code> (mid-tier, Lighthouse default — Moto G4 class) or
+    <code>6× slowdown</code> (low-tier).<br>
+    Then click <strong>Re-run</strong> below. The DevTools setting persists across re-runs while DevTools stays open;
+    a full page reload also keeps it.
+  </div>
+
+  <div class="controls">
+    <label>Source:
+      <select id="source-select">
+        <option value="local">Local build (./dist)</option>
+        <option value="cdn">CDN (latest published)</option>
+      </select>
+    </label>
+    <button id="run">Re-run</button>
+    <label>Iterations: <input id="iters" type="number" min="1" max="100" value="5"></label>
+    <label>Warm-up: <input id="warmup" type="number" min="0" max="10" value="1"></label>
+    <label>CPU note: <input id="cpu-note" type="text" placeholder="e.g. 4x"></label>
+  </div>
+
+  <div id="status">Initializing…</div>
+  <div id="results"></div>
+  <h3>Raw last-run elapsed</h3>
+  <pre id="raw"></pre>
+
+<script>
+// ---- Source resolution ----
+const SOURCES = {
+  local: { url: './dist/thumbmark.umd.js',
+           label: 'local build (./dist/thumbmark.umd.js)',
+           cssClass: 'src-local' },
+  cdn:   { url: 'https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.umd.js',
+           label: 'CDN — latest published @thumbmarkjs/thumbmarkjs',
+           cssClass: 'src-cdn' },
+};
+const params = new URLSearchParams(location.search);
+const sourceKey = params.get('source') === 'cdn' ? 'cdn' : 'local';
+const SOURCE = SOURCES[sourceKey];
+
+// ---- DOM refs ----
+const statusEl     = document.getElementById('status');
+const resultsEl    = document.getElementById('results');
+const rawEl        = document.getElementById('raw');
+const metaEl       = document.getElementById('meta');
+const runBtn       = document.getElementById('run');
+const itersIn      = document.getElementById('iters');
+const warmupIn     = document.getElementById('warmup');
+const cpuNote      = document.getElementById('cpu-note');
+const sourceSelect = document.getElementById('source-select');
+
+// ---- Source UI: sync dropdown to current state, change navigates ----
+sourceSelect.value = sourceKey;
+sourceSelect.addEventListener('change', (e) => {
+  const p = new URLSearchParams(location.search);
+  p.set('source', e.target.value);
+  location.search = p.toString();
+});
+
+metaEl.innerHTML = `Loading <span class="${SOURCE.cssClass}">${SOURCE.label}</span>…`;
+
+// Pre-fill cpu-note from ?cpu= query param if present.
+const qCpu = params.get('cpu');
+if (qCpu) cpuNote.value = qCpu;
+
+// ---- Helpers ----
+const median = (arr) => {
+  const s = [...arr].sort((a, b) => a - b);
+  const m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+};
+const fmt = (n) => n.toFixed(2);
+
+async function runHarness() {
+  if (typeof ThumbmarkJS === 'undefined') {
+    statusEl.innerHTML = `<span class="err">Failed: ThumbmarkJS UMD global not found. Source = ${SOURCE.url}</span>`;
+    return;
+  }
+  const ITERATIONS = Math.max(1, parseInt(itersIn.value, 10) || 5);
+  const WARMUP     = Math.max(0, parseInt(warmupIn.value, 10) || 0);
+  const noteTxt    = cpuNote.value.trim();
+
+  runBtn.disabled = true;
+  resultsEl.innerHTML = '';
+  rawEl.textContent = '';
+  statusEl.innerHTML = `<span class="warn">Running ${WARMUP} warm-up + ${ITERATIONS} measured iterations${noteTxt ? ' @ CPU '+noteTxt : ''} (source: <span class="${SOURCE.cssClass}">${sourceKey}</span>)…</span>`;
+
+  const tm = new ThumbmarkJS.Thumbmark({ performance: true });
+  metaEl.innerHTML = `<span class="${SOURCE.cssClass}">[${sourceKey}]</span> ${SOURCE.label} — version ${tm.getVersion()}${noteTxt ? ' — CPU note: '+noteTxt : ''}`;
+
+  for (let i = 0; i < WARMUP; i++) {
+    try { await tm.get(); } catch (e) {}
+  }
+
+  const runs = [];
+  for (let i = 0; i < ITERATIONS; i++) {
+    const t0 = performance.now();
+    let res;
+    try {
+      res = await tm.get();
+    } catch (e) {
+      statusEl.innerHTML = `<span class="err">Iteration ${i + 1} threw: ${e && e.message ? e.message : e}</span>`;
+      runBtn.disabled = false;
+      return;
+    }
+    const total = performance.now() - t0;
+    runs.push({ total, elapsed: res.elapsed || {}, thumbmark: res.thumbmark });
+  }
+
+  // Hash-stability sanity check across iterations
+  const distinctHashes = [...new Set(runs.map(r => r.thumbmark))];
+  if (distinctHashes.length > 1) {
+    console.warn('[thumbmarkjs perf] WARNING: thumbmark unstable across iterations:', distinctHashes);
+  }
+
+  const componentNames = new Set();
+  runs.forEach(r => Object.keys(r.elapsed).forEach(k => componentNames.add(k)));
+
+  const rows = [...componentNames].map(name => {
+    const samples = runs.map(r => r.elapsed[name] ?? 0);
+    return {
+      name,
+      median: median(samples),
+      min: Math.min(...samples),
+      max: Math.max(...samples),
+      samples,
+    };
+  }).sort((a, b) => b.median - a.median);
+
+  const totalMedian = median(runs.map(r => r.total));
+  const totalMin    = Math.min(...runs.map(r => r.total));
+  const totalMax    = Math.max(...runs.map(r => r.total));
+
+  let html = `
+    <table>
+      <thead>
+        <tr><th>Component</th><th>median (ms)</th><th>min</th><th>max</th><th>samples</th></tr>
+      </thead>
+      <tbody>
+        <tr class="total">
+          <td>TOTAL (tm.get wall-clock)</td>
+          <td>${fmt(totalMedian)}</td>
+          <td>${fmt(totalMin)}</td>
+          <td>${fmt(totalMax)}</td>
+          <td>${runs.map(r => fmt(r.total)).join(', ')}</td>
+        </tr>
+        ${rows.map(r => `
+          <tr>
+            <td>${r.name}</td>
+            <td>${fmt(r.median)}</td>
+            <td>${fmt(r.min)}</td>
+            <td>${fmt(r.max)}</td>
+            <td>${r.samples.map(fmt).join(', ')}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+  resultsEl.innerHTML = html;
+  statusEl.innerHTML = `<span class="ok">Done.</span> ${ITERATIONS} iterations after ${WARMUP} warm-up${noteTxt ? ' @ CPU '+noteTxt : ''} (source: <span class="${SOURCE.cssClass}">${sourceKey}</span>).`;
+  rawEl.textContent = JSON.stringify(runs[runs.length - 1].elapsed, null, 2);
+
+  console.log(`[thumbmarkjs perf] source=${sourceKey} version=${tm.getVersion()}${noteTxt ? ' CPU='+noteTxt : ''}`);
+  console.log('[thumbmarkjs perf] total median ms:', fmt(totalMedian));
+  console.log('[thumbmarkjs perf] thumbmark:', distinctHashes.length === 1 ? distinctHashes[0] : distinctHashes);
+  console.table(rows.map(r => ({
+    component: r.name,
+    median_ms: +fmt(r.median),
+    min_ms: +fmt(r.min),
+    max_ms: +fmt(r.max),
+  })));
+
+  // Encode results into document.title so external pollers (AppleScript) can
+  // read them without needing CDP / chrome-devtools MCP.
+  const titlePayload = {
+    source: sourceKey,
+    sourceUrl: SOURCE.url,
+    v: tm.getVersion(),
+    note: noteTxt || null,
+    iters: ITERATIONS,
+    warmup: WARMUP,
+    total: { median: +fmt(totalMedian), min: +fmt(totalMin), max: +fmt(totalMax) },
+    thumbmark: distinctHashes.length === 1 ? distinctHashes[0] : distinctHashes,
+    stable: distinctHashes.length === 1,
+    components: rows.map(r => ({
+      name: r.name,
+      median: +fmt(r.median),
+      min: +fmt(r.min),
+      max: +fmt(r.max),
+    })),
+  };
+  document.title = '__PERF__:' + JSON.stringify(titlePayload);
+
+  runBtn.disabled = false;
+}
+
+runBtn.addEventListener('click', runHarness);
+
+// ---- Load the chosen UMD build, then auto-run ----
+(function loadAndRun() {
+  const s = document.createElement('script');
+  s.src = SOURCE.url;
+  s.async = false;
+  s.onload = () => {
+    statusEl.textContent = 'Ready.';
+    runHarness();
+  };
+  s.onerror = () => {
+    statusEl.innerHTML = `<span class="err">Failed to load ${SOURCE.url}. ${
+      sourceKey === 'local'
+        ? 'Did you run <code>npm run build</code>?'
+        : 'Network error or CDN unreachable.'
+    }</span>`;
+  };
+  document.head.appendChild(s);
+})();
+</script>
+</body>
+</html>
