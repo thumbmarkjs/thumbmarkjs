@@ -161,6 +161,17 @@ describe('getExcludeList', () => {
         // Should not throw
         expect(() => getExcludeList({ ...defaultOptions }, obj)).not.toThrow();
     });
+
+    test('non-array string exclude does not throw and is ignored', () => {
+        const result = getExcludeList({ ...defaultOptions, exclude: 'one' as any, stabilize: [] });
+        expect(Array.isArray(result)).toBe(true);
+        expect(result).not.toContain('one');
+    });
+
+    test('non-array object exclude does not throw and is ignored', () => {
+        const result = getExcludeList({ ...defaultOptions, exclude: {} as any, stabilize: [] });
+        expect(Array.isArray(result)).toBe(true);
+    });
 });
 
 // ── filterThumbmarkData ─────────────────────────────────────────
@@ -234,5 +245,29 @@ describe('filterThumbmarkData', () => {
         expect(result.audio).toBeDefined();
         expect((result.audio as componentInterface).other).toBe('jkl');
         expect((result.audio as componentInterface).sampleHash).toBeUndefined();
+    });
+
+    test('non-array string include does not throw and does not rescue excluded keys', () => {
+        const result = filterThumbmarkData(testData, {
+            ...defaultOptions,
+            exclude: ['one'],
+            include: 'one' as any,
+            stabilize: [],
+        });
+        // Bad include is treated as empty, so 'one' stays excluded
+        expect(result.one).toBeUndefined();
+        expect(result.two).toBe(2);
+    });
+
+    test('null include does not throw and behaves as empty include', () => {
+        const result = filterThumbmarkData(testData, {
+            ...defaultOptions,
+            exclude: ['two'],
+            include: null as any,
+            stabilize: [],
+        });
+        // null include treated as empty, so 'two' stays excluded
+        expect(result.two).toBeUndefined();
+        expect(result.one).toBe('1');
     });
 });
