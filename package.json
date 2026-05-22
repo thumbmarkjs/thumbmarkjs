@@ -22,7 +22,8 @@
     "test": "jest",
     "test:e2e": "npx playwright test",
     "build": "rm -rf dist/* && rm -rf types/* && rollup -c",
-    "watch": "rollup -c -w"
+    "watch": "rollup -c -w",
+    "perf": "playwright test perf/perf.spec.ts"
   },
   "keywords": [
     "thumbmark",

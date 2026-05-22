@@ -10,3 +10,4 @@ test-results
 .vscode
 .serena
 specs
+perf/last-run.json
