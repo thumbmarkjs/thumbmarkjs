@@ -27,7 +27,7 @@ export function getExcludeList(options?: optionsInterface, obj?: componentInterf
 
     const name = browser.name.toLowerCase();
     const majorVer = parseInt(browser.version.split('.')[0] || '0', 10);
-    const excludeList = [...(options?.exclude || [])];
+    const excludeList = Array.isArray(options?.exclude) ? [...options.exclude] : [];
     const stabilizationOptions = [...new Set([...(options?.stabilize || []), 'always'])];
 
     for (const option of stabilizationOptions) {
@@ -52,7 +52,7 @@ export function filterThumbmarkData(
     options?: optionsInterface,
 ): componentInterface {
     const excludeList = getExcludeList(options, obj);
-    const includeList = options?.include || [];
+    const includeList = Array.isArray(options?.include) ? options.include : [];
 
     /**
      * Inner recursive function to perform the actual filtering.
@@ -84,6 +84,5 @@ export function filterThumbmarkData(
         return result;
     }
 
-    // Start the filtering process
     return performFilter(obj);
 }

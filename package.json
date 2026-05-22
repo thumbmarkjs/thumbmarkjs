@@ -1,6 +1,6 @@
 {
   "name": "@thumbmarkjs/thumbmarkjs",
-  "version": "1.9.0",
+  "version": "1.9.1",
   "description": "",
   "type": "module",
   "main": "./dist/thumbmark.cjs.js",
@@ -22,7 +22,8 @@
     "test": "jest",
     "test:e2e": "npx playwright test",
     "build": "rm -rf dist/* && rm -rf types/* && rollup -c",
-    "watch": "rollup -c -w"
+    "watch": "rollup -c -w",
+    "perf": "playwright test perf/perf.spec.ts"
   },
   "keywords": [
     "thumbmark",
