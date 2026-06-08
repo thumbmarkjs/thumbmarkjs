@@ -1,92 +1,73 @@
-# ThumbmarkJS
-![GitHub package.json dynamic](https://img.shields.io/github/package-json/version/ilkkapeltola/thumbmarkjs)
-![NPM Version](https://img.shields.io/npm/v/@thumbmarkjs/thumbmarkjs)
-![NPM Downloads](https://img.shields.io/npm/dm/%40thumbmarkjs%2Fthumbmarkjs)
-![jsDelivr hits](https://img.shields.io/jsdelivr/npm/hm/%40thumbmarkjs%2Fthumbmarkjs)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://www.thumbmarkjs.com/logo-dark.svg?v=2">
+  <source media="(prefers-color-scheme: light)" srcset="https://www.thumbmarkjs.com/logo-light.svg?v=2">
+  <img alt="ThumbmarkJS" src="https://www.thumbmarkjs.com/logo-dark.svg?v=2" height="60">
+</picture><br><br>
 
-ThumbmarkJS is now the world's best **free** browser fingerprinting JavaScript library. It is used to generate over a **billion thumbmarks** every month.
-Use this to prevent scammers and spammers for example. If you see this library being used for evil, contact me.
+[![NPM Version](https://img.shields.io/npm/v/@thumbmarkjs/thumbmarkjs)](https://www.npmjs.com/package/@thumbmarkjs/thumbmarkjs)
+[![NPM Downloads](https://img.shields.io/npm/dm/%40thumbmarkjs%2Fthumbmarkjs)](https://www.npmjs.com/package/@thumbmarkjs/thumbmarkjs)
+[![jsDelivr hits](https://img.shields.io/jsdelivr/npm/hm/%40thumbmarkjs%2Fthumbmarkjs)](https://www.jsdelivr.com/package/npm/@thumbmarkjs/thumbmarkjs)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
-🆓 The client ThumbmarkJS library is open source (MIT). The **free** open source library provides the best-in-class free browser fingerprinting technology and can be used also commercially.
+ThumbmarkJS is a free, open-source JavaScript browser fingerprinting library. Use it to identify returning visitors, detect fraud and bots, and more — all client-side, with no backend required.
 
-🆒 There also an enhanced **API version**. Learn more at [thumbmarkjs.com](https://www.thumbmarkjs.com).
+MIT-licensed and commercially usable, it is used on **60,000+ websites**, generating over a **billion fingerprints every month**.
 
-The API version:
-- Produces significantly **more unique fingerprints** by adding server-side components
-- Adds smart signals such as bot, vpn, tor & datacenter traffic detection, and also **threat level**
-- Provides uniqueness scoring
+## Try it now
 
+Visit the [live demo →](https://www.thumbmarkjs.com/resources/demo/) to see your browser's fingerprint and the individual components that make it up.
 
----
-
-🕺 Join the [ThumbmarkJS Discord channel](https://discord.gg/PAqxQ3TnDA) to discuss
-
-
-## How well does it perform?
-
-Even the client library alone works adequately to distinguish common browsers. Sampled data show a uniqueness of around 80%.
-
-Mileage may vary though. Mac/Safari users tend to either clash more than Windows users, or be too unique (noise in the components). It does depend on your audience, too.
-
-With the added entropy from an API call, that includes server-side components by investigating headers, TLS handshake signatures etc, it gets veeery unique. Over 99%.
-The visitor ID further improves both uniqueness and especially stability. Detailed statistics coming.
-
-## Share your experience
-
-Using ThumbmarkJS in your project? We'd love to hear about it!
-
-[Share your testimonial →](https://form.jotform.com/261132396063352)
-
-# Documentation : [docs.thumbmarkjs.com](https://docs.thumbmarkjs.com/docs/intro)
-
-This GitHub repository provides the very basic information on usage and installation. The web documentation is more thorough.
-
-## Import from jsDelivr
-
-Do [check the documentation](https://docs.thumbmarkjs.com/docs/category/installing--usage) for how to install and use ThumbmarkJS whether it is by importing from CDN or installing from NPM.
-
-Transpiled bundles are available on [JSDelivr](https://www.jsdelivr.com/package/npm/@thumbmarkjs/thumbmarkjs).
-
-Supported module formats:
-- UMD: https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.umd.js
-- CommonJS: https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.cjs.js
-- ESM: https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.esm.js
-
-You can run this in developer console for example as a test:
+Or paste this into your browser's developer console to get your fingerprint hash and component breakdown directly:
 
 ```javascript
-
 import('https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.umd.js')
-.then(() => {
-  const tm = new ThumbmarkJS.Thumbmark();
-  tm.get().then((res) => {
-      console.log(res)
+  .then(() => {
+    const tm = new ThumbmarkJS.Thumbmark();
+    tm.get().then((res) => console.log(res));
   })
-})
-
 ```
 
-## Install with NPM
+## Performance
 
-‼️ Please refer to the [documentation](https://docs.thumbmarkjs.com/docs/installation/usage-npm)
+The client library achieves ~80% uniqueness across general browser populations. Mac/Safari users can show higher collision rates or higher noise depending on the audience.
 
-However, you get it from NPM:
+### Need higher accuracy? Try the ThumbmarkJS API
+
+The open-source library is great for many use cases, but if you need production-grade accuracy for fraud prevention or user identification, the [ThumbmarkJS API](https://www.thumbmarkjs.com) takes it significantly further. A free tier is available.
+
+The API combines the client-side signals with server-side analysis — including TLS handshake details, HTTP headers, and connection-level data — to produce fingerprints with over 99% uniqueness. It also adds smart signals: bot detection, VPN and TOR detection, datacenter traffic identification, and a threat level score per visitor.
+
+[Learn more at thumbmarkjs.com →](https://www.thumbmarkjs.com)
+
+## Installation
+
+### NPM
 
 ```bash
 npm install @thumbmarkjs/thumbmarkjs
 ```
 
-:warning: the fingerprinting needs to run in a browser context. Let me know if the library fails on a server side import, that shouldn't happen. To calculate the components though, it needs the browser APIs.
+> ⚠️ ThumbmarkJS runs in the browser. It requires browser APIs to compute fingerprint components and cannot run server-side.
 
-## Integrations (React, Vue)
+See the [NPM usage guide →](https://docs.thumbmarkjs.com/docs/installation/usage-npm)
 
-React and Vue integration plugins are being worked on, [have a look](https://docs.thumbmarkjs.com/docs/category/integrations).
+### CDN (jsDelivr)
 
-## Options are... optional
+Transpiled bundles are available on [jsDelivr](https://www.jsdelivr.com/package/npm/@thumbmarkjs/thumbmarkjs):
 
-Thorough documentation about options are at [docs.thumbmarkjs.com](https://docs.thumbmarkjs.com/docs/configuration/options).
+| Format | URL |
+|---|---|
+| UMD | `https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.umd.js` |
+| CommonJS | `https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.cjs.js` |
+| ESM | `https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.esm.js` |
 
-Options are passed to the Thumbmark class constructor, like so:
+## Documentation
+
+Full documentation at **[docs.thumbmarkjs.com](https://docs.thumbmarkjs.com/docs/intro)** — including installation, configuration, integrations, and the API reference.
+
+### Configuration
+
+Options are passed to the `Thumbmark` constructor:
 
 ```javascript
 const tm = new ThumbmarkJS.Thumbmark({
@@ -94,57 +75,70 @@ const tm = new ThumbmarkJS.Thumbmark({
 })
 ```
 
-|  option |     type |                             example | what it does |
-| - | - | - | - |
-| api_key | string | 'ae8679607bf79f......' | Setting this to a key you've obtained from [https://thumbmarkjs.com](thumbmarkjs.com) makes thumbmarks incredibly more unique and enables **visitorId**
-| exclude | string[] | ['webgl', 'system.browser.version'] | Removes components from the fingerprint hash. An excluded top-level component improves performance. |
-| include | string[] | ['webgl', 'system.browser.version'] | Only includes the listed components. exclude still excludes included components. |
-| permissions_to_check | string[] | ['gyroscope', 'accelerometer'] | Checks only selected permissions. Like 'include', but more low-level. Permissions take the longest to resolve, so this is if you need to cut down some milliseconds. |
-| timeout | integer | 5000 | Default is 5000. Component timeout in milliseconds.
-| logging | boolean | true | Default is true. Some releases collect at most 0.01% logs to improve the library. This doesn't affect the user. |
-| performance | boolean | false | Default is false. Setting to true includes millisecond performance of component resolving |
-| stabilize | string[] | ['private', 'iframe'] | A preset exclusion list for different scenarios. Default is `['private', 'iframe']` which means thumbmark uses settings designed to stabilize for private browsing and iframes (i.e. thumbmark should be stable over those situations).
-| metadata | varies | 'event-123' | Passes metadata to webhooks. Does not affect thumbmark. |
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `api_key` | string | — | API key from [thumbmarkjs.com](https://thumbmarkjs.com). Enables server-side signals and visitorId. |
+| `exclude` | string[] | — | Components to exclude from the fingerprint hash. Excluding a top-level component also improves performance. |
+| `include` | string[] | — | Only include these components. `exclude` still applies. |
+| `permissions_to_check` | string[] | — | Limit which browser permissions are checked. Permissions are the slowest component to resolve. |
+| `timeout` | integer | 5000 | Component timeout in milliseconds. |
+| `logging` | boolean | true | At most 0.01% of runs collect anonymous logs to improve the library. Has no effect on users. |
+| `performance` | boolean | false | When true, includes per-component resolution time in milliseconds. |
+| `stabilize` | string[] | `['private', 'iframe']` | Preset exclusion list for stability across private browsing and iframes. |
+| `metadata` | varies | — | Passed to webhooks. Does not affect the fingerprint. |
 
-example usage:
+See the [configuration reference →](https://docs.thumbmarkjs.com/docs/configuration/options)
+
+### Integrations
+
+React, Vue, Angular, and Preact integration plugins are available. [See the integrations docs →](https://docs.thumbmarkjs.com/docs/category/integrations)
+
+### Fingerprint components
+
+ThumbmarkJS combines multiple browser fingerprinting techniques to maximise uniqueness. The following signals are collected client-side:
+
+- Audio fingerprinting
+- Canvas fingerprinting
+- WebGL fingerprinting and GPU info
+- Available fonts and rendering behaviour
+- Hardware details
+- Browser languages and timezone
+- Math precision characteristics
+- Browser permissions
+- Installed plugins
+- Screen details and media queries
+- Speech synthesis voices
+- System and browser details
+- WebRTC fingerprinting
+
+The following are available via the API only:
+
+- TLS handshake details
+- HTTP headers
+- Connection and IP details
+
+See the [full components reference →](https://docs.thumbmarkjs.com/docs/category/components)
+
+### Custom components
+
+Add your own signals to the fingerprint with `includeComponent(key, fn)`:
 
 ```javascript
-const tm_api = new ThumbmarkJS.Thumbmark({
-    api_key: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    exclude: ['math']
-});
+tm.includeComponent('my_signal', () => 'custom_value');
 ```
 
-## Custom components
+The function can return a string, number, or object. See the [custom components docs →](https://docs.thumbmarkjs.com/docs/configuration/custom-components)
 
-You can add custom components to the hash with `includeComponent`, which takes two parameters, the `key` being the key of the component in the JSON and the function that returns the value (a string, a number or a JSON object). Custom components are described in [here in the documentation](https://docs.thumbmarkjs.com/docs/configuration/custom-components).
-`Thumbmark#includeComponent()` stores the component on that instance.
-For legacy compatibility, deprecated top-level `includeComponent()` registrations are still merged during execution.
-If both define the same key, the instance registration wins.
+### Technical details
 
+The library is intentionally simple to build, extend, and audit. See [technical_details.md](technical_details.md) for an overview of the architecture.
 
-## Components included in fingerprint
-- audio fingerprint
-- canvas fingerprint
-- webgl fingerprint
-- available fonts and how they render
-- videocard
-- browser languages and time zone
-- browser permissions
-- available plugins
-- a ton of screen details including media queries
-- TLS handshake details (API only)
-- HTTP headers (API only)
-- Connection/IP details (API only)
+## Using ThumbmarkJS?
 
-## Technical details
+We'd love to hear about your use case. [Share your experience →](https://form.jotform.com/261132396063352)
 
-I wanted to create something that's easy to build, extend and use. If you're interested in how the library works, the structure is very simple.
+## Community & support
 
-Have a look at the [technical_details](technical_details.md)
-
-## Contact ThumbmarkJS
-
-- email: contact@thumbmarkjs.com
-
-- discord: https://discord.gg/PAqxQ3TnDA
+- 💬 [Discord](https://discord.gg/PAqxQ3TnDA) — questions, ideas, and discussion
+- 📧 [contact@thumbmarkjs.com](mailto:contact@thumbmarkjs.com)
+- 📖 [Documentation](https://docs.thumbmarkjs.com)
