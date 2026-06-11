@@ -7,7 +7,7 @@ Thank you for considering contributing to ThumbmarkJS\! Whether you're fixing a 
 - Open an issue before starting any significant piece of work, so we can align before you invest time building it  
 - All pull requests must include tests and pass the existing test suite  
 - Keep pull requests focused — one feature or fix per PR  
-- Be respectful and considerate in all interactions — see our [Code of Conduct](http://CODE_OF_CONDUCT.md)
+- Be respectful and considerate in all interactions — see our [Code of Conduct](CODE_OF_CONDUCT.md)
 
 ## What we need most
 
