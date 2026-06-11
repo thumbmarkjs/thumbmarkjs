@@ -119,7 +119,7 @@ npm run test:e2e
 
 Pull requests that don't include tests or break existing tests will not be merged.
 
-Working on your first pull request? [How to Contribute to an Open Source Project on GitHub](https://egghead.io/series/how-to-contribute-to-an-open-source-project-on-github) is a great free resource.
+Working on your first pull request? [How to Contribute to an Open Source Project on GitHub](https://egghead.io/courses/how-to-contribute-to-an-open-source-project-on-github) is a great free resource.
 
 ## Code review process
 
