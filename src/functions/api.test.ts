@@ -326,6 +326,88 @@ describe('getApiPromise timeout behavior', () => {
         jest.useFakeTimers();
     });
 
+    describe('endpoint URL construction', () => {
+        beforeEach(() => {
+            jest.useRealTimers();
+        });
+
+        afterEach(() => {
+            jest.useFakeTimers();
+        });
+
+        const baseOpts = {
+            ...testOptions,
+            cache_api_call: false,
+            timeout: 5000,
+        };
+
+        function resolveEndpoint(mockFetchInner: jest.Mock): string {
+            const call = mockFetchInner.mock.calls[0];
+            return call[0] as string;
+        }
+
+        test('default endpoint (no api_endpoint) appends /thumbmark', async () => {
+            const opts = { ...baseOpts };
+            delete (opts as any).api_endpoint;
+
+            mockFetch.mockResolvedValueOnce({
+                ok: true, status: 200,
+                json: async () => ({ thumbmark: 'ok' }),
+            });
+
+            await getApiPromise(opts, testComponents);
+            expect(resolveEndpoint(mockFetch)).toBe('https://api.thumbmarkjs.com/thumbmark');
+        });
+
+        test('custom origin without path appends /thumbmark', async () => {
+            const opts = { ...baseOpts, api_endpoint: 'https://x.example.com' };
+
+            mockFetch.mockResolvedValueOnce({
+                ok: true, status: 200,
+                json: async () => ({ thumbmark: 'ok' }),
+            });
+
+            await getApiPromise(opts, testComponents);
+            expect(resolveEndpoint(mockFetch)).toBe('https://x.example.com/thumbmark');
+        });
+
+        test('custom origin with bare trailing slash appends /thumbmark without double slash', async () => {
+            const opts = { ...baseOpts, api_endpoint: 'https://x.example.com/' };
+
+            mockFetch.mockResolvedValueOnce({
+                ok: true, status: 200,
+                json: async () => ({ thumbmark: 'ok' }),
+            });
+
+            await getApiPromise(opts, testComponents);
+            expect(resolveEndpoint(mockFetch)).toBe('https://x.example.com/thumbmark');
+        });
+
+        test('custom endpoint with a path is used as-is', async () => {
+            const opts = { ...baseOpts, api_endpoint: 'https://x.example.com/v2/fp' };
+
+            mockFetch.mockResolvedValueOnce({
+                ok: true, status: 200,
+                json: async () => ({ thumbmark: 'ok' }),
+            });
+
+            await getApiPromise(opts, testComponents);
+            expect(resolveEndpoint(mockFetch)).toBe('https://x.example.com/v2/fp');
+        });
+
+        test('malformed api_endpoint falls back to legacy append', async () => {
+            const opts = { ...baseOpts, api_endpoint: 'not-a-url' };
+
+            mockFetch.mockResolvedValueOnce({
+                ok: true, status: 200,
+                json: async () => ({ thumbmark: 'ok' }),
+            });
+
+            await getApiPromise(opts, testComponents);
+            expect(resolveEndpoint(mockFetch)).toBe('not-a-url/thumbmark');
+        });
+    });
+
     test('returns full cached response (not just visitorId) when cache exists on timeout', async () => {
         const noCacheOptions = {
             ...testOptions,

@@ -149,7 +149,15 @@ export const getApiPromise = (
 
     // 3. Otherwise, initiate a new API call with timeout.
     const apiEndpoint = options.api_endpoint || DEFAULT_API_ENDPOINT;
-    const endpoint = `${apiEndpoint}/thumbmark`;
+    let endpoint: string;
+    try {
+        const u = new URL(apiEndpoint);
+        endpoint = (u.pathname === '/' || u.pathname === '')
+            ? `${u.origin}/thumbmark`
+            : apiEndpoint.replace(/\/$/, '');
+    } catch {
+        endpoint = `${apiEndpoint}/thumbmark`;
+    }
     const visitorId = getVisitorId(options);
     const requestBody: any = {
         components,
