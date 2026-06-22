@@ -371,7 +371,8 @@ describe('getApiPromise timeout behavior', () => {
             expect(resolveEndpoint(mockFetch)).toBe('https://x.example.com/thumbmark');
         });
 
-        test('custom origin with bare trailing slash appends /thumbmark without double slash', async () => {
+        test('custom origin with bare trailing slash is used as-is (trailing slash = explicit "do not append" signal)', async () => {
+            // A trailing slash signals the caller provided a complete endpoint — do NOT append /thumbmark.
             const opts = { ...baseOpts, api_endpoint: 'https://x.example.com/' };
 
             mockFetch.mockResolvedValueOnce({
@@ -380,7 +381,7 @@ describe('getApiPromise timeout behavior', () => {
             });
 
             await getApiPromise(opts, testComponents);
-            expect(resolveEndpoint(mockFetch)).toBe('https://x.example.com/thumbmark');
+            expect(resolveEndpoint(mockFetch)).toBe('https://x.example.com/');
         });
 
         test('custom endpoint with a path is used as-is', async () => {

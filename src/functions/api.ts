@@ -152,9 +152,9 @@ export const getApiPromise = (
     let endpoint: string;
     try {
         const u = new URL(apiEndpoint);
-        endpoint = (u.pathname === '/' || u.pathname === '')
+        endpoint = (u.pathname === '/' && !apiEndpoint.endsWith('/'))
             ? `${u.origin}/thumbmark`
-            : apiEndpoint.replace(/\/$/, '');
+            : apiEndpoint;
     } catch {
         endpoint = `${apiEndpoint}/thumbmark`;
     }
