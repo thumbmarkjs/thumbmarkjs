@@ -32,7 +32,6 @@ export default async function getIntl(): Promise<componentInterface | null> {
     }
 
     return {
-      details,
       hash: hash(stableStringify(details)),
     };
   } catch {
