@@ -93,6 +93,47 @@ describe('resolveClientComponents runtime stability', () => {
     });
 });
 
+describe('getThumbmark API call gate', () => {
+    test('does not call fetch when neither api_key nor simple_request is set', async () => {
+        const fetchMock = jest.fn();
+        const originalFetch = global.fetch;
+        global.fetch = fetchMock;
+
+        await getThumbmark({
+            ...defaultOptions,
+            cache_api_call: false,
+        });
+
+        expect(fetchMock).not.toHaveBeenCalled();
+        global.fetch = originalFetch;
+    });
+
+    test('calls fetch when simple_request is true and no api_key is set', async () => {
+        const fetchMock = jest.fn().mockResolvedValue({
+            ok: true,
+            status: 200,
+            json: async () => ({ thumbmark: 'proxy-ok', info: {} }),
+        });
+        const originalFetch = global.fetch;
+        global.fetch = fetchMock;
+
+        const result = await getThumbmark({
+            ...defaultOptions,
+            simple_request: true,
+            cache_api_call: false,
+        });
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        const [, init] = fetchMock.mock.calls[0];
+        expect(init.headers['Content-Type']).toBe('text/plain');
+        expect(init.headers['x-api-key']).toBeUndefined();
+        expect(init.headers['Authorization']).toBeUndefined();
+        expect(result.thumbmark).toBeDefined();
+
+        global.fetch = originalFetch;
+    });
+});
+
 describe('getThumbmark error reporting', () => {
     test('returns api_unauthorized error for 403 response', async () => {
         const originalFetch = global.fetch;

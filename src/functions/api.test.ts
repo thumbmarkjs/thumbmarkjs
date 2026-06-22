@@ -409,6 +409,125 @@ describe('getApiPromise timeout behavior', () => {
         });
     });
 
+    describe('request headers', () => {
+        beforeEach(() => {
+            jest.useRealTimers();
+        });
+
+        afterEach(() => {
+            jest.useFakeTimers();
+        });
+
+        const baseOpts = {
+            ...testOptions,
+            cache_api_call: false,
+            timeout: 5000,
+        };
+
+        test('DEFAULT mode: fetch is called with Content-Type application/json, x-api-key, and Authorization', async () => {
+            mockFetch.mockResolvedValueOnce({
+                ok: true, status: 200,
+                json: async () => ({ thumbmark: 'ok' }),
+            });
+
+            await getApiPromise({ ...baseOpts, api_key: 'my-key' }, testComponents);
+
+            const [, init] = mockFetch.mock.calls[0];
+            expect(init.headers['Content-Type']).toBe('application/json');
+            expect(init.headers['x-api-key']).toBe('my-key');
+            expect(init.headers['Authorization']).toBe('custom-authorized');
+        });
+
+        test('simple_request: true → fetch is called with Content-Type text/plain, no x-api-key, no Authorization', async () => {
+            mockFetch.mockResolvedValueOnce({
+                ok: true, status: 200,
+                json: async () => ({ thumbmark: 'ok' }),
+            });
+
+            await getApiPromise({ ...baseOpts, simple_request: true, api_key: undefined }, testComponents);
+
+            const [, init] = mockFetch.mock.calls[0];
+            expect(init.headers['Content-Type']).toBe('text/plain');
+            expect(init.headers['x-api-key']).toBeUndefined();
+            expect(init.headers['Authorization']).toBeUndefined();
+        });
+
+        test('simple_request: true → body is still JSON.stringify output', async () => {
+            mockFetch.mockResolvedValueOnce({
+                ok: true, status: 200,
+                json: async () => ({ thumbmark: 'ok' }),
+            });
+
+            await getApiPromise({ ...baseOpts, simple_request: true, api_key: undefined }, testComponents);
+
+            const [, init] = mockFetch.mock.calls[0];
+            expect(() => JSON.parse(init.body as string)).not.toThrow();
+        });
+
+        test('DEFAULT mode: request body options does NOT contain api_key, but x-api-key header still set', async () => {
+            mockFetch.mockResolvedValueOnce({
+                ok: true, status: 200,
+                json: async () => ({ thumbmark: 'ok' }),
+            });
+
+            await getApiPromise({ ...baseOpts, api_key: 'my-key' }, testComponents);
+
+            const [, init] = mockFetch.mock.calls[0];
+            // Header must still carry the key
+            expect(init.headers['x-api-key']).toBe('my-key');
+            // Body must NOT expose the key
+            const body = JSON.parse(init.body as string);
+            expect(body.options.api_key).toBeUndefined();
+        });
+
+        test('simple_request mode: request body options does NOT contain api_key', async () => {
+            mockFetch.mockResolvedValueOnce({
+                ok: true, status: 200,
+                json: async () => ({ thumbmark: 'ok' }),
+            });
+
+            await getApiPromise({ ...baseOpts, simple_request: true, api_key: 'proxy-injected-key' }, testComponents);
+
+            const [, init] = mockFetch.mock.calls[0];
+            // simple_request: no api_key header either
+            expect(init.headers['x-api-key']).toBeUndefined();
+            // Body must NOT expose the key
+            const body = JSON.parse(init.body as string);
+            expect(body.options.api_key).toBeUndefined();
+        });
+    });
+
+    describe('API call gate', () => {
+        beforeEach(() => {
+            jest.useRealTimers();
+        });
+
+        afterEach(() => {
+            jest.useFakeTimers();
+        });
+
+        const baseOpts = {
+            ...testOptions,
+            cache_api_call: false,
+            timeout: 5000,
+        };
+
+        test('fires when simple_request is true and no api_key is set', async () => {
+            mockFetch.mockResolvedValueOnce({
+                ok: true, status: 200,
+                json: async () => ({ thumbmark: 'simple-ok' }),
+            });
+
+            const result = await getApiPromise(
+                { ...baseOpts, simple_request: true, api_key: undefined },
+                testComponents
+            );
+
+            expect(mockFetch).toHaveBeenCalledTimes(1);
+            expect(result?.thumbmark).toBe('simple-ok');
+        });
+    });
+
     test('returns full cached response (not just visitorId) when cache exists on timeout', async () => {
         const noCacheOptions = {
             ...testOptions,

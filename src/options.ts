@@ -19,6 +19,12 @@ export interface OptionsAfterDefaults {
     api_key?: string,
     api_endpoint?: string,
     /**
+     * When true, the API request is sent as a CORS "simple request" (Content-Type: text/plain,
+     * no custom headers). Use this when routing through a proxy that attaches the real API key.
+     * Requires neither api_key nor Authorization header from the client side.
+     */
+    simple_request?: boolean,
+    /**
      * @deprecated This will be removed in Thumbmarkjs 2.0, use cache_lifetime_in_ms instead
      */
     cache_api_call?: boolean,
@@ -58,6 +64,7 @@ export const defaultOptions: OptionsAfterDefaults = {
     cache_lifetime_in_ms: DEFAULT_CACHE_LIFETIME,
     performance: false,
     experimental: false,
+    simple_request: false,
     property_name_factory: (name: string) => {
         return `${DEFAULT_STORAGE_PREFIX}_${name}`;
     },

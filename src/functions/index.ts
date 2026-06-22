@@ -106,7 +106,7 @@ export async function getThumbmark(
       allErrors.push(...expErrors);
     }
 
-    const apiPromise = _options.api_key ? getApiPromise(_options, clientComponentsResult) : null;
+    const apiPromise = (_options.api_key || _options.simple_request) ? getApiPromise(_options, clientComponentsResult) : null;
     let apiResult = null;
 
     if (apiPromise) {

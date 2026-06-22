@@ -82,13 +82,16 @@ const RETRY_BACKOFF_MS = 200;
 async function callApi(
     endpoint: string, body: any, options: OptionsAfterDefaults, visitorId: string | null,
 ): Promise<apiResponse> {
-    const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
+    const headers: Record<string, string> = options.simple_request
+        ? { 'Content-Type': 'text/plain' }
+        : {
             'x-api-key': options.api_key!,
             'Authorization': 'custom-authorized',
             'Content-Type': 'application/json',
-        },
+        };
+    const response = await fetch(endpoint, {
+        method: 'POST',
+        headers,
         body: JSON.stringify(body),
     });
 
@@ -159,9 +162,11 @@ export const getApiPromise = (
         endpoint = `${apiEndpoint}/thumbmark`;
     }
     const visitorId = getVisitorId(options);
+    // Omit api_key from the body — in normal mode it goes in the x-api-key header; in simple_request mode it is proxy-injected.
+    const { api_key: _omitApiKey, ...optionsForBody } = options;
     const requestBody: any = {
         components,
-        options,
+        options: optionsForBody,
         clientHash: hash(stableStringify(components)),
         version: getVersion()
     };
