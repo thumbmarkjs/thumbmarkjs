@@ -1,1 +1,6 @@
+*.test.ts
+*.spec.ts
 **/*.test.ts
+**/*.spec.ts
+__tests__/
+__mocks__/
