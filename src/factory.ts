@@ -12,11 +12,8 @@ import getAudio from "./components/audio";
 import getCanvas from "./components/canvas";
 import getFonts from "./components/fonts";
 import getHardware from "./components/hardware";
-import getIntl from "./components/intl";
 import getLocales from "./components/locales";
 import getMath from "./components/math";
-import getMathML from "./components/mathml";
-import getMediaDevices from "./components/mediaDevices";
 import getPermissions from "./components/permissions";
 import getPlugins from "./components/plugins";
 import getScreen from "./components/screen";
@@ -25,6 +22,7 @@ import getWebGL from "./components/webgl";
 
 // Import experimental component functions
 import getWebRTC from "./components/webrtc";
+import getMathML from "./components/mathml";
 import getSpeech from "./components/speech";
 
 /**
@@ -35,11 +33,8 @@ export const tm_component_promises = {
     'canvas': getCanvas,
     'fonts': getFonts,
     'hardware': getHardware,
-    'intl': getIntl,
     'locales': getLocales,
     'math': getMath,
-    'mathml': getMathML,
-    'mediadevices': getMediaDevices,
     'permissions': getPermissions,
     'plugins': getPlugins,
     'screen': getScreen,
@@ -52,7 +47,9 @@ export const tm_component_promises = {
 /**
  * @description key->function map of experimental components. Only resolved during logging.
  */
-export const tm_experimental_component_promises: Record<string, never> = {};
+export const tm_experimental_component_promises = {
+    'mathml': getMathML,
+};
 
 // the component interface is the form of the JSON object the function's promise must return
 export interface componentInterface {
