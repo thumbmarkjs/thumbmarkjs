@@ -12,10 +12,8 @@ import getAudio from "./components/audio";
 import getCanvas from "./components/canvas";
 import getFonts from "./components/fonts";
 import getHardware from "./components/hardware";
-import getIntl from "./components/intl";
 import getLocales from "./components/locales";
 import getMath from "./components/math";
-import getMediaDevices from "./components/mediaDevices";
 import getPermissions from "./components/permissions";
 import getPlugins from "./components/plugins";
 import getScreen from "./components/screen";
@@ -35,10 +33,8 @@ export const tm_component_promises = {
     'canvas': getCanvas,
     'fonts': getFonts,
     'hardware': getHardware,
-    'intl': getIntl,
     'locales': getLocales,
     'math': getMath,
-    'mediadevices': getMediaDevices,
     'permissions': getPermissions,
     'plugins': getPlugins,
     'screen': getScreen,
