@@ -20,25 +20,26 @@ export default async function getMathML(): Promise<componentInterface | null> {
           }
 
           const structures = [
-            createMathML('integral', '<msubsup><mo>\u222B</mo><mi>a</mi><mi>b</mi></msubsup><mfrac><mrow><mi>f</mi><mo>(</mo><mi>x</mi><mo>)</mo></mrow><mrow><mi>g</mi><mo>(</mo><mi>x</mi><mo>)</mo></mrow></mfrac><mi>dx</mi>'),
-            createMathML('fraction', '<mfrac><mrow><mi>\u03C0</mi><mo>\u00D7</mo><msup><mi>r</mi><mn>2</mn></msup></mrow><mrow><mn>2</mn><mi>\u03C3</mi></mrow></mfrac>'),
-            createMathML('matrix', '<mo>[</mo><mtable><mtr><mtd><mi>\u03B1</mi></mtd><mtd><mi>\u03B2</mi></mtd></mtr><mtr><mtd><mi>\u03B3</mi></mtd><mtd><mi>\u03B4</mi></mtd></mtr></mtable><mo>]</mo>'),
+            createMathML('<msubsup><mo>\u222B</mo><mi>a</mi><mi>b</mi></msubsup><mfrac><mrow><mi>f</mi><mo>(</mo><mi>x</mi><mo>)</mo></mrow><mrow><mi>g</mi><mo>(</mo><mi>x</mi><mo>)</mo></mrow></mfrac><mi>dx</mi>'),
+            createMathML('<mfrac><mrow><mi>\u03C0</mi><mo>\u00D7</mo><msup><mi>r</mi><mn>2</mn></msup></mrow><mrow><mn>2</mn><mi>\u03C3</mi></mrow></mfrac>'),
+            createMathML('<mo>[</mo><mtable><mtr><mtd><mi>\u03B1</mi></mtd><mtd><mi>\u03B2</mi></mtd></mtr><mtr><mtd><mi>\u03B3</mi></mtd><mtd><mi>\u03B4</mi></mtd></mtr></mtable><mo>]</mo>'),
             createComplexNestedStructure(),
             ...createSymbolStructures()
           ];
 
-          const dimensionsArray: any[] = [];
+          const dimensionsArray: Array<{ width: number; height: number }> = [];
           let fontStyleHash: string = '';
 
           structures.forEach((struct, i) => {
             const measurement = measureMathMLStructure(struct, iframe);
+            if (!('dimensions' in measurement)) return;
             // Extract dimensions for this structure
             dimensionsArray.push({
               width: measurement.dimensions.width,
               height: measurement.dimensions.height
             });
             // Capture font style hash from the first structure (it's the same for all)
-            if (i === 0 && measurement.fontInfo) {
+            if (i === 0) {
               fontStyleHash = hash(stableStringify(measurement.fontInfo));
             }
           });
@@ -49,8 +50,6 @@ export default async function getMathML(): Promise<componentInterface | null> {
           };
 
           resolve({
-            //supported: true,
-            details,
             hash: hash(stableStringify(details))
           });
 
@@ -87,7 +86,7 @@ function isMathMLSupported(iframe: Document): boolean {
   }
 }
 
-function createMathML(name: string, content: string): string {
+function createMathML(content: string): string {
   return `<math><mrow>${content}</mrow></math>`;
 }
 
@@ -104,7 +103,7 @@ function createComplexNestedStructure(): string {
     }
   });
 
-  return createMathML('complex_nested',
+  return createMathML(
     `<munderover><mmultiscripts>${nestedContent}</mmultiscripts></munderover>`
   );
 }
@@ -119,7 +118,7 @@ function createSymbolStructures(): string[] {
     const greekSet = GREEK_SYMBOLS.slice(startIdx, startIdx + 2);
 
     if (greekSet.length === 2) {
-      structures.push(createMathML('combined',
+      structures.push(createMathML(
         `<mmultiscripts><mi>${bbSymbol}</mi><none/><mi>${greekSet[1]}</mi><mprescripts></mprescripts><mi>${greekSet[0]}</mi><none/></mmultiscripts>`
       ));
     }
@@ -128,7 +127,11 @@ function createSymbolStructures(): string[] {
   return structures;
 }
 
-function measureMathMLStructure(mathml: string, iframe: Document): any {
+type MathMLMeasurement =
+  | { dimensions: { width: number; height: number }; fontInfo: Record<string, string> }
+  | { error: string };
+
+function measureMathMLStructure(mathml: string, iframe: Document): MathMLMeasurement {
   try {
     const mathElement = iframe.createElement('math');
     mathElement.innerHTML = mathml.replace(/<\/?math>/g, '');
