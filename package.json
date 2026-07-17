@@ -3,14 +3,14 @@
   "version": "1.10.0",
   "description": "",
   "type": "module",
-  "main": "./dist/thumbmark.cjs.js",
+  "main": "./dist/thumbmark.cjs",
   "module": "./dist/thumbmark.esm.js",
   "types": "./dist/thumbmark.esm.d.ts",
   "exports": {
     ".": {
       "types": "./dist/thumbmark.esm.d.ts",
       "import": "./dist/thumbmark.esm.js",
-      "require": "./dist/thumbmark.cjs.js"
+      "require": "./dist/thumbmark.cjs"
     }
   },
   "public": true,

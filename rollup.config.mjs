@@ -17,7 +17,9 @@ const config = [
     input: 'src/index.ts', // replace with your entry file
     output: [
       {
-        file: 'dist/thumbmark.cjs.js',
+        // .cjs, not .cjs.js: package.json declares "type": "module", which makes Node
+        // parse every .js file in this package as ESM regardless of the rest of the name.
+        file: 'dist/thumbmark.cjs',
         format: 'cjs',
         sourcemap: true,
       },
