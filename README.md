@@ -133,9 +133,9 @@ The function can return a string, number, or object. See the [custom components 
 
 The library is intentionally simple to build, extend, and audit. See [technical_details.md](technical_details.md) for an overview of the architecture.
 
-## Using ThumbmarkJS?
+## Enjoying ThumbmarkJS?
 
-We'd love to hear about your use case. [Share your experience →](https://form.jotform.com/261132396063352)
+If it's working well for you, a quick review on [SourceForge](https://sourceforge.net/projects/thumbmarkjs.mirror/reviews/) helps other developers find it when they're comparing fingerprinting libraries. Takes about 5 minutes — thank you!
 
 ## Community & support
 
