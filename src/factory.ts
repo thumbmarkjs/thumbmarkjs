@@ -20,9 +20,7 @@ import getScreen from "./components/screen";
 import getSystem from "./components/system";
 import getWebGL from "./components/webgl";
 
-// Import experimental component functions
 import getWebRTC from "./components/webrtc";
-import getMathML from "./components/mathml";
 import getSpeech from "./components/speech";
 
 /**
@@ -44,12 +42,8 @@ export const tm_component_promises = {
     'speech': getSpeech,
 };
 
-/**
- * @description key->function map of experimental components. Only resolved during logging.
- */
-export const tm_experimental_component_promises = {
-    'mathml': getMathML,
-};
+// Experimental signals are no longer implemented here. They live in a payload
+// artifact fetched and evaluated at runtime — see src/utils/experimental.ts.
 
 // the component interface is the form of the JSON object the function's promise must return
 export interface componentInterface {

@@ -22,7 +22,6 @@
     "src/components/hardware/index.ts",
     "src/components/locales/index.ts",
     "src/components/math/index.ts",
-    "src/components/mathml/index.ts",
     "src/components/permissions/index.ts",
     "src/components/plugins/index.ts",
     "src/components/screen/index.ts",
