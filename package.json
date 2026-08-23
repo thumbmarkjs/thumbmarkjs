@@ -43,6 +43,7 @@
     "src/utils/cache.ts",
     "src/utils/commonPixels.ts",
     "src/utils/ephemeralIFrame.ts",
+    "src/utils/experimental.ts",
     "src/utils/getMostFrequent.ts",
     "src/utils/hash.ts",
     "src/utils/imageDataToDataURL.ts",
