@@ -13,7 +13,6 @@ import {
   componentFunctionInterface,
   tm_component_promises,
   customComponents,
-  tm_experimental_component_promises,
   includeComponent as globalIncludeComponent
 } from "../factory";
 import { hash } from "../utils/hash";
@@ -49,8 +48,6 @@ export interface ThumbmarkResponse {
   elapsed?: Record<string, number>;
   /** Structured error array. Present only when errors occurred. */
   error?: ThumbmarkError[];
-  /** Experimental components (only when options.experimental is true) */
-  experimental?: componentInterface;
   /** Unique identifier for this API request */
   requestId?: string;
   /** Metadata echoed back from the API */
@@ -93,18 +90,6 @@ export async function getThumbmark(
     } as Record<string, componentFunctionInterface>;
     const { elapsed, resolvedComponents: clientComponentsResult, errors: componentErrors, pipelineTimings: mainPipelineTimings } = await resolveClientComponents(allComponents, _options);
     allErrors.push(...componentErrors);
-
-    // Resolve experimental components only when logging
-    let experimentalComponents = {};
-    let experimentalElapsed = {};
-    let expPipelineTimings: Record<string, number> = {};
-    if (shouldLog || _options.experimental) {
-      const { elapsed: expElapsed, resolvedComponents, errors: expErrors, pipelineTimings: expTimings } = await resolveClientComponents(tm_experimental_component_promises, _options);
-      experimentalComponents = resolvedComponents;
-      experimentalElapsed = expElapsed;
-      expPipelineTimings = expTimings;
-      allErrors.push(...expErrors);
-    }
 
     const apiPromise = (_options.api_key || _options.simple_request) ? getApiPromise(_options, clientComponentsResult) : null;
     let apiResult = null;
@@ -161,16 +146,14 @@ export async function getThumbmark(
 
     // Only log to server when not in debug mode
     if (shouldLog) {
-      logThumbmarkData(thumbmark, components, _options, experimentalComponents, allErrors).catch(() => { /* do nothing */ });
+      logThumbmarkData(thumbmark, components, _options, allErrors).catch(() => { /* do nothing */ });
     }
 
-    // Accumulate _pipeline timings from both the main and (if run) experimental component phases.
-    // Filter time includes: main component filter + optional experimental filter + apiComponents filter.
-    const expFilterMs = expPipelineTimings['_pipeline.filter'] ?? 0;
+    // Filter time includes: main component filter + apiComponents filter.
     const _pipelineTimings: Record<string, number> = {
       '_pipeline.dispatch': mainPipelineTimings['_pipeline.dispatch'],
       '_pipeline.resolve': mainPipelineTimings['_pipeline.resolve'],
-      '_pipeline.filter': mainPipelineTimings['_pipeline.filter'] + expFilterMs + filterMs,
+      '_pipeline.filter': mainPipelineTimings['_pipeline.filter'] + filterMs,
       '_pipeline.stringify': stringifyMs,
       '_pipeline.hash': hashMs,
       '_pipeline.assembly': 0, // placeholder, updated below after result construction
@@ -180,7 +163,7 @@ export async function getThumbmark(
     // allElapsed holds a live reference to _pipelineTimings entries via spread — we update assembly after.
     // mainPipelineTimings contains both _pipeline.* keys (overridden by _pipelineTimings below) and
     // _dispatch.<name> keys (per-component sync prelude timings) that flow through unchanged.
-    const allElapsed: Record<string, number> = { ...elapsed, ...experimentalElapsed, ...mainPipelineTimings, ..._pipelineTimings };
+    const allElapsed: Record<string, number> = { ...elapsed, ...mainPipelineTimings, ..._pipelineTimings };
     const maybeElapsed = _options.performance ? { elapsed: allElapsed } : {};
 
     const assemblyStart = performance.now();
@@ -192,7 +175,6 @@ export async function getThumbmark(
       version,
       ...maybeElapsed,
       ...(allErrors.length > 0 && { error: allErrors }),
-      ...(Object.keys(experimentalComponents).length > 0 && _options.experimental && { experimental: experimentalComponents }),
       ...(apiResult?.requestId && { requestId: apiResult.requestId }),
       ...(apiResult?.metadata && { metadata: apiResult.metadata }),
     };

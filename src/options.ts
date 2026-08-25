@@ -34,6 +34,12 @@ export interface OptionsAfterDefaults {
     cache_lifetime_in_ms: number,
     performance?: boolean,
     stabilize?: string[],
+    /**
+     * @deprecated This will be removed in Thumbmarkjs 2.0 and already has no
+     * effect. Experimental signals are internal telemetry: the payload is
+     * fetched only when the sampled logging path fires, and is never returned
+     * to the caller.
+     */
     experimental?: boolean,
     /**
      * Optional metadata to pass through to the API and webhooks.
