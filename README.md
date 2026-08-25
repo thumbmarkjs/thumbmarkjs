@@ -82,12 +82,28 @@ const tm = new ThumbmarkJS.Thumbmark({
 | `include` | string[] | — | Only include these components. `exclude` still applies. |
 | `permissions_to_check` | string[] | — | Limit which browser permissions are checked. Permissions are the slowest component to resolve. |
 | `timeout` | integer | 5000 | Component timeout in milliseconds. |
-| `logging` | boolean | true | At most 0.01% of runs collect anonymous logs to improve the library. Has no effect on users. |
+| `logging` | boolean | true | At most 0.01% of runs send an anonymous sample to improve the library. See [Sampled logging](#sampled-logging). |
 | `performance` | boolean | false | When true, includes per-component resolution time in milliseconds. |
 | `stabilize` | string[] | `['private', 'iframe']` | Preset exclusion list for stability across private browsing and iframes. |
 | `metadata` | varies | — | Passed to webhooks. Does not affect the fingerprint. |
 
 See the [configuration reference →](https://docs.thumbmarkjs.com/docs/configuration/options)
+
+### Sampled logging
+
+By default, at most 0.01% of runs — and never more than once per browser session — send an anonymous sample to `api.thumbmarkjs.com/log`. This is how the library gets improved: it shows which components turn out to be unstable across real browsers.
+
+When a run is sampled, the library also fetches a small script from `experimental.thumbmarkjs.com` and evaluates it. That script computes fraud-prevention signals that are still under evaluation — they are included in the sample but are **not** part of the fingerprint hash and are never returned to the caller. Keeping them out of the bundle means they can be iterated without a release.
+
+The script is published in readable, non-minified form alongside the minified build the library actually loads, so you can read exactly what runs: [experimental.js](https://experimental.thumbmarkjs.com/experimental.js)
+
+Nothing is fetched or evaluated on the other 99.99% of runs. To disable both the sample and the fetch:
+
+```javascript
+const tm = new ThumbmarkJS.Thumbmark({ logging: false })
+```
+
+If your Content Security Policy omits `'unsafe-eval'`, or does not allow `experimental.thumbmarkjs.com`, the fetch or evaluation fails silently and fingerprinting is unaffected.
 
 ### Integrations
 
