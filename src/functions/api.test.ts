@@ -409,6 +409,48 @@ describe('getApiPromise timeout behavior', () => {
         });
     });
 
+    describe('request body: path', () => {
+        beforeEach(() => { jest.useRealTimers(); });
+        afterEach(() => { jest.useFakeTimers(); });
+
+        const baseOpts = { ...testOptions, cache_api_call: false, timeout: 5000, api_key: 'k' };
+
+        function bodyOf() {
+            const [, init] = mockFetch.mock.calls[0];
+            return JSON.parse(init.body);
+        }
+
+        test('sends the current pathname as `path`', async () => {
+            window.history.pushState({}, '', '/checkout/step-2');
+            mockFetch.mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ thumbmark: 'ok' }) });
+
+            await getApiPromise(baseOpts, testComponents);
+
+            expect(bodyOf().path).toBe('/checkout/step-2');
+        });
+
+        test('path is not part of clientHash, so the fingerprint does not follow the page', async () => {
+            // The whole point of keeping `path` a sibling of `components`: two
+            // requests from different pages on the same browser must still hash
+            // identically, or every navigation looks like a new device.
+            window.history.pushState({}, '', '/page-a');
+            mockFetch.mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ thumbmark: 'ok' }) });
+            await getApiPromise(baseOpts, testComponents);
+            const first = bodyOf();
+
+            mockFetch.mockClear();
+            window.history.pushState({}, '', '/page-b');
+            mockFetch.mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ thumbmark: 'ok' }) });
+            await getApiPromise(baseOpts, testComponents);
+            const second = bodyOf();
+
+            expect(first.path).toBe('/page-a');
+            expect(second.path).toBe('/page-b');
+            expect(second.clientHash).toBe(first.clientHash);
+            expect(second.components).toEqual(first.components);
+        });
+    });
+
     describe('request headers', () => {
         beforeEach(() => {
             jest.useRealTimers();
