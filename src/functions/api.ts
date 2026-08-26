@@ -168,7 +168,11 @@ export const getApiPromise = (
         components,
         options: optionsForBody,
         clientHash: hash(stableStringify(components)),
-        version: getVersion()
+        version: getVersion(),
+        // Sits alongside components rather than inside it, so it reaches the API
+        // and webhooks without entering clientHash — the fingerprint must not
+        // change with the page it was taken on.
+        path: window?.location?.pathname,
     };
     if (visitorId) {
         requestBody.visitorId = visitorId;
