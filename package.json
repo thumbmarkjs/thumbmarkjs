@@ -1,7 +1,7 @@
 {
   "name": "@thumbmarkjs/thumbmarkjs",
   "version": "1.11.0",
-  "description": "",
+  "description": "Free, open-source browser fingerprinting library. Identify returning visitors, detect fraud and bots — client-side, cookieless, no backend required.",
   "type": "module",
   "main": "./dist/thumbmark.cjs",
   "module": "./dist/thumbmark.esm.js",
@@ -77,6 +77,14 @@
   ],
   "author": "Ilkka Peltola",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thumbmarkjs/thumbmarkjs.git"
+  },
+  "homepage": "https://www.thumbmarkjs.com",
+  "bugs": {
+    "url": "https://github.com/thumbmarkjs/thumbmarkjs/issues"
+  },
   "unpkg": "dist/thumbmark.umd.js",
   "overrides": {
     "js-yaml": "^3.15.0"
