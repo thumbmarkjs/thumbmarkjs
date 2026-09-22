@@ -44,6 +44,51 @@ describe('setCachedApiResponse', () => {
         expect(getCache(options).apiResponse).not.toBeDefined();
         expect(getCache(options).apiResponseExpiry).not.toBeDefined();
     });
+
+    test('it should strip the collect directive before caching (one-shot, per-request only)', () => {
+        const responseWithCollect = {
+            ...apiResponse,
+            thumbmark: 'thumb-abc',
+            visitorId: 'visitor-abc',
+            components: { foo: 'bar' } as unknown as componentInterface,
+            info: { timed_out: false },
+            requestId: 'req-abc',
+            metadata: { some: 'meta' },
+            collect: { ja4: 'ja4-fingerprint', source: 'header' },
+        } as apiResponse;
+
+        setCachedApiResponse(options, responseWithCollect);
+
+        const rawCache = localStorage.getItem(options.property_name_factory('cache'));
+        const parsed = JSON.parse(rawCache!);
+
+        expect('collect' in parsed.apiResponse).toBe(false);
+        expect(parsed.apiResponse.collect).toBeUndefined();
+
+        // All other fields must survive caching unchanged.
+        expect(parsed.apiResponse.thumbmark).toEqual(responseWithCollect.thumbmark);
+        expect(parsed.apiResponse.visitorId).toEqual(responseWithCollect.visitorId);
+        expect(parsed.apiResponse.components).toEqual(responseWithCollect.components);
+        expect(parsed.apiResponse.info).toEqual(responseWithCollect.info);
+        expect(parsed.apiResponse.requestId).toEqual(responseWithCollect.requestId);
+        expect(parsed.apiResponse.metadata).toEqual(responseWithCollect.metadata);
+    });
+
+    test('it should cache a response with no collect key exactly as before (no regression)', () => {
+        const responseWithoutCollect = {
+            ...apiResponse,
+            thumbmark: 'thumb-xyz',
+            visitorId: 'visitor-xyz',
+        } as apiResponse;
+
+        setCachedApiResponse(options, responseWithoutCollect);
+
+        expect(getCache(options).apiResponse).toEqual(responseWithoutCollect);
+
+        const rawCache = localStorage.getItem(options.property_name_factory('cache'));
+        const parsed = JSON.parse(rawCache!);
+        expect('collect' in parsed.apiResponse).toBe(false);
+    });
 })
 
 describe('getCachedApiResponse', () => {

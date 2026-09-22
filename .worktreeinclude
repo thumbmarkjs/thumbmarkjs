@@ -1,0 +1,10 @@
+# .worktreeinclude -- gitignored files copied into each new git worktree.
+# Uses .gitignore syntax. Only files that match AND are gitignored are copied;
+# tracked files are never duplicated.
+#
+# testpage/ is gitignored but REQUIRED by the Playwright e2e suite:
+# playwright.config.ts starts a webServer on ./testpage, and its index.html
+# loads /dist/thumbmark.umd.js. Without it every e2e spec fails with
+# "ReferenceError: ThumbmarkJS is not defined", which looks like a real
+# regression but is purely a missing fixture.
+testpage/

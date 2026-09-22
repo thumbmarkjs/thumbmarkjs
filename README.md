@@ -83,6 +83,7 @@ const tm = new ThumbmarkJS.Thumbmark({
 | `permissions_to_check` | string[] | — | Limit which browser permissions are checked. Permissions are the slowest component to resolve. |
 | `timeout` | integer | 5000 | Component timeout in milliseconds. |
 | `logging` | boolean | true | At most 0.01% of runs send an anonymous sample to improve the library. See [Sampled logging](#sampled-logging). |
+| `collect_beacon` | boolean | true | When the pro API asks the client to (see [Collect beacon](#collect-beacon)), sends the User-Agent and thumbmark hash to `collect.thumbmarkjs.com`. Never fires on an anonymous install (one that sets neither `api_key` nor `simple_request`), since no API call is made at all in that case. |
 | `performance` | boolean | false | When true, includes per-component resolution time in milliseconds. |
 | `stabilize` | string[] | `['private', 'iframe']` | Preset exclusion list for stability across private browsing and iframes. |
 | `metadata` | varies | — | Passed to webhooks. Does not affect the fingerprint. |
@@ -104,6 +105,35 @@ const tm = new ThumbmarkJS.Thumbmark({ logging: false })
 ```
 
 If your Content Security Policy omits `'unsafe-eval'`, or does not allow `experimental.thumbmarkjs.com`, the fetch or evaluation fails silently and fingerprinting is unaffected.
+
+### Collect beacon
+
+If you use a pro `api_key` (or proxy requests via `simple_request`), the API
+can occasionally instruct the client to send one small extra request, direct
+from the browser to `collect.thumbmarkjs.com` (or your `collect_endpoint`):
+
+```json
+{
+  "ua": "<navigator.userAgent>",
+  "thumbmark": "<the resolved thumbmark hash>",
+  "ja4": "<the JA4 TLS fingerprint the API observed>",
+  "ja4_source": "<the header the API read it from>"
+}
+```
+
+The receiving server **also fingerprints the TLS handshake of that
+connection** (its "JA4") and stores it alongside those fields. This builds
+network-level fraud-detection signals for your account — it is not library
+telemetry. An install with neither `api_key` nor `simple_request` makes no
+API call, so it never receives the instruction and never sends this beacon.
+
+The response is never read, so nothing about it reaches your code or affects
+`getThumbmark()`. At most one beacon per browser session, best-effort. If
+your CSP `connect-src` disallows the host, the browser blocks the request and
+logs a CSP violation.
+
+`logging: false` does not disable this — that flag covers only the anonymous
+sample above. Use `collect_beacon: false`.
 
 ### Integrations
 

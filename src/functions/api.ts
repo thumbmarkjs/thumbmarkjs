@@ -59,6 +59,30 @@ export interface apiResponse {
     thumbmark?: string;
     requestId?: string;
     metadata?: string | object;
+    /**
+     * Present when the server could not resolve this request's JA4 (TLS
+     * ClientHello) fingerprint and has sampled this client to help fill the
+     * gap. Absent otherwise. Only appears on an authenticated (api_key)
+     * response; an anonymous/no-key call never receives this field. See
+     * src/utils/collect.ts.
+     *
+     * An object carrying the JA4 fingerprint the server observed for this
+     * request (`ja4`) and which header it was read from (`source`), so the
+     * client can validate its own JA4 computation against what the server
+     * saw. The object being present (even empty) is itself the directive to
+     * send a collect beacon; `ja4`/`source` may be omitted if the server has
+     * nothing to report.
+     */
+    collect?: collectDirective;
+}
+
+/**
+ * Shape of `apiResponse.collect` when the server has JA4 data to report
+ * alongside the directive to send a collect beacon. See `apiResponse.collect`.
+ */
+export interface collectDirective {
+    ja4?: string;
+    source?: string;
 }
 
 // ===================== API Call Logic =====================
@@ -239,8 +263,12 @@ export function setCachedApiResponse(
         return;
     }
 
+    // `collect` is a one-shot, per-request directive from the server and must
+    // never survive into a cached response — a cached copy would re-trigger
+    // the beacon on every subsequent page load for the whole cache lifetime.
+    const { collect: _collect, ...cacheable } = response;
     setCache(options, {
         apiResponseExpiry: getApiResponseExpiry(options),
-        apiResponse: response,
+        apiResponse: cacheable,
     });
 }
