@@ -1,0 +1,72 @@
+{
+  "mode": "full",
+  "iterations": 50,
+  "timestamp": "2026-06-24T20:39:12.961Z",
+  "per_browser": {
+    "chromium": {
+      "total_ms": 22.656,
+      "total_p95": 33,
+      "components": {
+        "audio": 0.384,
+        "canvas": 0.02,
+        "fonts": 0.02,
+        "hardware": 0.014,
+        "locales": 0.014,
+        "math": 0.012,
+        "plugins": 0.014,
+        "screen": 0.012,
+        "system": 0.012,
+        "webgl": 0.012,
+        "webrtc": 4.854,
+        "speech": 0.014
+      }
+    },
+    "firefox": {
+      "total_ms": 213.48,
+      "total_p95": 329,
+      "components": {
+        "audio": 9.54,
+        "hardware": 0.14,
+        "locales": 0.12,
+        "math": 0.12,
+        "plugins": 0.12,
+        "screen": 0.08,
+        "system": 0.06,
+        "webgl": 0.06,
+        "webrtc": 2.8
+      }
+    },
+    "webkit": {
+      "total_ms": 10.2,
+      "total_p95": 13,
+      "components": {
+        "fonts": 0,
+        "hardware": 0,
+        "locales": 0,
+        "math": 0,
+        "plugins": 0,
+        "screen": 0,
+        "system": 0,
+        "webgl": 0,
+        "webrtc": 2.1,
+        "speech": 0
+      }
+    }
+  },
+  "total_ms": 22.656,
+  "total_p95": 33,
+  "components": {
+    "audio": 0.384,
+    "canvas": 0.02,
+    "fonts": 0.02,
+    "hardware": 0.014,
+    "locales": 0.014,
+    "math": 0.012,
+    "plugins": 0.014,
+    "screen": 0.012,
+    "system": 0.012,
+    "webgl": 0.012,
+    "webrtc": 4.854,
+    "speech": 0.014
+  }
+}
