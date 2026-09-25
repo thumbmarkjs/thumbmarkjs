@@ -60,7 +60,7 @@
     "test:e2e": "npx playwright test",
     "build": "rm -rf dist/* && rm -rf types/* && rollup -c",
     "watch": "rollup -c -w",
-    "perf": "playwright test perf/perf.spec.ts"
+    "perf": "npm run build && playwright test -c perf/playwright.perf.config.ts"
   },
   "keywords": [
     "thumbmark",
