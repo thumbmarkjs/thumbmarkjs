@@ -2,6 +2,9 @@ import { componentInterface } from '../factory'
 import { filterThumbmarkData } from './filterComponents'
 import { resolveClientComponents, getThumbmark } from '.';
 import { defaultOptions } from '../options';
+import { sendCollectBeacon } from '../utils/collect';
+
+jest.mock('../utils/collect', () => ({ sendCollectBeacon: jest.fn() }));
 
 const test_components: componentInterface = {
     'one': '1',
@@ -105,6 +108,7 @@ describe('getThumbmark API call gate', () => {
         });
 
         expect(fetchMock).not.toHaveBeenCalled();
+        expect(sendCollectBeacon).not.toHaveBeenCalled();
         global.fetch = originalFetch;
     });
 
@@ -130,6 +134,134 @@ describe('getThumbmark API call gate', () => {
         expect(init.headers['Authorization']).toBeUndefined();
         expect(result.thumbmark).toBeDefined();
 
+        global.fetch = originalFetch;
+    });
+
+    test('does not call sendCollectBeacon when the API response has collect: true (bare boolean is not a valid directive)', async () => {
+        (sendCollectBeacon as jest.Mock).mockClear();
+        const originalFetch = global.fetch;
+        global.fetch = jest.fn().mockResolvedValue({
+            ok: true,
+            status: 200,
+            json: async () => ({ thumbmark: 'resolved-hash-value', info: {}, collect: true }),
+        }) as unknown as typeof fetch;
+
+        await getThumbmark({
+            ...defaultOptions,
+            api_key: 'some-key',
+            cache_api_call: false,
+        });
+
+        expect(sendCollectBeacon).not.toHaveBeenCalled();
+        global.fetch = originalFetch;
+    });
+
+    test('calls sendCollectBeacon with no ja4/source when collect is an empty object', async () => {
+        (sendCollectBeacon as jest.Mock).mockClear();
+        const originalFetch = global.fetch;
+        global.fetch = jest.fn().mockResolvedValue({
+            ok: true,
+            status: 200,
+            json: async () => ({ thumbmark: 'resolved-hash-value', info: {}, collect: {} }),
+        }) as unknown as typeof fetch;
+
+        await getThumbmark({
+            ...defaultOptions,
+            api_key: 'some-key',
+            cache_api_call: false,
+        });
+
+        expect(sendCollectBeacon).toHaveBeenCalledTimes(1);
+        expect(sendCollectBeacon).toHaveBeenCalledWith(
+            'resolved-hash-value',
+            expect.anything(),
+            { ja4: undefined, source: undefined },
+        );
+        global.fetch = originalFetch;
+    });
+
+    test('calls sendCollectBeacon with the ja4/source directive when collect is an object', async () => {
+        (sendCollectBeacon as jest.Mock).mockClear();
+        const originalFetch = global.fetch;
+        global.fetch = jest.fn().mockResolvedValue({
+            ok: true,
+            status: 200,
+            json: async () => ({
+                thumbmark: 'resolved-hash-value',
+                info: {},
+                collect: { ja4: 't13d1517h2_8daaf6152771_63ff51340b64', source: 'cloudfront-viewer' },
+            }),
+        }) as unknown as typeof fetch;
+
+        await getThumbmark({
+            ...defaultOptions,
+            api_key: 'some-key',
+            cache_api_call: false,
+        });
+
+        expect(sendCollectBeacon).toHaveBeenCalledTimes(1);
+        expect(sendCollectBeacon).toHaveBeenCalledWith(
+            'resolved-hash-value',
+            expect.anything(),
+            { ja4: 't13d1517h2_8daaf6152771_63ff51340b64', source: 'cloudfront-viewer' },
+        );
+        global.fetch = originalFetch;
+    });
+
+    test('does not call sendCollectBeacon when the API response has collect: null', async () => {
+        (sendCollectBeacon as jest.Mock).mockClear();
+        const originalFetch = global.fetch;
+        global.fetch = jest.fn().mockResolvedValue({
+            ok: true,
+            status: 200,
+            json: async () => ({ thumbmark: 'resolved-hash-value', info: {}, collect: null }),
+        }) as unknown as typeof fetch;
+
+        await getThumbmark({
+            ...defaultOptions,
+            api_key: 'some-key',
+            cache_api_call: false,
+        });
+
+        expect(sendCollectBeacon).not.toHaveBeenCalled();
+        global.fetch = originalFetch;
+    });
+
+    test('does not call sendCollectBeacon when the API response omits collect', async () => {
+        (sendCollectBeacon as jest.Mock).mockClear();
+        const originalFetch = global.fetch;
+        global.fetch = jest.fn().mockResolvedValue({
+            ok: true,
+            status: 200,
+            json: async () => ({ thumbmark: 'resolved-hash-value', info: {} }),
+        }) as unknown as typeof fetch;
+
+        await getThumbmark({
+            ...defaultOptions,
+            api_key: 'some-key',
+            cache_api_call: false,
+        });
+
+        expect(sendCollectBeacon).not.toHaveBeenCalled();
+        global.fetch = originalFetch;
+    });
+
+    test('does not call sendCollectBeacon when the API response has collect: false', async () => {
+        (sendCollectBeacon as jest.Mock).mockClear();
+        const originalFetch = global.fetch;
+        global.fetch = jest.fn().mockResolvedValue({
+            ok: true,
+            status: 200,
+            json: async () => ({ thumbmark: 'resolved-hash-value', info: {}, collect: false }),
+        }) as unknown as typeof fetch;
+
+        await getThumbmark({
+            ...defaultOptions,
+            api_key: 'some-key',
+            cache_api_call: false,
+        });
+
+        expect(sendCollectBeacon).not.toHaveBeenCalled();
         global.fetch = originalFetch;
     });
 });

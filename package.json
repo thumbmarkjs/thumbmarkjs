@@ -1,6 +1,6 @@
 {
   "name": "@thumbmarkjs/thumbmarkjs",
-  "version": "1.11.0",
+  "version": "1.12.0",
   "description": "Free, open-source browser fingerprinting library. Identify returning visitors, detect fraud and bots — client-side, cookieless, no backend required.",
   "type": "module",
   "main": "./dist/thumbmark.cjs",
@@ -40,6 +40,7 @@
     "src/thumbmark.ts",
     "src/types/global.d.ts",
     "src/utils/cache.ts",
+    "src/utils/collect.ts",
     "src/utils/commonPixels.ts",
     "src/utils/ephemeralIFrame.ts",
     "src/utils/experimental.ts",

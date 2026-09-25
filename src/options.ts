@@ -25,6 +25,24 @@ export interface OptionsAfterDefaults {
      */
     simple_request?: boolean,
     /**
+     * When true (default), the client honors a `collect: true` hint on a
+     * pro API response by sending a small, one-shot beacon (the browser's
+     * User-Agent and the computed thumbmark hash) directly to
+     * `collect_endpoint`. The server alone decides if/when to send that
+     * hint -- this option only controls whether the client obeys it when
+     * it does. Independent of `logging`. Fire-and-forget: never affects the
+     * fingerprint or getThumbmark()'s return value. Never fires on an
+     * anonymous install -- one that sets neither `api_key` nor
+     * `simple_request` -- because no API call is made at all in that case,
+     * so no `collect` directive can ever arrive.
+     */
+    collect_beacon?: boolean,
+    /**
+     * Destination for the collect_beacon request. Defaults to the hosted
+     * ThumbmarkJS collector. Override for a self-hosted collector.
+     */
+    collect_endpoint?: string,
+    /**
      * @deprecated This will be removed in Thumbmarkjs 2.0, use cache_lifetime_in_ms instead
      */
     cache_api_call?: boolean,
@@ -59,12 +77,14 @@ export const DEFAULT_CACHE_LIFETIME = 0;
 export const MAXIMUM_CACHE_LIFETIME = 259_200_000;
 export const DEFAULT_STORAGE_PREFIX = 'thumbmark';
 export const DEFAULT_API_ENDPOINT = 'https://api.thumbmarkjs.com';
+export const DEFAULT_COLLECT_ENDPOINT = 'https://collect.thumbmarkjs.com/beacon';
 
 export const defaultOptions: OptionsAfterDefaults = {
     exclude: [],
     include: [],
     stabilize: ['private', 'iframe'],
     logging: true,
+    collect_beacon: true,
     timeout: 5000,
     cache_api_call: true,
     cache_lifetime_in_ms: DEFAULT_CACHE_LIFETIME,

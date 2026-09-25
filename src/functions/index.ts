@@ -20,6 +20,7 @@ import { raceAllPerformance } from "../utils/raceAll";
 import { getVersion } from "../utils/version";
 import { filterThumbmarkData, getExcludeList } from './filterComponents'
 import { logThumbmarkData } from '../utils/log';
+import { sendCollectBeacon } from '../utils/collect';
 import { getApiPromise, ApiError, infoInterface } from "./api";
 import { stableStringify } from "../utils/stableStringify";
 
@@ -147,6 +148,23 @@ export async function getThumbmark(
     // Only log to server when not in debug mode
     if (shouldLog) {
       logThumbmarkData(thumbmark, components, _options, allErrors).catch(() => { /* do nothing */ });
+    }
+
+    // Independent of `logging`/shouldLog: the pro API can instruct the client
+    // (via apiResult.collect) to send a one-shot collect beacon. See
+    // collect.ts. Never awaited; never throws; cannot affect this function's
+    // return value, its timing, or the computed fingerprint.
+    //
+    // `collect` being present as an object (even an empty one) is the
+    // directive to send a beacon -- absent (or any other shape, such as a
+    // bare boolean) means don't. It normally carries the ja4/source the
+    // server observed for this request, but the presence check here
+    // doesn't need to know what's inside it. The `typeof` guard is
+    // defensive: the client and API deploy independently, so a response
+    // that doesn't match the current `collectDirective` contract should
+    // never trigger a beacon.
+    if (apiResult?.collect && typeof apiResult.collect === 'object') {
+      sendCollectBeacon(thumbmark, _options, apiResult.collect);
     }
 
     // Filter time includes: main component filter + apiComponents filter.
