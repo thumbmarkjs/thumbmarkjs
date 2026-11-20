@@ -108,7 +108,7 @@ If your Content Security Policy omits `'unsafe-eval'`, or does not allow `experi
 
 ### Environment observations
 
-With an `api_key` (or `simple_request`), the API request also carries an `observations` object: a few raw facts about the browser environment (for example the unmasked WebGL vendor and renderer, media decode support, `navigator.webdriver`, and whether some `navigator` properties have been overridden). The API uses them to compute `info.signals`. The client only collects and sends raw values; it makes no judgement about them.
+With an `api_key` (or `simple_request`), the API request also carries an `observations` object: a few raw facts about the browser environment (for example the unmasked WebGL vendor and renderer, media decode support, `navigator.webdriver`, whether some `navigator` properties have been overridden, and how many bytes differ between two reads of the same unmodified canvas). The API uses them to compute `info.signals`. The client only collects and sends raw values; it makes no judgement about them.
 
 - They are sent next to `components` in the API request only. They are not part of the fingerprint or the thumbmark hash, and are not returned in the result.
 - Collection runs in parallel with the components. The request includes every value that has resolved by the time it is built, and waits for pending ones only until 500 ms after collection started, so it is never delayed beyond that. A value that cannot be determined in time is left out, so a missing key means "unknown", not "false". It never prompts or changes the page.

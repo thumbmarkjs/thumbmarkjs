@@ -47,7 +47,7 @@ describe('collectObservations', () => {
         const everyKeyExcluded = [
             'webglVendorUnmasked', 'webglRendererUnmasked', 'mediaDecode', 'webdriver', 'automationGlobals',
             'engineApiMarkers', 'navigatorAccessorOverrides', 'getterNativeSourceTamper', 'hardwareConcurrency',
-            'overriddenPrototypeMethods', 'adBaitBlocked',
+            'overriddenPrototypeMethods', 'adBaitBlocked', 'canvasReadbackDiffBytes',
         ].map(key => `observations.${key}`);
         expect(await collect(everyKeyExcluded)).toEqual({ v: 1 });
     });
@@ -86,6 +86,13 @@ describe('collectObservations', () => {
             const result = await collect(['observations.adBaitBlocked']);
             expect(append).not.toHaveBeenCalled();
             expect('adBaitBlocked' in result).toBe(false);
+        });
+
+        test('canvas readback creates no canvas', async () => {
+            const createElement = jest.spyOn(document, 'createElement');
+            const result = await collect(['observations.canvasReadbackDiffBytes', 'observations.webglVendorUnmasked', 'observations.webglRendererUnmasked', 'observations.adBaitBlocked']);
+            expect(createElement).not.toHaveBeenCalledWith('canvas');
+            expect('canvasReadbackDiffBytes' in result).toBe(false);
         });
 
         test('webgl creates no context when both keys are excluded, and one key still works alone', async () => {
@@ -253,6 +260,54 @@ describe('collectObservations', () => {
         test('is omitted when there is no document.body', async () => {
             jest.spyOn(document, 'body', 'get').mockReturnValue(null as unknown as HTMLElement);
             expect('adBaitBlocked' in (await collect())).toBe(false);
+        });
+    });
+
+    describe('canvasReadbackDiffBytes', () => {
+        /** A 2d context whose two getImageData reads return the given byte arrays. */
+        function mockCanvas2d(reads: Uint8ClampedArray[]) {
+            const ctx = {
+                fillRect: jest.fn(), beginPath: jest.fn(), arc: jest.fn(), fill: jest.fn(),
+                getImageData: jest.fn(() => ({ data: reads.shift() })),
+            };
+            const getContext = jest.spyOn(HTMLCanvasElement.prototype, 'getContext')
+                .mockImplementation(((type: string) => type === '2d' ? ctx : null) as typeof HTMLCanvasElement.prototype.getContext);
+            return { ctx, getContext };
+        }
+        const pixels = () => new Uint8ClampedArray(16 * 16 * 4);
+
+        test('is 0 when both reads are identical, and the canvas is drawn off-screen with the readback hint', async () => {
+            const before = document.body.innerHTML;
+            const { ctx, getContext } = mockCanvas2d([pixels(), pixels()]);
+            expect((await collect()).canvasReadbackDiffBytes).toBe(0);
+            expect(getContext).toHaveBeenCalledWith('2d', { willReadFrequently: true });
+            expect(ctx.getImageData).toHaveBeenCalledTimes(2);
+            expect(ctx.getImageData).toHaveBeenCalledWith(0, 0, 16, 16);
+            expect(document.body.innerHTML).toBe(before);
+        });
+
+        test('counts the bytes that differ between the two reads', async () => {
+            const noisy = pixels();
+            [0, 5, 9, 200, 1023].forEach(i => { noisy[i] = 1; });
+            mockCanvas2d([pixels(), noisy]);
+            expect((await collect()).canvasReadbackDiffBytes).toBe(5);
+        });
+
+        test('uses the longer length when the reads differ in size', async () => {
+            mockCanvas2d([new Uint8ClampedArray(8), new Uint8ClampedArray(12)]);
+            expect((await collect()).canvasReadbackDiffBytes).toBe(12);
+        });
+
+        test('is omitted when there is no 2d context', async () => {
+            expect('canvasReadbackDiffBytes' in (await collect())).toBe(false);
+        });
+
+        test('is omitted when a canvas call throws', async () => {
+            const { ctx } = mockCanvas2d([]);
+            ctx.getImageData.mockImplementation(() => { throw new Error('blocked'); });
+            const result = await collect();
+            expect('canvasReadbackDiffBytes' in result).toBe(false);
+            expect(result.v).toBe(1);
         });
     });
 

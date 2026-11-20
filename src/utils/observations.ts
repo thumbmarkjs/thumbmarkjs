@@ -37,6 +37,13 @@ export interface ObservationsInterface {
     overriddenPrototypeMethods?: string[];
     /** Generic ad-slot class names whose bait element collapsed to no box. */
     adBaitBlocked?: string[];
+    /**
+     * Number of bytes that differ between two immediate reads of the same
+     * unmodified 16x16 canvas. Always 0 in an unmodified browser; above 0 means
+     * the canvas output is being altered per read (noise from a privacy-hardened
+     * browser or an anti-fingerprinting extension).
+     */
+    canvasReadbackDiffBytes?: number;
 }
 
 type ObservationKey = Exclude<keyof ObservationsInterface, 'v'>;
@@ -149,6 +156,31 @@ function adBaitBlocked(): string[] | undefined {
     }
 }
 
+function canvasReadbackDiffBytes(): number | undefined {
+    // Never attached to the document. Fixed shapes and no text, since text
+    // rendering legitimately varies between machines. willReadFrequently avoids
+    // Chrome's console warning about repeated readbacks.
+    const canvas = document.createElement('canvas');
+    canvas.width = 16;
+    canvas.height = 16;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return;
+    ctx.fillStyle = '#ff0000';
+    ctx.fillRect(0, 0, 8, 8);
+    ctx.fillStyle = '#00ff00';
+    ctx.fillRect(8, 0, 8, 8);
+    ctx.fillStyle = '#0000ff';
+    ctx.beginPath();
+    ctx.arc(8, 12, 4, 0, Math.PI * 2);
+    ctx.fill();
+    const first = ctx.getImageData(0, 0, 16, 16).data;
+    const second = ctx.getImageData(0, 0, 16, 16).data;
+    if (first.length !== second.length) return Math.max(first.length, second.length);
+    let diff = 0;
+    for (let i = 0; i < first.length; i++) if (first[i] !== second[i]) diff++;
+    return diff;
+}
+
 const PROBES: Record<ObservationKey, () => unknown> = {
     webglVendorUnmasked: () => readWebglUnmasked().vendor,
     webglRendererUnmasked: () => readWebglUnmasked().renderer,
@@ -194,6 +226,7 @@ const PROBES: Record<ObservationKey, () => unknown> = {
         return hits;
     },
     adBaitBlocked,
+    canvasReadbackDiffBytes,
 };
 
 // ===================== Collection =====================
