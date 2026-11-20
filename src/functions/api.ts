@@ -43,7 +43,9 @@ export interface infoInterface {
         lastSeen: string,
     },
     signals?: {
-        timezone_country_mismatch?: boolean,
+        /** null when the server cannot determine it. */
+        timezone_country_mismatch?: boolean | null,
+        [key: string]: unknown,
     },
     timed_out?: boolean; // added for timeout handling
 }
