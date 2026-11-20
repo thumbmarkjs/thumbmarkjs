@@ -21,7 +21,8 @@ import { getVersion } from "../utils/version";
 import { filterThumbmarkData, getExcludeList } from './filterComponents'
 import { logThumbmarkData } from '../utils/log';
 import { sendCollectBeacon } from '../utils/collect';
-import { getApiPromise, ApiError, infoInterface } from "./api";
+import { getApiPromise, isApiServedFromCache, ApiError, infoInterface } from "./api";
+import { collectObservations } from "../utils/observations";
 import { stableStringify } from "../utils/stableStringify";
 
 
@@ -89,10 +90,17 @@ export async function getThumbmark(
       ...customComponents,
       ...instanceCustomComponents,
     } as Record<string, componentFunctionInterface>;
+    // Raw environment observations for the API request and the sampled log
+    // (never part of components or the hash). Started now so it overlaps
+    // component resolution, once, only when a request or a log will be built,
+    // and shared by both.
+    const callsApi = !!(_options.api_key || _options.simple_request);
+    const needsObservations = (callsApi && !isApiServedFromCache(_options)) || shouldLog;
+    const observations = needsObservations ? collectObservations(_options) : undefined;
     const { elapsed, resolvedComponents: clientComponentsResult, errors: componentErrors, pipelineTimings: mainPipelineTimings } = await resolveClientComponents(allComponents, _options);
     allErrors.push(...componentErrors);
 
-    const apiPromise = (_options.api_key || _options.simple_request) ? getApiPromise(_options, clientComponentsResult) : null;
+    const apiPromise = callsApi ? getApiPromise(_options, clientComponentsResult, observations) : null;
     let apiResult = null;
 
     if (apiPromise) {
@@ -147,7 +155,7 @@ export async function getThumbmark(
 
     // Only log to server when not in debug mode
     if (shouldLog) {
-      logThumbmarkData(thumbmark, components, _options, allErrors).catch(() => { /* do nothing */ });
+      logThumbmarkData(thumbmark, components, _options, allErrors, observations).catch(() => { /* do nothing */ });
     }
 
     // Independent of `logging`/shouldLog: the pro API can instruct the client

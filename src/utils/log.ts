@@ -3,6 +3,7 @@ import { optionsInterface, DEFAULT_API_ENDPOINT } from '../options';
 import { getVersion } from './version';
 import { getExperimentalPayload } from './experimental';
 import type { ThumbmarkError } from '../functions';
+import type { ObservationsCollection } from './observations';
 
 // ===================== Logging (Internal) =====================
 
@@ -14,17 +15,25 @@ import type { ThumbmarkError } from '../functions';
  * this is its only consumer. That keeps it off getThumbmark's critical path —
  * this whole function is fire-and-forget, so the round-trip costs the caller
  * nothing.
+ *
+ * `observations`, when given, is added as a sibling of `components` (outside
+ * the hash) from its deadline-bounded snapshot, awaited here for the same
+ * reason. If the snapshot rejects, the key is omitted.
  * @internal
  */
-export async function logThumbmarkData(thisHash: string, thumbmarkData: componentInterface, options: optionsInterface, errors: ThumbmarkError[] = []): Promise<void> {
+export async function logThumbmarkData(thisHash: string, thumbmarkData: componentInterface, options: optionsInterface, errors: ThumbmarkError[] = [], observations?: Pick<ObservationsCollection, 'snapshot'>): Promise<void> {
     const apiEndpoint = DEFAULT_API_ENDPOINT;
     const url = `${apiEndpoint}/log`;
 
     sessionStorage.setItem("_tmjs_l", "1");
 
+    let observed;
+    try { observed = await observations?.snapshot(); } catch { /* log without observations */ }
+
     const payload = {
         thumbmark: thisHash,
         components: thumbmarkData,
+        ...(observed && { observations: observed }),
         experimental: await getExperimentalPayload(),
         version: getVersion(),
         options,
