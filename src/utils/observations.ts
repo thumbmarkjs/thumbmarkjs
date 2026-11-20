@@ -1,11 +1,12 @@
 import { OptionsAfterDefaults } from '../options';
 
-// ================= Environment observations (API request only) =================
+// ================= Environment observations (API request and sampled log) =================
 
 /**
  * Raw environment observations sent to the API next to `components`, which the
  * API uses to compute `info.signals`. They are never part of the fingerprint,
- * never returned to the caller, and never sent anywhere except the API request.
+ * never returned to the caller, and never sent anywhere except the API request
+ * and the sampled diagnostic log.
  *
  * Every key is optional: a key is omitted when it could not be determined
  * (unsupported API, a probe that threw, or one that missed its deadline), so a

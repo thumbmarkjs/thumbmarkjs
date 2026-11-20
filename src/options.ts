@@ -13,7 +13,7 @@ export interface OptionsAfterDefaults {
     storage_property_name?: string,
     /**
      * Components to exclude. Also accepts `observations` (no environment
-     * observations are collected or sent with API requests) and
+     * observations are collected or sent with API requests or the sampled log) and
      * `observations.<key>` (that single observation is not collected or sent).
      */
     exclude?: string[],

@@ -5,6 +5,7 @@ import { hash } from '../utils/hash';
 import { stableStringify } from '../utils/stableStringify';
 import { collectObservations, ObservationsInterface } from '../utils/observations';
 import { setCache } from '../utils/cache';
+import { logThumbmarkData } from '../utils/log';
 import { __resetBrowserCache } from '../components/system/browser';
 import type { componentInterface } from '../factory';
 
@@ -290,6 +291,104 @@ describe('getApiPromise with pending observations', () => {
         const { observations } = sentBodies()[0];
         expect(observations).not.toHaveProperty('webdriver');
         expect(observations).toHaveProperty('automationGlobals');
+    });
+});
+
+describe('observations in the sampled log', () => {
+    const logOptions = { ...defaultOptions, cache_api_call: false };
+    const isLog = ([url]: [string]) => url.includes('/log');
+    const logBodies = (): Body[] => fetchMock.mock.calls.filter(isLog).map(([, init]) => JSON.parse(init.body));
+    const apiBodies = (): Body[] => fetchMock.mock.calls.filter(call => !isLog(call) && call[1]?.method === 'POST').map(([, init]) => JSON.parse(init.body));
+    // The log is fire-and-forget, so let it settle before inspecting what was sent.
+    const flush = () => new Promise(resolve => setTimeout(resolve, 50));
+    const sample = (value: number) => jest.spyOn(Math, 'random').mockReturnValue(value);
+
+    beforeEach(() => {
+        sessionStorage.clear();
+        fetchMock.mockImplementation((url: string) => url.includes('experimental.thumbmarkjs.com')
+            ? Promise.reject(new TypeError('Failed to fetch'))
+            : Promise.resolve({ ok: true, status: 200, json: async () => ({ info: {} }) }));
+    });
+    afterEach(() => sessionStorage.clear());
+
+    test('a sampled run without an api_key collects once and logs observations next to components', async () => {
+        sample(0);
+        await getThumbmark(logOptions);
+        await flush();
+        expect(collectSpy).toHaveBeenCalledTimes(1);
+        const [body] = logBodies();
+        expect(body.observations).toMatchObject({ v: 1, automationGlobals: [], engineApiMarkers: [] });
+        expect(Object.keys(body)).toEqual(expect.arrayContaining(['components', 'observations', 'thumbmark']));
+        expect(body.components).not.toHaveProperty('observations');
+        expect(apiBodies()).toHaveLength(0);
+    });
+
+    test('an unsampled run without an api_key collects nothing and logs nothing', async () => {
+        sample(0.5);
+        await getThumbmark(logOptions);
+        await flush();
+        expect(collectSpy).not.toHaveBeenCalled();
+        expect(logBodies()).toHaveLength(0);
+    });
+
+    test('logging: false does not start collection by itself', async () => {
+        sample(0);
+        await getThumbmark({ ...logOptions, logging: false });
+        await flush();
+        expect(collectSpy).not.toHaveBeenCalled();
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    test('with an API call and a sampled log, one collection feeds both bodies', async () => {
+        sample(0);
+        await getThumbmark(apiOptions);
+        await flush();
+        expect(collectSpy).toHaveBeenCalledTimes(1);
+        expect(apiBodies()).toHaveLength(1);
+        expect(logBodies()).toHaveLength(1);
+        expect(apiBodies()[0].observations).toMatchObject({ v: 1 });
+        expect(logBodies()[0].observations).toMatchObject({ v: 1 });
+    });
+
+    test('exclude: ["observations"] leaves the key out of the log and collects nothing', async () => {
+        sample(0);
+        await getThumbmark({ ...logOptions, exclude: ['observations'] });
+        await flush();
+        expect(collectSpy.mock.results.every(result => result.value === undefined)).toBe(true);
+        expect(logBodies()).toHaveLength(1);
+        expect(logBodies()[0]).not.toHaveProperty('observations');
+    });
+
+    test('exclude: ["observations.<key>"] drops that key from the log', async () => {
+        sample(0);
+        await getThumbmark({ ...logOptions, exclude: ['observations.adBaitBlocked'] });
+        await flush();
+        expect(logBodies()[0].observations).not.toHaveProperty('adBaitBlocked');
+        expect(logBodies()[0].observations).toHaveProperty('automationGlobals');
+    });
+
+    test('a rejected snapshot still sends the log, without the key', async () => {
+        await logThumbmarkData('abc', { a: { b: 1 } }, defaultOptions, [], { snapshot: () => Promise.reject(new Error('boom')) });
+        expect(logBodies()).toHaveLength(1);
+        expect(logBodies()[0]).not.toHaveProperty('observations');
+        expect(logBodies()[0].components).toEqual({ a: { b: 1 } });
+    });
+
+    test('without a collection the log is sent without the key', async () => {
+        await logThumbmarkData('abc', {}, defaultOptions);
+        expect(logBodies()[0]).not.toHaveProperty('observations');
+    });
+
+    test('the thumbmark is the same with and without the log observations', async () => {
+        sample(0);
+        const logged = await getThumbmark(logOptions);
+        await flush();
+        sessionStorage.clear();
+        const excluded = await getThumbmark({ ...logOptions, exclude: ['observations'] });
+        await flush();
+        expect(logged.thumbmark).toBe(excluded.thumbmark);
+        expect(logged).not.toHaveProperty('observations');
+        expect(logBodies()[0].thumbmark).toBe(logged.thumbmark);
     });
 });
 
