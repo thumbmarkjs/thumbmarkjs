@@ -11,7 +11,15 @@ export interface OptionsAfterDefaults {
      * @deprecated use property_name_factory
      */
     storage_property_name?: string,
+    /**
+     * Components to exclude. Also accepts `observations` (no environment
+     * observations are collected or sent with API requests) and
+     * `observations.<key>` (that single observation is not collected or sent).
+     */
     exclude?: string[],
+    /**
+     * Only include these components. Does not apply to observations.
+     */
     include?: string[],
     permissions_to_check?: PermissionName[],
     timeout?: number,
@@ -51,6 +59,9 @@ export interface OptionsAfterDefaults {
      */
     cache_lifetime_in_ms: number,
     performance?: boolean,
+    /**
+     * Preset exclusion rules for stability. Not applied to observations.
+     */
     stabilize?: string[],
     /**
      * @deprecated This will be removed in Thumbmarkjs 2.0 and already has no

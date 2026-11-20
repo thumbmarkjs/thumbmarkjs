@@ -10,9 +10,10 @@ import { includeComponent } from './factory'
 import { Thumbmark } from './thumbmark'
 import { filterThumbmarkData } from './functions/filterComponents'
 import { stableStringify } from './utils/stableStringify'
+import { ObservationsInterface } from './utils/observations'
 
 export {
-    Thumbmark, getThumbmark, getVersion, ThumbmarkResponse, ThumbmarkError,
+    Thumbmark, getThumbmark, getVersion, ThumbmarkResponse, ThumbmarkError, ObservationsInterface,
 
     // Filtering functions for server-side use
     filterThumbmarkData, optionsInterface, stabilizationExclusionRules,

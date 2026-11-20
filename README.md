@@ -78,14 +78,14 @@ const tm = new ThumbmarkJS.Thumbmark({
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `api_key` | string | — | API key from [thumbmarkjs.com](https://thumbmarkjs.com). Enables server-side signals and visitorId. |
-| `exclude` | string[] | — | Components to exclude from the fingerprint hash. Excluding a top-level component also improves performance. |
-| `include` | string[] | — | Only include these components. `exclude` still applies. |
+| `exclude` | string[] | — | Components to exclude from the fingerprint hash. Excluding a top-level component also improves performance. `observations` and `observations.<key>` opt out of [environment observations](#environment-observations). |
+| `include` | string[] | — | Only include these components. `exclude` still applies. Does not apply to observations. |
 | `permissions_to_check` | string[] | — | Limit which browser permissions are checked. Permissions are the slowest component to resolve. |
 | `timeout` | integer | 5000 | Component timeout in milliseconds. |
 | `logging` | boolean | true | At most 0.01% of runs send an anonymous sample to improve the library. See [Sampled logging](#sampled-logging). |
 | `collect_beacon` | boolean | true | When the pro API asks the client to (see [Collect beacon](#collect-beacon)), sends the User-Agent and thumbmark hash to `collect.thumbmarkjs.com`. Never fires on an anonymous install (one that sets neither `api_key` nor `simple_request`), since no API call is made at all in that case. |
 | `performance` | boolean | false | When true, includes per-component resolution time in milliseconds. |
-| `stabilize` | string[] | `['private', 'iframe']` | Preset exclusion list for stability across private browsing and iframes. |
+| `stabilize` | string[] | `['private', 'iframe']` | Preset exclusion list for stability across private browsing and iframes. Does not apply to observations. |
 | `metadata` | varies | — | Passed to webhooks. Does not affect the fingerprint. |
 
 See the [configuration reference →](https://docs.thumbmarkjs.com/docs/configuration/options)
@@ -105,6 +105,16 @@ const tm = new ThumbmarkJS.Thumbmark({ logging: false })
 ```
 
 If your Content Security Policy omits `'unsafe-eval'`, or does not allow `experimental.thumbmarkjs.com`, the fetch or evaluation fails silently and fingerprinting is unaffected.
+
+### Environment observations
+
+With an `api_key` (or `simple_request`), the API request also carries an `observations` object: a few raw facts about the browser environment (for example the unmasked WebGL vendor and renderer, media decode support, `navigator.webdriver`, and whether some `navigator` properties have been overridden). The API uses them to compute `info.signals`. The client only collects and sends raw values; it makes no judgement about them.
+
+- They are sent next to `components` in the API request only. They are not part of the fingerprint or the thumbmark hash, and are not returned in the result.
+- Collection runs in parallel with the components. The request includes every value that has resolved by the time it is built, and waits for pending ones only until 500 ms after collection started, so it is never delayed beyond that. A value that cannot be determined in time is left out, so a missing key means "unknown", not "false". It never prompts or changes the page.
+- Nothing is collected without an API call, or when a cached API response is used.
+- Opt out of everything with `exclude: ['observations']`, or of a single value with e.g. `exclude: ['observations.adBaitBlocked']`. The excluded probe does not run. `include` and `stabilize` do not apply to observations.
+- The payload type is exported as `ObservationsInterface`.
 
 ### Collect beacon
 

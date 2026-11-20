@@ -21,7 +21,8 @@ import { getVersion } from "../utils/version";
 import { filterThumbmarkData, getExcludeList } from './filterComponents'
 import { logThumbmarkData } from '../utils/log';
 import { sendCollectBeacon } from '../utils/collect';
-import { getApiPromise, ApiError, infoInterface } from "./api";
+import { getApiPromise, isApiServedFromCache, ApiError, infoInterface } from "./api";
+import { collectObservations } from "../utils/observations";
 import { stableStringify } from "../utils/stableStringify";
 
 
@@ -89,10 +90,15 @@ export async function getThumbmark(
       ...customComponents,
       ...instanceCustomComponents,
     } as Record<string, componentFunctionInterface>;
+    // Raw environment observations for the API request only (never part of
+    // components or the hash). Started now so it overlaps component
+    // resolution, and only when a request will actually be built.
+    const callsApi = !!(_options.api_key || _options.simple_request);
+    const observations = callsApi && !isApiServedFromCache(_options) ? collectObservations(_options) : undefined;
     const { elapsed, resolvedComponents: clientComponentsResult, errors: componentErrors, pipelineTimings: mainPipelineTimings } = await resolveClientComponents(allComponents, _options);
     allErrors.push(...componentErrors);
 
-    const apiPromise = (_options.api_key || _options.simple_request) ? getApiPromise(_options, clientComponentsResult) : null;
+    const apiPromise = callsApi ? getApiPromise(_options, clientComponentsResult, observations) : null;
     let apiResult = null;
 
     if (apiPromise) {

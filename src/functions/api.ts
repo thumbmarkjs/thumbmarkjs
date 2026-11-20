@@ -5,6 +5,7 @@ import { getVersion } from "../utils/version";
 import { hash } from '../utils/hash';
 import { stableStringify } from '../utils/stableStringify';
 import { getCache, getApiResponseExpiry, setCache } from "../utils/cache";
+import type { ObservationsCollection } from "../utils/observations";
 
 // ===================== Types & Interfaces =====================
 
@@ -149,32 +150,40 @@ async function callApiWithRetry(
 }
 
 /**
+ * The result getApiPromise would return without making a request, if any:
+ * the in-memory result, a valid localStorage entry, or an in-flight request.
+ * Only applies while caching is enabled.
+ */
+function getServedFromCache(options: OptionsAfterDefaults): Promise<apiResponse> | undefined {
+    if (!options.cache_api_call) return;
+    if (apiPromiseResult) return Promise.resolve(apiPromiseResult);
+    const cached = getCachedApiResponse(options);
+    if (cached) return Promise.resolve(cached);
+    // A request already in flight is shared to prevent duplicate calls. Kept
+    // inside the cache_api_call check to avoid holding onto promises when caching is disabled.
+    return currentApiPromise ?? undefined;
+}
+
+/** True when getApiPromise would be served without a new request. */
+export const isApiServedFromCache = (options: OptionsAfterDefaults): boolean =>
+    !!getServedFromCache(options);
+
+/**
  * Calls the Thumbmark API with the given components, using caching and deduplication.
  * Returns a promise for the API response or null on error.
+ *
+ * `observations`, when given, is sent as a sibling of `components` (outside
+ * clientHash). The request includes every key resolved by the time it is built
+ * and waits for pending ones only until the collection deadline.
  */
 export const getApiPromise = (
     options: OptionsAfterDefaults,
-    components: componentInterface
+    components: componentInterface,
+    observations?: Pick<ObservationsCollection, 'snapshot'>,
 ): Promise<apiResponse | null> => {
-    // 1. If a result is already cached and caching is enabled, return it.
-    if (options.cache_api_call) {
-        // Check the in-memory cache
-        if (apiPromiseResult) {
-            return Promise.resolve(apiPromiseResult);
-        }
-
-        // Check the localStorage cache
-        const cached = getCachedApiResponse(options);
-        if (cached) {
-            return Promise.resolve(cached);
-        }
-
-        // 2. If a request is already in flight, return that promise to prevent duplicate calls.
-        // Moved inside the cache_api_call check to avoid holding onto promises when caching is disabled.
-        if (currentApiPromise) {
-            return currentApiPromise;
-        }
-    }
+    // 1. Serve from the in-memory cache, localStorage cache or an in-flight request.
+    const served = getServedFromCache(options);
+    if (served) return served;
 
     // 3. Otherwise, initiate a new API call with timeout.
     const apiEndpoint = options.api_endpoint || DEFAULT_API_ENDPOINT;
@@ -224,8 +233,18 @@ export const getApiPromise = (
 
     const timeoutMs = options.timeout || 5000;
 
-    const apiCall = callApiWithRetry(endpoint, requestBody, options, visitorId)
-        .finally(() => { currentApiPromise = null; });
+    // With observations, take a snapshot of the collection (which waits for
+    // pending keys only until its deadline) and attach it; the body is
+    // serialized only when the request is sent. currentApiPromise is still set
+    // synchronously below, so concurrent callers keep sharing this one request.
+    const send = () => callApiWithRetry(endpoint, requestBody, options, visitorId);
+    const apiCall = (observations
+        ? observations.snapshot().then(
+            resolved => { requestBody.observations = resolved; },
+            () => { /* send without observations */ },
+        ).then(send)
+        : send()
+    ).finally(() => { currentApiPromise = null; });
 
     const timeout = new Promise<apiResponse>((resolve) => {
         setTimeout(() => {

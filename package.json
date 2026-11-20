@@ -48,6 +48,7 @@
     "src/utils/hash.ts",
     "src/utils/imageDataToDataURL.ts",
     "src/utils/log.ts",
+    "src/utils/observations.ts",
     "src/utils/raceAll.ts",
     "src/utils/sort.ts",
     "src/utils/stableStringify.ts",
