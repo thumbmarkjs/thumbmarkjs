@@ -96,7 +96,7 @@ export async function getThumbmark(
     // and shared by both.
     const callsApi = !!(_options.api_key || _options.simple_request);
     const needsObservations = (callsApi && !isApiServedFromCache(_options)) || shouldLog;
-    const observations = needsObservations ? collectObservations(_options) : undefined;
+    const observations = needsObservations ? collectObservations() : undefined;
     const { elapsed, resolvedComponents: clientComponentsResult, errors: componentErrors, pipelineTimings: mainPipelineTimings } = await resolveClientComponents(allComponents, _options);
     allErrors.push(...componentErrors);
 

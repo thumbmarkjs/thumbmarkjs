@@ -1,5 +1,3 @@
-import { OptionsAfterDefaults } from '../options';
-
 // ================= Environment observations (API request and sampled log) =================
 
 /**
@@ -245,22 +243,13 @@ export interface ObservationsCollection {
  * collection is read with `snapshot()` when the request or log is built, and
  * whatever has resolved by then is what is sent. Probes start right away and
  * run in parallel, off the calling stack (after the current synchronous work),
- * each isolated: a probe that throws omits only its own key.
- *
- * Returns undefined when `exclude` contains `observations`. An
- * `observations.<key>` entry skips that probe entirely. `include` and
- * `stabilize` do not apply to observations.
+ * each isolated: a probe that throws omits only its own key. `exclude`,
+ * `include` and `stabilize` do not apply to observations.
  */
-export function collectObservations(
-    options: Pick<OptionsAfterDefaults, 'exclude'>,
-): ObservationsCollection | undefined {
-    const excluded = options.exclude || [];
-    if (excluded.includes('observations')) return;
-
+export function collectObservations(): ObservationsCollection {
     // Filled live as probes resolve.
     const observations: ObservationsInterface = { v: 1 };
     (Object.keys(PROBES) as ObservationKey[])
-        .filter(key => !excluded.includes(`observations.${key}`))
         .forEach(key =>
             Promise.resolve()
                 .then(PROBES[key])

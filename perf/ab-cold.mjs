@@ -7,9 +7,11 @@
  *   node perf/ab-cold.mjs <label>=<path> <label>=<path> [...] [--samples N] [--opts <label>=<json>]
  *
  * Each path needs a built dist/. Reported deltas are relative to the first arm.
- * `--opts` adds Thumbmark options to one arm, e.g. to compare a checkout
- * against itself with observations switched off:
- *   node perf/ab-cold.mjs with=. without=. --opts 'without={"exclude":["observations"]}'
+ * `--opts` adds Thumbmark options to one arm, e.g.
+ *   node perf/ab-cold.mjs a=. b=. --opts 'b={"logging":false}'
+ * Observations are always on, so to measure their cost compare against a
+ * checkout that predates them (e.g. a v1.12.0 worktree):
+ *   node perf/ab-cold.mjs v1120=<path> main=.
  * An A/A run (same path twice) shows the noise floor:
  *   node perf/ab-cold.mjs a=. b=.
  */
