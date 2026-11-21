@@ -18,8 +18,8 @@ import type { ObservationsCollection } from './observations';
  * nothing.
  *
  * `observations`, when given, is added as a sibling of `components` (outside
- * the hash) from its deadline-bounded snapshot, awaited here for the same
- * reason. If the snapshot rejects, the key is omitted.
+ * the hash) from a snapshot taken when the log is built, so it can include keys
+ * that resolved after the API request's snapshot. It never waits for a pending key.
  * @internal
  */
 export async function logThumbmarkData(thisHash: string, thumbmarkData: componentInterface, options: optionsInterface, errors: ThumbmarkError[] = [], observations?: Pick<ObservationsCollection, 'snapshot'>): Promise<void> {
@@ -28,15 +28,16 @@ export async function logThumbmarkData(thisHash: string, thumbmarkData: componen
 
     sessionStorage.setItem("_tmjs_l", "1");
 
-    let observed;
-    try { observed = await observations?.snapshot(); } catch { /* log without observations */ }
+    // Snapshot last, once the payload is otherwise ready, so it holds as much as has resolved.
+    const experimental = await getExperimentalPayload();
+    const observed = observations?.snapshot();
 
     const { api_key: _omitApiKey, metadata: _omitMetadata, ...loggableOptions } = options;
     const payload = {
         thumbmark: thisHash,
         components: thumbmarkData,
         ...(observed && { observations: observed }),
-        experimental: await getExperimentalPayload(),
+        experimental,
         version: getVersion(),
         options: loggableOptions,
         path: window?.location?.pathname,

@@ -1,10 +1,16 @@
-import { collectObservations, ObservationsInterface } from './observations';
+import { collectObservations, ObservationsInterface, PROBES } from './observations';
 
 type Obj = Record<string, unknown>;
 
-/** Runs the collection to completion with every key enabled unless `exclude` says otherwise. */
-const collect = async (exclude: string[] = []): Promise<ObservationsInterface> =>
-    (await collectObservations({ exclude }))!;
+/** Lets every probe that can resolve do so (a macrotask, so any chain of promises has settled). */
+const settle = () => new Promise<void>(resolve => setTimeout(resolve, 0));
+
+/** Runs the collection until every probe has settled, with every key enabled unless `exclude` says otherwise. */
+async function collect(exclude: string[] = []): Promise<ObservationsInterface> {
+    const collection = collectObservations({ exclude })!;
+    await settle();
+    return collection.snapshot();
+}
 
 /**
  * Like collect(), but from a freshly loaded module, so the per-page-load WebGL
@@ -14,7 +20,9 @@ async function collectFresh(exclude: string[] = []): Promise<ObservationsInterfa
     let result!: ObservationsInterface;
     await jest.isolateModulesAsync(async () => {
         const fresh = await import('./observations');
-        result = (await fresh.collectObservations({ exclude }))!;
+        const collection = fresh.collectObservations({ exclude })!;
+        await settle();
+        result = collection.snapshot();
     });
     return result;
 }
@@ -107,7 +115,6 @@ describe('collectObservations', () => {
             expect('webglRendererUnmasked' in one).toBe(false);
             restore();
         });
-
         test('media decode does not run', async () => {
             const decodingInfo = jest.fn(() => Promise.resolve({ supported: true }));
             fake(navigator, 'mediaCapabilities', { value: { decodingInfo } });
@@ -361,12 +368,9 @@ describe('collectObservations', () => {
                 parameter === 1 ? 'Unmasked Vendor' : parameter === 2 ? 'Unmasked Renderer' : 'Intel Inc.');
             await jest.isolateModulesAsync(async () => {
                 const fresh = await import('./observations');
-                const results = [
-                    await fresh.collectObservations({ exclude: [] }),
-                    await fresh.collectObservations({ exclude: [] }),
-                    await fresh.collectObservations({ exclude: [] }),
-                ];
-                results.forEach(result => expect(result).toMatchObject({
+                const collections = [1, 2, 3].map(() => fresh.collectObservations({ exclude: [] })!);
+                await settle();
+                collections.forEach(collection => expect(collection.snapshot()).toMatchObject({
                     webglVendorUnmasked: 'Unmasked Vendor', webglRendererUnmasked: 'Unmasked Renderer',
                 }));
             });
@@ -449,77 +453,81 @@ describe('collectObservations', () => {
         });
     });
 
-    describe('deadlines', () => {
+    describe('snapshot', () => {
         const hang = () => new Promise(() => undefined);
 
-        /** A mediaDecode whose codec checks all stay pending until the returned function is called. */
-        function pendingMediaDecode() {
-            const resolvers: ((value: Obj) => void)[] = [];
-            fake(navigator, 'mediaCapabilities', { value: { decodingInfo: () => new Promise(resolve => { resolvers.push(resolve as (value: Obj) => void); }) } });
-            return (value: Obj) => resolvers.forEach(resolve => resolve(value));
+        /** Swaps one probe for the length of a test, so a slow one can be simulated. */
+        function slowProbe(probe: () => unknown) {
+            const original = PROBES.adBaitBlocked;
+            PROBES.adBaitBlocked = probe;
+            restorers.push(() => { PROBES.adBaitBlocked = original; });
         }
 
-        test('a never-resolving mediaDecode is omitted at the 500 ms deadline, and no timers are left behind', async () => {
+        /** An adBaitBlocked whose result stays pending until the returned function is called. */
+        function pendingProbe() {
+            let resolve!: (value: string[]) => void;
+            slowProbe(() => new Promise(r => { resolve = r; }));
+            return (value: string[]) => resolve(value);
+        }
+
+        test('a snapshot taken while a probe is pending omits that key, returns synchronously and creates no timers', async () => {
             jest.useFakeTimers();
+            pendingProbe();
+            fake(navigator, 'hardwareConcurrency', { value: 4 });
+            const collection = collectObservations({ exclude: [] })!;
+            await jest.advanceTimersByTimeAsync(0);
+            const snapshot = collection.snapshot();
+            expect(snapshot).not.toBeInstanceOf(Promise);
+            expect(snapshot).toMatchObject({ v: 1, hardwareConcurrency: 4, automationGlobals: [] });
+            expect('adBaitBlocked' in snapshot).toBe(false);
+            expect(jest.getTimerCount()).toBe(0);
+        });
+
+        test('a snapshot taken before the probes have run has only the version, and still returns immediately', () => {
+            jest.useFakeTimers();
+            const collection = collectObservations({ exclude: [] })!;
+            expect(collection.snapshot()).toEqual({ v: 1 });
+            expect(jest.getTimerCount()).toBe(0);
+        });
+
+        test('a pending probe is never waited for, however much time passes', async () => {
+            jest.useFakeTimers();
+            slowProbe(hang);
+            const collection = collectObservations({ exclude: [] })!;
+            await jest.advanceTimersByTimeAsync(10_000);
+            expect(collection.snapshot()).toMatchObject({ v: 1, automationGlobals: [] });
+            expect('adBaitBlocked' in collection.snapshot()).toBe(false);
+            expect(jest.getTimerCount()).toBe(0);
+        });
+
+        test('a later snapshot includes the key once it has resolved, and an earlier one is not changed', async () => {
+            jest.useFakeTimers();
+            const resolveProbe = pendingProbe();
+            const collection = collectObservations({ exclude: [] })!;
+            await jest.advanceTimersByTimeAsync(0);
+            const early = collection.snapshot();
+            resolveProbe(['ad-banner']);
+            await jest.advanceTimersByTimeAsync(0);
+            expect('adBaitBlocked' in early).toBe(false);
+            expect(collection.snapshot().adBaitBlocked).toEqual(['ad-banner']);
+        });
+
+        test('each snapshot is a copy: changing one does not affect the next', async () => {
+            const collection = collectObservations({ exclude: [] })!;
+            await settle();
+            const first = collection.snapshot();
+            delete first.automationGlobals;
+            expect(collection.snapshot().automationGlobals).toEqual([]);
+        });
+
+        test('a never-answering decodingInfo leaves only mediaDecode out', async () => {
             fake(navigator, 'mediaCapabilities', { value: { decodingInfo: hang } });
             fake(navigator, 'hardwareConcurrency', { value: 4 });
-            let result: ObservationsInterface | undefined;
-            collectObservations({ exclude: [] })!.then(r => { result = r; });
-            await jest.advanceTimersByTimeAsync(499);
-            expect(result).toBeUndefined();
-            await jest.advanceTimersByTimeAsync(1);
-            expect(result).toBeDefined();
-            expect('mediaDecode' in result!).toBe(false);
-            expect(result!.hardwareConcurrency).toBe(4);
-            expect(jest.getTimerCount()).toBe(0);
-        });
-
-        test('a probe that resolves after the deadline is not in the collection promise, but is in a later snapshot', async () => {
-            jest.useFakeTimers();
-            const resolveDecode = pendingMediaDecode();
             const collection = collectObservations({ exclude: [] })!;
-            let result: ObservationsInterface | undefined;
-            collection.then(r => { result = r; });
-            await jest.advanceTimersByTimeAsync(500);
-            expect(result).toBeDefined();
-            resolveDecode({ supported: true });
-            await jest.advanceTimersByTimeAsync(0);
-            expect('mediaDecode' in result!).toBe(false);
-            expect((await collection.snapshot()).mediaDecode).toContain('h264:supported');
-        });
-
-        test('a snapshot taken before the deadline waits for a pending key only until the deadline', async () => {
-            jest.useFakeTimers();
-            pendingMediaDecode();
-            const collection = collectObservations({ exclude: [] })!;
-            await jest.advanceTimersByTimeAsync(200);
-            let snapshot: ObservationsInterface | undefined;
-            collection.snapshot().then(r => { snapshot = r; });
-            await jest.advanceTimersByTimeAsync(299);
-            expect(snapshot).toBeUndefined();
-            await jest.advanceTimersByTimeAsync(1);
-            expect(snapshot).toMatchObject({ v: 1, automationGlobals: [] });
-            expect('mediaDecode' in snapshot!).toBe(false);
-        });
-
-        test('a snapshot taken after the deadline does not wait', async () => {
-            jest.useFakeTimers();
-            pendingMediaDecode();
-            const collection = collectObservations({ exclude: [] })!;
-            await jest.advanceTimersByTimeAsync(800);
-            let snapshot: ObservationsInterface | undefined;
-            collection.snapshot().then(r => { snapshot = r; });
-            await jest.advanceTimersByTimeAsync(0);
-            expect(snapshot).toMatchObject({ v: 1 });
-        });
-
-        test('resolves as soon as every key has settled, without waiting for the deadline', async () => {
-            jest.useFakeTimers();
-            let result: ObservationsInterface | undefined;
-            collectObservations({ exclude: [] })!.then(r => { result = r; });
-            await jest.advanceTimersByTimeAsync(0);
-            expect(result).toBeDefined();
-            expect(jest.getTimerCount()).toBe(0);
+            await settle();
+            const snapshot = collection.snapshot();
+            expect('mediaDecode' in snapshot).toBe(false);
+            expect(snapshot.hardwareConcurrency).toBe(4);
         });
     });
 });

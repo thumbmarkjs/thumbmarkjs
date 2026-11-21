@@ -174,7 +174,7 @@ export const isApiServedFromCache = (options: OptionsAfterDefaults): boolean =>
  *
  * `observations`, when given, is sent as a sibling of `components` (outside
  * clientHash). The request includes every key resolved by the time it is built
- * and waits for pending ones only until the collection deadline.
+ * and never waits for a pending one.
  */
 export const getApiPromise = (
     options: OptionsAfterDefaults,
@@ -233,18 +233,12 @@ export const getApiPromise = (
 
     const timeoutMs = options.timeout || 5000;
 
-    // With observations, take a snapshot of the collection (which waits for
-    // pending keys only until its deadline) and attach it; the body is
-    // serialized only when the request is sent. currentApiPromise is still set
-    // synchronously below, so concurrent callers keep sharing this one request.
-    const send = () => callApiWithRetry(endpoint, requestBody, options, visitorId);
-    const apiCall = (observations
-        ? observations.snapshot().then(
-            resolved => { requestBody.observations = resolved; },
-            () => { /* send without observations */ },
-        ).then(send)
-        : send()
-    ).finally(() => { currentApiPromise = null; });
+    // The snapshot is taken now, without waiting, and the body is serialized
+    // when the request is sent. currentApiPromise is still set synchronously
+    // below, so concurrent callers keep sharing this one request.
+    if (observations) requestBody.observations = observations.snapshot();
+    const apiCall = callApiWithRetry(endpoint, requestBody, options, visitorId)
+        .finally(() => { currentApiPromise = null; });
 
     const timeout = new Promise<apiResponse>((resolve) => {
         setTimeout(() => {

@@ -9,9 +9,9 @@ import { OptionsAfterDefaults } from '../options';
  * and the sampled diagnostic log.
  *
  * Every key is optional: a key is omitted when it could not be determined
- * (unsupported API, a probe that threw, or one that missed its deadline), so a
- * missing key is not the same as a negative result. Values are raw facts; the
- * client does no classification.
+ * (unsupported API, a probe that threw, or one that had not resolved yet when
+ * the snapshot was taken), so a missing key is not the same as a negative
+ * result. Values are raw facts; the client does no classification.
  */
 export interface ObservationsInterface {
     /** Schema version. Always present, so the API can tell "nothing determinable" from an older client. */
@@ -48,9 +48,6 @@ export interface ObservationsInterface {
 }
 
 type ObservationKey = Exclude<keyof ObservationsInterface, 'v'>;
-
-/** One cap for the whole collection, measured from when it starts. */
-const OBSERVATIONS_TIMEOUT_MS = 500;
 
 const NAVIGATOR_ACCESSORS = ['hardwareConcurrency', 'userAgent', 'platform', 'language'];
 
@@ -128,8 +125,8 @@ function mediaDecode(): Promise<string[] | undefined> | undefined {
             () => `${label}:error`,
         );
     });
-    // No timer of its own: a decodingInfo that never answers just stays pending and
-    // is left out when the collection deadline passes.
+    // No timer of its own: a decodingInfo that never answers just stays pending, and
+    // the key is left out of every snapshot taken before it resolves.
     return Promise.all(probes).then(results => results.sort());
 }
 
@@ -182,7 +179,8 @@ function canvasReadbackDiffBytes(): number | undefined {
     return diff;
 }
 
-const PROBES: Record<ObservationKey, () => unknown> = {
+/** Exported only so tests can swap in a slow probe. */
+export const PROBES: Record<ObservationKey, () => unknown> = {
     webglVendorUnmasked: () => readWebglUnmasked().vendor,
     webglRendererUnmasked: () => readWebglUnmasked().renderer,
     mediaDecode,
@@ -232,26 +230,22 @@ const PROBES: Record<ObservationKey, () => unknown> = {
 
 // ===================== Collection =====================
 
-/**
- * The collection promise, plus `snapshot()` for reading the result later.
- */
-export type ObservationsCollection = Promise<ObservationsInterface> & {
+/** Handle to a running collection. */
+export interface ObservationsCollection {
     /**
-     * Resolves with every key that has resolved by now, including ones that
-     * resolved after the deadline. If keys are still pending and the deadline
-     * has not passed, waits for them only until the deadline.
+     * A copy of every key that has resolved so far. Returns immediately and
+     * never waits for a pending probe, whose key is simply absent; a later call
+     * includes it once it has resolved.
      */
-    snapshot(): Promise<ObservationsInterface>;
-};
+    snapshot(): ObservationsInterface;
+}
 
 /**
- * Starts collecting observations. The returned promise never rejects and
- * resolves once every key has settled or 500 ms after this call, whichever
- * comes first, with the keys that resolved by then. A key still pending at the
- * deadline is omitted from it, but `snapshot()` picks it up if it resolves
- * before the request is built. Probes run off the calling stack (after the
- * current synchronous work), each isolated: a probe that throws omits only its
- * own key.
+ * Starts collecting observations. There is no time budget of its own: the
+ * collection is read with `snapshot()` when the request or log is built, and
+ * whatever has resolved by then is what is sent. Probes start right away and
+ * run in parallel, off the calling stack (after the current synchronous work),
+ * each isolated: a probe that throws omits only its own key.
  *
  * Returns undefined when `exclude` contains `observations`. An
  * `observations.<key>` entry skips that probe entirely. `include` and
@@ -263,25 +257,17 @@ export function collectObservations(
     const excluded = options.exclude || [];
     if (excluded.includes('observations')) return;
 
-    const keys = (Object.keys(PROBES) as ObservationKey[]).filter(key => !excluded.includes(`observations.${key}`));
-    // Filled live as probes resolve, even after the deadline.
+    // Filled live as probes resolve.
     const observations: ObservationsInterface = { v: 1 };
+    (Object.keys(PROBES) as ObservationKey[])
+        .filter(key => !excluded.includes(`observations.${key}`))
+        .forEach(key =>
+            Promise.resolve()
+                .then(PROBES[key])
+                .then(value => {
+                    if (value != null) (observations as unknown as Record<string, unknown>)[key] = value;
+                }, () => { /* a failed probe omits its key */ }),
+        );
 
-    let remaining = keys.length;
-    let release!: () => void;
-    const ready = new Promise<void>(resolve => { release = resolve; });
-    const done = () => { clearTimeout(timer); release(); };
-    const timer = setTimeout(done, OBSERVATIONS_TIMEOUT_MS);
-    if (!remaining) done();
-    keys.forEach(key =>
-        Promise.resolve()
-            .then(PROBES[key])
-            .then(value => {
-                if (value != null) (observations as unknown as Record<string, unknown>)[key] = value;
-            }, () => { /* a failed probe omits its key */ })
-            .then(() => { if (!--remaining) done(); }),
-    );
-
-    const snapshot = () => ready.then(() => ({ ...observations }));
-    return Object.assign(snapshot(), { snapshot });
+    return { snapshot: () => ({ ...observations }) };
 }
