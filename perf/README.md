@@ -56,7 +56,10 @@ WARN.
 - `node perf/ab-cold.mjs a=<path> b=<path> [--samples N]` -- compares checkouts
   cold, interleaved sample by sample, so drift cancels. Use it to confirm any
   WARN, and for hardware that differs from the baseline's. `--opts label=<json>`
-  adds Thumbmark options to one arm, e.g. `--opts 'b={"exclude":["observations"]}'`.
+  adds Thumbmark options to one arm, e.g. `--opts 'b={"logging":false}'`.
+  Observations cannot be switched off, so to measure their cost compare against
+  a checkout without them (e.g. a v1.12.0 worktree):
+  `node perf/ab-cold.mjs v1120=<path> main=.`.
   `a=. b=.` shows the noise floor.
 - `perf/last-cold.json` / `perf/last-ab-cold.json` -- (gitignored) latest cold results.
 

@@ -5,9 +5,9 @@ type Obj = Record<string, unknown>;
 /** Lets every probe that can resolve do so (a macrotask, so any chain of promises has settled). */
 const settle = () => new Promise<void>(resolve => setTimeout(resolve, 0));
 
-/** Runs the collection until every probe has settled, with every key enabled unless `exclude` says otherwise. */
-async function collect(exclude: string[] = []): Promise<ObservationsInterface> {
-    const collection = collectObservations({ exclude })!;
+/** Runs the collection until every probe that can resolve has settled. */
+async function collect(): Promise<ObservationsInterface> {
+    const collection = collectObservations();
     await settle();
     return collection.snapshot();
 }
@@ -16,11 +16,11 @@ async function collect(exclude: string[] = []): Promise<ObservationsInterface> {
  * Like collect(), but from a freshly loaded module, so the per-page-load WebGL
  * memo starts empty. Needed by every test that depends on the WebGL probe.
  */
-async function collectFresh(exclude: string[] = []): Promise<ObservationsInterface> {
+async function collectFresh(): Promise<ObservationsInterface> {
     let result!: ObservationsInterface;
     await jest.isolateModulesAsync(async () => {
         const fresh = await import('./observations');
-        const collection = fresh.collectObservations({ exclude })!;
+        const collection = fresh.collectObservations();
         await settle();
         result = collection.snapshot();
     });
@@ -52,19 +52,20 @@ afterEach(() => {
 describe('collectObservations', () => {
     test('always carries the schema version, even when nothing else is determinable', async () => {
         expect(await collect()).toMatchObject({ v: 1 });
-        const everyKeyExcluded = [
-            'webglVendorUnmasked', 'webglRendererUnmasked', 'mediaDecode', 'webdriver', 'automationGlobals',
-            'engineApiMarkers', 'navigatorAccessorOverrides', 'getterNativeSourceTamper', 'hardwareConcurrency',
-            'overriddenPrototypeMethods', 'adBaitBlocked', 'canvasReadbackDiffBytes',
-        ].map(key => `observations.${key}`);
-        expect(await collect(everyKeyExcluded)).toEqual({ v: 1 });
+        const original = { ...PROBES };
+        restorers.push(() => { Object.assign(PROBES, original); });
+        (Object.keys(PROBES) as (keyof typeof PROBES)[]).forEach(key => { PROBES[key] = () => undefined; });
+        expect(await collect()).toEqual({ v: 1 });
     });
 
-    test('exclude: ["observations"] collects nothing and returns no promise', () => {
-        const probe = jest.fn(() => 4);
-        fake(navigator, 'hardwareConcurrency', { get: probe });
-        expect(collectObservations({ exclude: ['observations'] })).toBeUndefined();
-        expect(probe).not.toHaveBeenCalled();
+    test('runs every probe', async () => {
+        const original = { ...PROBES };
+        restorers.push(() => { Object.assign(PROBES, original); });
+        const keys = Object.keys(PROBES) as (keyof typeof PROBES)[];
+        const calls = keys.map(key => { const probe = jest.fn(() => undefined); PROBES[key] = probe; return probe; });
+        await collect();
+        calls.forEach(probe => expect(probe).toHaveBeenCalledTimes(1));
+        expect(keys).toHaveLength(12);
     });
 
     test('a probe that throws omits only its own key', async () => {
@@ -74,54 +75,6 @@ describe('collectObservations', () => {
         expect('webdriver' in result).toBe(false);
         expect(result.hardwareConcurrency).toBe(6);
         expect(result.v).toBe(1);
-    });
-
-    describe('per-key exclude skips the probe', () => {
-        test('sync navigator probes', async () => {
-            const webdriver = jest.fn(() => true);
-            const concurrency = jest.fn(() => 8);
-            fake(navigator, 'webdriver', { get: webdriver });
-            fake(navigator, 'hardwareConcurrency', { get: concurrency });
-            const result = await collect(['observations.webdriver', 'observations.hardwareConcurrency']);
-            expect(webdriver).not.toHaveBeenCalled();
-            expect(concurrency).not.toHaveBeenCalled();
-            expect('webdriver' in result).toBe(false);
-            expect('hardwareConcurrency' in result).toBe(false);
-        });
-
-        test('ad bait does not touch the document', async () => {
-            const append = jest.spyOn(document.body, 'appendChild');
-            const result = await collect(['observations.adBaitBlocked']);
-            expect(append).not.toHaveBeenCalled();
-            expect('adBaitBlocked' in result).toBe(false);
-        });
-
-        test('canvas readback creates no canvas', async () => {
-            const createElement = jest.spyOn(document, 'createElement');
-            const result = await collect(['observations.canvasReadbackDiffBytes', 'observations.webglVendorUnmasked', 'observations.webglRendererUnmasked', 'observations.adBaitBlocked']);
-            expect(createElement).not.toHaveBeenCalledWith('canvas');
-            expect('canvasReadbackDiffBytes' in result).toBe(false);
-        });
-
-        test('webgl creates no context when both keys are excluded, and one key still works alone', async () => {
-            const { getContext, restore } = mockWebgl();
-            const none = await collectFresh(['observations.webglVendorUnmasked', 'observations.webglRendererUnmasked']);
-            expect(getContext).not.toHaveBeenCalledWith('webgl');
-            expect('webglVendorUnmasked' in none).toBe(false);
-            expect('webglRendererUnmasked' in none).toBe(false);
-
-            const one = await collectFresh(['observations.webglRendererUnmasked']);
-            expect(one.webglVendorUnmasked).toBe('Fake Vendor Inc.');
-            expect('webglRendererUnmasked' in one).toBe(false);
-            restore();
-        });
-        test('media decode does not run', async () => {
-            const decodingInfo = jest.fn(() => Promise.resolve({ supported: true }));
-            fake(navigator, 'mediaCapabilities', { value: { decodingInfo } });
-            const result = await collect(['observations.mediaDecode']);
-            expect(decodingInfo).not.toHaveBeenCalled();
-            expect('mediaDecode' in result).toBe(false);
-        });
     });
 
     describe('webdriver', () => {
@@ -368,7 +321,7 @@ describe('collectObservations', () => {
                 parameter === 1 ? 'Unmasked Vendor' : parameter === 2 ? 'Unmasked Renderer' : 'Intel Inc.');
             await jest.isolateModulesAsync(async () => {
                 const fresh = await import('./observations');
-                const collections = [1, 2, 3].map(() => fresh.collectObservations({ exclude: [] })!);
+                const collections = [1, 2, 3].map(() => fresh.collectObservations());
                 await settle();
                 collections.forEach(collection => expect(collection.snapshot()).toMatchObject({
                     webglVendorUnmasked: 'Unmasked Vendor', webglRendererUnmasked: 'Unmasked Renderer',
@@ -474,7 +427,7 @@ describe('collectObservations', () => {
             jest.useFakeTimers();
             pendingProbe();
             fake(navigator, 'hardwareConcurrency', { value: 4 });
-            const collection = collectObservations({ exclude: [] })!;
+            const collection = collectObservations();
             await jest.advanceTimersByTimeAsync(0);
             const snapshot = collection.snapshot();
             expect(snapshot).not.toBeInstanceOf(Promise);
@@ -485,7 +438,7 @@ describe('collectObservations', () => {
 
         test('a snapshot taken before the probes have run has only the version, and still returns immediately', () => {
             jest.useFakeTimers();
-            const collection = collectObservations({ exclude: [] })!;
+            const collection = collectObservations();
             expect(collection.snapshot()).toEqual({ v: 1 });
             expect(jest.getTimerCount()).toBe(0);
         });
@@ -493,7 +446,7 @@ describe('collectObservations', () => {
         test('a pending probe is never waited for, however much time passes', async () => {
             jest.useFakeTimers();
             slowProbe(hang);
-            const collection = collectObservations({ exclude: [] })!;
+            const collection = collectObservations();
             await jest.advanceTimersByTimeAsync(10_000);
             expect(collection.snapshot()).toMatchObject({ v: 1, automationGlobals: [] });
             expect('adBaitBlocked' in collection.snapshot()).toBe(false);
@@ -503,7 +456,7 @@ describe('collectObservations', () => {
         test('a later snapshot includes the key once it has resolved, and an earlier one is not changed', async () => {
             jest.useFakeTimers();
             const resolveProbe = pendingProbe();
-            const collection = collectObservations({ exclude: [] })!;
+            const collection = collectObservations();
             await jest.advanceTimersByTimeAsync(0);
             const early = collection.snapshot();
             resolveProbe(['ad-banner']);
@@ -513,7 +466,7 @@ describe('collectObservations', () => {
         });
 
         test('each snapshot is a copy: changing one does not affect the next', async () => {
-            const collection = collectObservations({ exclude: [] })!;
+            const collection = collectObservations();
             await settle();
             const first = collection.snapshot();
             delete first.automationGlobals;
@@ -523,7 +476,7 @@ describe('collectObservations', () => {
         test('a never-answering decodingInfo leaves only mediaDecode out', async () => {
             fake(navigator, 'mediaCapabilities', { value: { decodingInfo: hang } });
             fake(navigator, 'hardwareConcurrency', { value: 4 });
-            const collection = collectObservations({ exclude: [] })!;
+            const collection = collectObservations();
             await settle();
             const snapshot = collection.snapshot();
             expect('mediaDecode' in snapshot).toBe(false);

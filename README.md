@@ -78,7 +78,7 @@ const tm = new ThumbmarkJS.Thumbmark({
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `api_key` | string | — | API key from [thumbmarkjs.com](https://thumbmarkjs.com). Enables server-side signals and visitorId. |
-| `exclude` | string[] | — | Components to exclude from the fingerprint hash. Excluding a top-level component also improves performance. `observations` and `observations.<key>` opt out of [environment observations](#environment-observations). |
+| `exclude` | string[] | — | Components to exclude from the fingerprint hash. Excluding a top-level component also improves performance. |
 | `include` | string[] | — | Only include these components. `exclude` still applies. Does not apply to observations. |
 | `permissions_to_check` | string[] | — | Limit which browser permissions are checked. Permissions are the slowest component to resolve. |
 | `timeout` | integer | 5000 | Component timeout in milliseconds. |
@@ -113,7 +113,7 @@ With an `api_key` (or `simple_request`), the API request also carries an `observ
 - They are sent next to `components` in the API request, and in the [sampled log](#sampled-logging) when a run is sampled. They are not part of the fingerprint or the thumbmark hash, and are not returned in the result.
 - Observations are collected while the components run. The request includes whatever has been collected by the time the components finish; it never waits for observations. A value that has not resolved by then is left out, so a missing key means "unknown", not "false". It never prompts or changes the page.
 - Nothing is collected unless an API request will be built (not when a cached API response is used) or the run is sampled for logging. One collection serves both.
-- Opt out of everything with `exclude: ['observations']`, or of a single value with e.g. `exclude: ['observations.adBaitBlocked']`. The excluded probe does not run. `include` and `stabilize` do not apply to observations.
+- `exclude`, `include` and `stabilize` do not apply to observations.
 - The payload type is exported as `ObservationsInterface`.
 
 ### Collect beacon

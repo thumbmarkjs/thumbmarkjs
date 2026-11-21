@@ -72,20 +72,23 @@ describe('observations in the API request body', () => {
     });
 
     test('still sends { v: 1 } when no key could be determined', async () => {
-        const every = [
-            'webglVendorUnmasked', 'webglRendererUnmasked', 'mediaDecode', 'webdriver', 'automationGlobals',
-            'engineApiMarkers', 'navigatorAccessorOverrides', 'getterNativeSourceTamper', 'hardwareConcurrency',
-            'overriddenPrototypeMethods', 'adBaitBlocked',
-        ];
-        await getThumbmark({ ...apiOptions, exclude: every.map(key => `observations.${key}`) });
+        const original = { ...PROBES };
+        (Object.keys(PROBES) as (keyof typeof PROBES)[]).forEach(key => { PROBES[key] = () => undefined; });
+        try {
+            await getThumbmark(apiOptions);
+        } finally {
+            Object.assign(PROBES, original);
+        }
         expect(sentBodies()[0].observations).toEqual({ v: 1 });
     });
 });
 
 describe('hash invariance', () => {
-    test('the thumbmark and clientHash are identical with default options and with exclude: ["observations"]', async () => {
+    test('the thumbmark and clientHash are identical whether or not observations are collected', async () => {
         const withObservations = await getThumbmark(apiOptions);
-        const without = await getThumbmark({ ...apiOptions, exclude: ['observations'] });
+        // Simulates a run where nothing is collected, so the request carries no observations.
+        collectSpy.mockReturnValueOnce(undefined);
+        const without = await getThumbmark(apiOptions);
         const [first, second] = sentBodies();
 
         expect(first.observations).toBeDefined();
@@ -103,28 +106,21 @@ describe('hash invariance', () => {
     });
 });
 
-describe('exclude and stabilize', () => {
-    test('exclude: ["observations"] collects nothing and sends no observations key', async () => {
-        // The observation getters are the only thing in this test that would read it.
+describe('exclude, include and stabilize', () => {
+    test('exclude does not opt out of observations, whatever it lists', async () => {
         const webdriver = jest.fn(() => false);
         Object.defineProperty(navigator, 'webdriver', { get: webdriver, configurable: true });
         try {
-            await getThumbmark({ ...apiOptions, exclude: ['observations'] });
+            await getThumbmark({ ...apiOptions, exclude: ['observations', 'observations.adBaitBlocked', 'observations.hardwareConcurrency'] });
         } finally {
             delete (navigator as unknown as Record<string, unknown>).webdriver;
         }
-        expect(collectSpy.mock.results.every(result => result.value === undefined)).toBe(true);
-        expect(webdriver).not.toHaveBeenCalled();
-        expect(sentBodies()[0]).not.toHaveProperty('observations');
-    });
-
-    test('exclude: ["observations.<key>"] omits that key and keeps the others', async () => {
-        await getThumbmark({ ...apiOptions, exclude: ['observations.adBaitBlocked', 'observations.hardwareConcurrency'] });
         const { observations } = sentBodies()[0];
-        expect(observations).toBeDefined();
-        expect(observations).not.toHaveProperty('adBaitBlocked');
-        expect(observations).not.toHaveProperty('hardwareConcurrency');
-        expect(observations).toHaveProperty('automationGlobals');
+        expect(collectSpy).toHaveBeenCalledTimes(1);
+        expect(webdriver).toHaveBeenCalled();
+        expect(observations).toMatchObject({ v: 1, webdriver: false });
+        expect(observations).toHaveProperty('adBaitBlocked');
+        expect(observations).toHaveProperty('hardwareConcurrency');
     });
 
     test('stabilize does not strip observations (hardwareConcurrency survives where the component drops it)', async () => {
@@ -213,7 +209,7 @@ describe('getApiPromise with pending observations', () => {
     test('a pending probe is omitted and the request is sent at once, without waiting', async () => {
         jest.useFakeTimers();
         withSlowProbe(hang);
-        const collection = collectObservations(options);
+        const collection = collectObservations();
         await jest.advanceTimersByTimeAsync(0);
         const response = getApiPromise(options, { a: 1 } as componentInterface, collection);
         expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -233,7 +229,7 @@ describe('getApiPromise with pending observations', () => {
     });
 
     test('a probe that resolved before the request is built is included', async () => {
-        const collection = collectObservations(options)!;
+        const collection = collectObservations()!;
         await new Promise(resolve => setTimeout(resolve, 0));
         void getApiPromise(options, {}, collection);
         expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -244,7 +240,7 @@ describe('getApiPromise with pending observations', () => {
         jest.useFakeTimers();
         let resolveProbe!: (value: string[]) => void;
         withSlowProbe(() => new Promise(resolve => { resolveProbe = resolve; }));
-        const collection = collectObservations(options)!;
+        const collection = collectObservations()!;
         await jest.advanceTimersByTimeAsync(0);
         void getApiPromise(options, {}, collection);
         resolveProbe(['ad-banner']);
@@ -262,7 +258,7 @@ describe('getApiPromise with pending observations', () => {
     test('a probe that throws omits only its own key from the request', async () => {
         Object.defineProperty(navigator, 'webdriver', { get() { throw new Error('boom'); }, configurable: true });
         try {
-            const collection = collectObservations(options)!;
+            const collection = collectObservations()!;
             await new Promise(resolve => setTimeout(resolve, 0));
             await getApiPromise(options, {}, collection);
         } finally {
@@ -330,21 +326,14 @@ describe('observations in the sampled log', () => {
         expect(logBodies()[0].observations).toMatchObject({ v: 1 });
     });
 
-    test('exclude: ["observations"] leaves the key out of the log and collects nothing', async () => {
+    test('exclude does not remove observations from the log', async () => {
         sample(0);
-        await getThumbmark({ ...logOptions, exclude: ['observations'] });
+        await getThumbmark({ ...logOptions, exclude: ['observations', 'observations.adBaitBlocked'] });
         await flush();
-        expect(collectSpy.mock.results.every(result => result.value === undefined)).toBe(true);
+        expect(collectSpy).toHaveBeenCalledTimes(1);
         expect(logBodies()).toHaveLength(1);
-        expect(logBodies()[0]).not.toHaveProperty('observations');
-    });
-
-    test('exclude: ["observations.<key>"] drops that key from the log', async () => {
-        sample(0);
-        await getThumbmark({ ...logOptions, exclude: ['observations.adBaitBlocked'] });
-        await flush();
-        expect(logBodies()[0].observations).not.toHaveProperty('adBaitBlocked');
-        expect(logBodies()[0].observations).toHaveProperty('automationGlobals');
+        expect(logBodies()[0].observations).toMatchObject({ v: 1, automationGlobals: [] });
+        expect(logBodies()[0].observations).toHaveProperty('adBaitBlocked');
     });
 
     test('the log includes a key that resolved after the API request was built', async () => {
@@ -394,12 +383,18 @@ describe('observations in the sampled log', () => {
         sample(0);
         const logged = await getThumbmark(logOptions);
         await flush();
+        expect(logBodies()[0].observations).toBeDefined();
         sessionStorage.clear();
-        const excluded = await getThumbmark({ ...logOptions, exclude: ['observations'] });
+        // Simulates a sampled run where nothing is collected, so the log carries no observations.
+        collectSpy.mockReturnValueOnce(undefined);
+        const notCollected = await getThumbmark(logOptions);
         await flush();
-        expect(logged.thumbmark).toBe(excluded.thumbmark);
+        expect(logBodies()).toHaveLength(2);
+        expect(logBodies()[1]).not.toHaveProperty('observations');
+        expect(logged.thumbmark).toBe(notCollected.thumbmark);
         expect(logged).not.toHaveProperty('observations');
         expect(logBodies()[0].thumbmark).toBe(logged.thumbmark);
+        expect(logBodies()[1].thumbmark).toBe(logged.thumbmark);
     });
 });
 
