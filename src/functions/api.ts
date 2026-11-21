@@ -174,7 +174,8 @@ export const isApiServedFromCache = (options: OptionsAfterDefaults): boolean =>
  *
  * `observations`, when given, is sent as a sibling of `components` (outside
  * clientHash). The request includes every key resolved by the time it is built
- * and waits for pending ones only until the collection deadline.
+ * and waits for pending ones only until the collection deadline (50 ms after
+ * collection started; in practice it never waits, as every value is read synchronously).
  */
 export const getApiPromise = (
     options: OptionsAfterDefaults,
@@ -234,7 +235,7 @@ export const getApiPromise = (
     const timeoutMs = options.timeout || 5000;
 
     // With observations, take a snapshot of the collection (which waits for
-    // pending keys only until its deadline) and attach it; the body is
+    // pending keys only until its 50 ms deadline) and attach it; the body is
     // serialized only when the request is sent. currentApiPromise is still set
     // synchronously below, so concurrent callers keep sharing this one request.
     const send = () => callApiWithRetry(endpoint, requestBody, options, visitorId);

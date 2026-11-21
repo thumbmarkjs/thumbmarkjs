@@ -1,4 +1,4 @@
-import { collectObservations, ObservationsInterface } from './observations';
+import { collectObservations, ObservationsInterface, PROBES } from './observations';
 
 type Obj = Record<string, unknown>;
 
@@ -45,7 +45,7 @@ describe('collectObservations', () => {
     test('always carries the schema version, even when nothing else is determinable', async () => {
         expect(await collect()).toMatchObject({ v: 1 });
         const everyKeyExcluded = [
-            'webglVendorUnmasked', 'webglRendererUnmasked', 'mediaDecode', 'webdriver', 'automationGlobals',
+            'webglVendorUnmasked', 'webglRendererUnmasked', 'webdriver', 'automationGlobals',
             'engineApiMarkers', 'navigatorAccessorOverrides', 'getterNativeSourceTamper', 'hardwareConcurrency',
             'overriddenPrototypeMethods', 'adBaitBlocked', 'canvasReadbackDiffBytes',
         ].map(key => `observations.${key}`);
@@ -106,14 +106,6 @@ describe('collectObservations', () => {
             expect(one.webglVendorUnmasked).toBe('Fake Vendor Inc.');
             expect('webglRendererUnmasked' in one).toBe(false);
             restore();
-        });
-
-        test('media decode does not run', async () => {
-            const decodingInfo = jest.fn(() => Promise.resolve({ supported: true }));
-            fake(navigator, 'mediaCapabilities', { value: { decodingInfo } });
-            const result = await collect(['observations.mediaDecode']);
-            expect(decodingInfo).not.toHaveBeenCalled();
-            expect('mediaDecode' in result).toBe(false);
         });
     });
 
@@ -405,108 +397,71 @@ describe('collectObservations', () => {
         });
     });
 
-    describe('mediaDecode', () => {
-        const verdicts: Record<string, Obj | 'reject'> = {
-            'video/mp4; codecs="avc1.42E01E"': { supported: true, smooth: true, powerEfficient: true },
-            'video/mp4; codecs="av01.0.05M.08"': { supported: false },
-            'video/webm; codecs="vp09.00.10.08"': 'reject',
-            'audio/mp4; codecs="mp4a.40.2"': { supported: true, smooth: true },
-        };
-        const decodingInfo = jest.fn((configuration: { video?: { contentType: string }, audio?: { contentType: string } }) => {
-            const verdict = verdicts[(configuration.video || configuration.audio)!.contentType];
-            return verdict === 'reject' ? Promise.reject(new Error('unsupported config')) : Promise.resolve(verdict || {});
-        });
-
-        test('reports one sorted verdict per codec, with "error" for a rejected configuration', async () => {
-            fake(navigator, 'mediaCapabilities', { value: { decodingInfo } });
-            expect((await collect()).mediaDecode).toEqual([
-                'aac:supported+smooth',
-                'av1:unsupported',
-                'h264:supported+smooth+powerEfficient',
-                'hevc:unsupported',
-                'opus:unsupported',
-                'vp9:error',
-            ]);
-            expect(decodingInfo).toHaveBeenCalledWith({
-                type: 'file',
-                video: { contentType: 'video/mp4; codecs="avc1.42E01E"', width: 1920, height: 1080, bitrate: 4000000, framerate: 30 },
-            });
-            expect(decodingInfo).toHaveBeenCalledWith({
-                type: 'file',
-                audio: { contentType: 'audio/webm; codecs="opus"', channels: '2', bitrate: 128000, samplerate: 48000 },
-            });
-        });
-
-        test('a decodingInfo that throws synchronously is an error verdict, not a missing key', async () => {
-            fake(navigator, 'mediaCapabilities', { value: { decodingInfo() { throw new TypeError('bad'); } } });
-            expect((await collect()).mediaDecode).toEqual(
-                ['aac', 'av1', 'h264', 'hevc', 'opus', 'vp9'].map(label => `${label}:error`),
-            );
-        });
-
-        test('is omitted when MediaCapabilities is unavailable', async () => {
-            expect('mediaDecode' in (await collect())).toBe(false);
-        });
-    });
-
     describe('deadlines', () => {
         const hang = () => new Promise(() => undefined);
 
-        /** A mediaDecode whose codec checks all stay pending until the returned function is called. */
-        function pendingMediaDecode() {
-            const resolvers: ((value: Obj) => void)[] = [];
-            fake(navigator, 'mediaCapabilities', { value: { decodingInfo: () => new Promise(resolve => { resolvers.push(resolve as (value: Obj) => void); }) } });
-            return (value: Obj) => resolvers.forEach(resolve => resolve(value));
+        /** Swaps one probe for the length of a test, so a slow one can be simulated. */
+        function slowProbe(probe: () => unknown) {
+            const original = PROBES.adBaitBlocked;
+            PROBES.adBaitBlocked = probe;
+            restorers.push(() => { PROBES.adBaitBlocked = original; });
         }
 
-        test('a never-resolving mediaDecode is omitted at the 500 ms deadline, and no timers are left behind', async () => {
+        /** An adBaitBlocked whose result stays pending until the returned function is called. */
+        function pendingProbe() {
+            let resolve!: (value: string[]) => void;
+            slowProbe(() => new Promise(r => { resolve = r; }));
+            return (value: string[]) => resolve(value);
+        }
+
+        test('a never-resolving probe is omitted at the 50 ms deadline, and no timers are left behind', async () => {
             jest.useFakeTimers();
-            fake(navigator, 'mediaCapabilities', { value: { decodingInfo: hang } });
+            slowProbe(hang);
             fake(navigator, 'hardwareConcurrency', { value: 4 });
             let result: ObservationsInterface | undefined;
             collectObservations({ exclude: [] })!.then(r => { result = r; });
-            await jest.advanceTimersByTimeAsync(499);
+            await jest.advanceTimersByTimeAsync(49);
             expect(result).toBeUndefined();
             await jest.advanceTimersByTimeAsync(1);
             expect(result).toBeDefined();
-            expect('mediaDecode' in result!).toBe(false);
+            expect('adBaitBlocked' in result!).toBe(false);
             expect(result!.hardwareConcurrency).toBe(4);
             expect(jest.getTimerCount()).toBe(0);
         });
 
         test('a probe that resolves after the deadline is not in the collection promise, but is in a later snapshot', async () => {
             jest.useFakeTimers();
-            const resolveDecode = pendingMediaDecode();
+            const resolveProbe = pendingProbe();
             const collection = collectObservations({ exclude: [] })!;
             let result: ObservationsInterface | undefined;
             collection.then(r => { result = r; });
-            await jest.advanceTimersByTimeAsync(500);
+            await jest.advanceTimersByTimeAsync(50);
             expect(result).toBeDefined();
-            resolveDecode({ supported: true });
+            resolveProbe(['ad-banner']);
             await jest.advanceTimersByTimeAsync(0);
-            expect('mediaDecode' in result!).toBe(false);
-            expect((await collection.snapshot()).mediaDecode).toContain('h264:supported');
+            expect('adBaitBlocked' in result!).toBe(false);
+            expect((await collection.snapshot()).adBaitBlocked).toEqual(['ad-banner']);
         });
 
         test('a snapshot taken before the deadline waits for a pending key only until the deadline', async () => {
             jest.useFakeTimers();
-            pendingMediaDecode();
+            pendingProbe();
             const collection = collectObservations({ exclude: [] })!;
-            await jest.advanceTimersByTimeAsync(200);
+            await jest.advanceTimersByTimeAsync(20);
             let snapshot: ObservationsInterface | undefined;
             collection.snapshot().then(r => { snapshot = r; });
-            await jest.advanceTimersByTimeAsync(299);
+            await jest.advanceTimersByTimeAsync(29);
             expect(snapshot).toBeUndefined();
             await jest.advanceTimersByTimeAsync(1);
             expect(snapshot).toMatchObject({ v: 1, automationGlobals: [] });
-            expect('mediaDecode' in snapshot!).toBe(false);
+            expect('adBaitBlocked' in snapshot!).toBe(false);
         });
 
         test('a snapshot taken after the deadline does not wait', async () => {
             jest.useFakeTimers();
-            pendingMediaDecode();
+            pendingProbe();
             const collection = collectObservations({ exclude: [] })!;
-            await jest.advanceTimersByTimeAsync(800);
+            await jest.advanceTimersByTimeAsync(80);
             let snapshot: ObservationsInterface | undefined;
             collection.snapshot().then(r => { snapshot = r; });
             await jest.advanceTimersByTimeAsync(0);

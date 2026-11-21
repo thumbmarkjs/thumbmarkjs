@@ -20,8 +20,6 @@ export interface ObservationsInterface {
     webglVendorUnmasked?: string;
     /** UNMASKED_RENDERER_WEBGL, read through WEBGL_debug_renderer_info (on Gecko the plain RENDERER, which is already unmasked). */
     webglRendererUnmasked?: string;
-    /** Sorted MediaCapabilities verdicts, e.g. `h264:supported+smooth+powerEfficient`, `av1:unsupported` or `vp9:error`. */
-    mediaDecode?: string[];
     /** navigator.webdriver as-is; omitted when it is not a boolean. */
     webdriver?: boolean;
     /** Names of legacy automation-driver globals found on the global object (including `cdc_` prefixed ones). */
@@ -49,8 +47,12 @@ export interface ObservationsInterface {
 
 type ObservationKey = Exclude<keyof ObservationsInterface, 'v'>;
 
-/** One cap for the whole collection, measured from when it starts. */
-const OBSERVATIONS_TIMEOUT_MS = 500;
+/**
+ * One cap for the whole collection, measured from when it starts. Every probe
+ * reads its value synchronously, so in practice nothing waits for it; it is
+ * only a safety net for a probe that never settles.
+ */
+const OBSERVATIONS_TIMEOUT_MS = 50;
 
 const NAVIGATOR_ACCESSORS = ['hardwareConcurrency', 'userAgent', 'platform', 'language'];
 
@@ -59,15 +61,6 @@ const AUTOMATION_GLOBALS =
 
 const AD_BAIT_CLASSES =
     'ad-banner ad-container ad-slot banner-ad text-ad sponsored-ad google-ad ad-unit'.split(' ');
-
-const MEDIA_DECODE_SPEC: [contentType: string, label: string][] = [
-    ['video/mp4; codecs="avc1.42E01E"', 'h264'],
-    ['video/mp4; codecs="hvc1.1.6.L93.B0"', 'hevc'],
-    ['video/webm; codecs="vp09.00.10.08"', 'vp9'],
-    ['video/mp4; codecs="av01.0.05M.08"', 'av1'],
-    ['audio/mp4; codecs="mp4a.40.2"', 'aac'],
-    ['audio/webm; codecs="opus"', 'opus'],
-];
 
 const hasOwn = (target: object, name: string): boolean =>
     Object.prototype.hasOwnProperty.call(target, name);
@@ -110,27 +103,6 @@ function readWebglUnmasked(): { vendor?: string, renderer?: string } {
         // WebGL unavailable or blocked: both keys are omitted.
     }
     return webglUnmasked;
-}
-
-function mediaDecode(): Promise<string[] | undefined> | undefined {
-    const capabilities = navigator.mediaCapabilities;
-    if (!capabilities || typeof capabilities.decodingInfo !== 'function') return;
-    const probes = MEDIA_DECODE_SPEC.map(([contentType, label]) => {
-        const configuration: MediaDecodingConfiguration = contentType.startsWith('video/')
-            ? { type: 'file', video: { contentType, width: 1920, height: 1080, bitrate: 4000000, framerate: 30 } }
-            : { type: 'file', audio: { contentType, channels: '2', bitrate: 128000, samplerate: 48000 } };
-        return Promise.resolve().then(() => capabilities.decodingInfo(configuration)).then(
-            info => {
-                const flags = (['supported', 'smooth', 'powerEfficient'] as const).filter(flag => info && info[flag]);
-                return `${label}:${flags.length ? flags.join('+') : 'unsupported'}`;
-            },
-            // A rejected configuration is an answer for that codec only.
-            () => `${label}:error`,
-        );
-    });
-    // No timer of its own: a decodingInfo that never answers just stays pending and
-    // is left out when the collection deadline passes.
-    return Promise.all(probes).then(results => results.sort());
 }
 
 function adBaitBlocked(): string[] | undefined {
@@ -182,10 +154,10 @@ function canvasReadbackDiffBytes(): number | undefined {
     return diff;
 }
 
-const PROBES: Record<ObservationKey, () => unknown> = {
+/** Exported only so tests can swap in a slow probe. */
+export const PROBES: Record<ObservationKey, () => unknown> = {
     webglVendorUnmasked: () => readWebglUnmasked().vendor,
     webglRendererUnmasked: () => readWebglUnmasked().renderer,
-    mediaDecode,
     webdriver: () => typeof navigator.webdriver === 'boolean' ? navigator.webdriver : undefined,
     automationGlobals: () => {
         const names = Object.getOwnPropertyNames(globalThis);
@@ -246,7 +218,7 @@ export type ObservationsCollection = Promise<ObservationsInterface> & {
 
 /**
  * Starts collecting observations. The returned promise never rejects and
- * resolves once every key has settled or 500 ms after this call, whichever
+ * resolves once every key has settled or 50 ms after this call, whichever
  * comes first, with the keys that resolved by then. A key still pending at the
  * deadline is omitted from it, but `snapshot()` picks it up if it resolves
  * before the request is built. Probes run off the calling stack (after the

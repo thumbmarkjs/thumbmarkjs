@@ -3,7 +3,7 @@ import { getApiPromise } from './api';
 import { defaultOptions, OptionsAfterDefaults } from '../options';
 import { hash } from '../utils/hash';
 import { stableStringify } from '../utils/stableStringify';
-import { collectObservations, ObservationsInterface } from '../utils/observations';
+import { collectObservations, ObservationsInterface, PROBES } from '../utils/observations';
 import { setCache } from '../utils/cache';
 import { logThumbmarkData } from '../utils/log';
 import { __resetBrowserCache } from '../components/system/browser';
@@ -73,7 +73,7 @@ describe('observations in the API request body', () => {
 
     test('still sends { v: 1 } when no key could be determined', async () => {
         const every = [
-            'webglVendorUnmasked', 'webglRendererUnmasked', 'mediaDecode', 'webdriver', 'automationGlobals',
+            'webglVendorUnmasked', 'webglRendererUnmasked', 'webdriver', 'automationGlobals',
             'engineApiMarkers', 'navigatorAccessorOverrides', 'getterNativeSourceTamper', 'hardwareConcurrency',
             'overriddenPrototypeMethods', 'adBaitBlocked',
         ];
@@ -205,58 +205,59 @@ describe('when collection happens', () => {
 describe('getApiPromise with pending observations', () => {
     const options = { ...apiOptions, timeout: 5000 } as OptionsAfterDefaults;
     const hang = () => new Promise(() => undefined);
-    const withMedia = (decodingInfo: () => Promise<unknown>) =>
-        Object.defineProperty(navigator, 'mediaCapabilities', { value: { decodingInfo }, configurable: true });
-    afterEach(() => { delete (navigator as unknown as Record<string, unknown>).mediaCapabilities; });
+    // Every real probe is synchronous, so a slow one is simulated by swapping adBaitBlocked.
+    const original = PROBES.adBaitBlocked;
+    const withSlowProbe = (probe: () => unknown) => { PROBES.adBaitBlocked = probe; };
+    afterEach(() => { PROBES.adBaitBlocked = original; });
 
-    test('a probe still pending at the deadline is omitted and the request goes out at 500 ms, not the 5 s timeout', async () => {
+    test('a probe still pending at the deadline is omitted and the request goes out at 50 ms, not the 5 s timeout', async () => {
         jest.useFakeTimers();
-        withMedia(hang);
+        withSlowProbe(hang);
         const response = getApiPromise(options, { a: 1 } as componentInterface, collectObservations(options));
-        await jest.advanceTimersByTimeAsync(499);
+        await jest.advanceTimersByTimeAsync(49);
         expect(fetchMock).not.toHaveBeenCalled();
         await jest.advanceTimersByTimeAsync(1);
         expect(fetchMock).toHaveBeenCalledTimes(1);
         const [body] = sentBodies();
         expect(body.observations).toMatchObject({ v: 1, automationGlobals: [] });
-        expect(body.observations).not.toHaveProperty('mediaDecode');
+        expect(body.observations).not.toHaveProperty('adBaitBlocked');
         await expect(response).resolves.toEqual({ info: {} });
     });
 
     test('a probe that resolves after the deadline but before the request is built is included, with no wait', async () => {
         jest.useFakeTimers();
         const resolvers: ((value: unknown) => void)[] = [];
-        withMedia(() => new Promise(resolve => { resolvers.push(resolve); }));
+        withSlowProbe(() => new Promise(resolve => { resolvers.push(resolve); }));
         const collection = collectObservations(options)!;
-        await jest.advanceTimersByTimeAsync(700);
-        resolvers.forEach(resolve => resolve({ supported: true }));
+        await jest.advanceTimersByTimeAsync(70);
+        resolvers.forEach(resolve => resolve(['ad-banner']));
         await jest.advanceTimersByTimeAsync(0);
         void getApiPromise(options, {}, collection);
         await jest.advanceTimersByTimeAsync(0);
         expect(fetchMock).toHaveBeenCalledTimes(1);
-        expect(sentBodies()[0].observations!.mediaDecode).toContain('h264:supported');
+        expect(sentBodies()[0].observations!.adBaitBlocked).toEqual(['ad-banner']);
     });
 
     test('a request built after the deadline does not wait for a pending probe', async () => {
         jest.useFakeTimers();
-        withMedia(hang);
+        withSlowProbe(hang);
         const collection = collectObservations(options)!;
-        await jest.advanceTimersByTimeAsync(700);
+        await jest.advanceTimersByTimeAsync(70);
         void getApiPromise(options, {}, collection);
         await jest.advanceTimersByTimeAsync(0);
         expect(fetchMock).toHaveBeenCalledTimes(1);
-        expect(sentBodies()[0].observations).not.toHaveProperty('mediaDecode');
+        expect(sentBodies()[0].observations).not.toHaveProperty('adBaitBlocked');
     });
 
     test('waits for a probe that resolves before the deadline and includes it', async () => {
         jest.useFakeTimers();
-        withMedia(() => new Promise(resolve => setTimeout(() => resolve({ supported: true }), 100)));
+        withSlowProbe(() => new Promise(resolve => setTimeout(() => resolve(['ad-banner']), 20)));
         void getApiPromise(options, {}, collectObservations(options));
-        await jest.advanceTimersByTimeAsync(99);
+        await jest.advanceTimersByTimeAsync(19);
         expect(fetchMock).not.toHaveBeenCalled();
         await jest.advanceTimersByTimeAsync(1);
         expect(fetchMock).toHaveBeenCalledTimes(1);
-        expect(sentBodies()[0].observations!.mediaDecode).toContain('h264:supported');
+        expect(sentBodies()[0].observations!.adBaitBlocked).toEqual(['ad-banner']);
     });
 
     test('keys that resolved before the request is built are included without any wait', async () => {

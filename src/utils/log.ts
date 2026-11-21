@@ -18,8 +18,8 @@ import type { ObservationsCollection } from './observations';
  * nothing.
  *
  * `observations`, when given, is added as a sibling of `components` (outside
- * the hash) from its deadline-bounded snapshot, awaited here for the same
- * reason. If the snapshot rejects, the key is omitted.
+ * the hash) from its deadline-bounded snapshot (50 ms after collection
+ * started at most), awaited here for the same reason. If the snapshot rejects, the key is omitted.
  * @internal
  */
 export async function logThumbmarkData(thisHash: string, thumbmarkData: componentInterface, options: optionsInterface, errors: ThumbmarkError[] = [], observations?: Pick<ObservationsCollection, 'snapshot'>): Promise<void> {
