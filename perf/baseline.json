@@ -68,5 +68,39 @@
     "webgl": 0.012,
     "webrtc": 4.854,
     "speech": 0.014
+  },
+  "cold": {
+    "timestamp": "2026-11-21T13:31:53.577Z",
+    "samples": 10,
+    "chromium": "143.0.7499.4",
+    "host": {
+      "platform": "darwin",
+      "arch": "arm64",
+      "cpu": "Apple M1 Pro",
+      "cores": 8
+    },
+    "load_per_core": 0.42,
+    "metrics": {
+      "noapi_total_ms": {
+        "median": 952.9,
+        "p95": 1096.5
+      },
+      "api_total_ms": {
+        "median": 1255.5,
+        "p95": 1308
+      },
+      "api_send_ms": {
+        "median": 950.9,
+        "p95": 976.2
+      },
+      "ctx_api_total_ms": {
+        "median": 123.6,
+        "p95": 1238.9
+      },
+      "ctx_api_send_ms": {
+        "median": 121,
+        "p95": 953.3
+      }
+    }
   }
 }

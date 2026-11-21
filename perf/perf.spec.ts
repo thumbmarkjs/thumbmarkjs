@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { writeFileSync } from 'node:fs';
+import { coldCheck } from './cold.mjs';
 
 const MODE = process.env.PERF_MODE || 'regression';
 const CFG: Record<string, { iter: number; warmup: number }> = {
@@ -53,7 +54,8 @@ async function runOne(page) {
 }
 
 const results: any = { mode: MODE, iterations: iter, timestamp: new Date().toISOString(), per_browser: {} };
-const browsers = MODE === 'full' ? ['chromium','firefox','webkit'] : ['chromium'];
+// PERF_MODE=cold runs only the cold-start check below.
+const browsers = MODE === 'cold' ? [] : MODE === 'full' ? ['chromium','firefox','webkit'] : ['chromium'];
 
 for (const b of browsers) {
   test(`bench ${b}`, async ({ playwright }) => {
@@ -78,7 +80,26 @@ for (const b of browsers) {
   });
 }
 
+// Cold start: the first get() in a brand-new browser process, which is what a
+// real page view pays. Runs in every mode; see perf/cold.mjs for the variants
+// and thresholds. FAIL fails the suite; WARN is reported but passes.
+test('cold start', async () => {
+  test.setTimeout(2 * (Number(process.env.PERF_COLD_DEADLINE_S) || 600) * 1000 + 120_000);
+  const r = await coldCheck({ log: (m) => console.log(`[cold] ${m}`) });
+  results.cold = r.cold;
+  results.cold_verdict = { verdict: r.verdict, checks: r.checks, notes: r.notes, anomalies: r.anomalies };
+  console.log(`[cold] ${r.verdict}\n${JSON.stringify(r.cold.metrics, null, 2)}\n${JSON.stringify(r.checks)}`);
+  if (r.verdict === 'WARN') test.info().annotations.push({ type: 'cold-start WARN', description: JSON.stringify(r.checks) });
+  expect(r.verdict, `cold-start regression: ${JSON.stringify(r.checks)}`).not.toBe('FAIL');
+});
+
 test.afterAll(() => {
+  if (MODE === 'cold') {
+    // Kept apart from last-run.json so a cold-only run can never be copied over
+    // the warm baseline by mistake.
+    writeFileSync('perf/last-cold.json', JSON.stringify(results, null, 2));
+    return;
+  }
   if (MODE !== 'full') delete (results as any).per_browser;
   writeFileSync('perf/last-run.json', JSON.stringify(results, null, 2));
 });

@@ -11,3 +11,5 @@ test-results
 .serena
 specs
 perf/last-run.json
+perf/last-cold.json
+perf/last-ab-cold.json
