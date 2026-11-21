@@ -73,7 +73,7 @@ describe('observations in the API request body', () => {
 
     test('still sends { v: 1 } when no key could be determined', async () => {
         const every = [
-            'webglVendorUnmasked', 'webglRendererUnmasked', 'webdriver', 'automationGlobals',
+            'webglVendorUnmasked', 'webglRendererUnmasked', 'mediaDecode', 'webdriver', 'automationGlobals',
             'engineApiMarkers', 'navigatorAccessorOverrides', 'getterNativeSourceTamper', 'hardwareConcurrency',
             'overriddenPrototypeMethods', 'adBaitBlocked',
         ];
@@ -210,13 +210,12 @@ describe('getApiPromise with pending observations', () => {
     const withSlowProbe = (probe: () => unknown) => { PROBES.adBaitBlocked = probe; };
     afterEach(() => { PROBES.adBaitBlocked = original; });
 
-    test('a probe still pending at the deadline is omitted and the request goes out at 50 ms, not the 5 s timeout', async () => {
+    test('a pending probe is omitted and the request is sent at once, without waiting', async () => {
         jest.useFakeTimers();
         withSlowProbe(hang);
-        const response = getApiPromise(options, { a: 1 } as componentInterface, collectObservations(options));
-        await jest.advanceTimersByTimeAsync(49);
-        expect(fetchMock).not.toHaveBeenCalled();
-        await jest.advanceTimersByTimeAsync(1);
+        const collection = collectObservations(options);
+        await jest.advanceTimersByTimeAsync(0);
+        const response = getApiPromise(options, { a: 1 } as componentInterface, collection);
         expect(fetchMock).toHaveBeenCalledTimes(1);
         const [body] = sentBodies();
         expect(body.observations).toMatchObject({ v: 1, automationGlobals: [] });
@@ -224,56 +223,34 @@ describe('getApiPromise with pending observations', () => {
         await expect(response).resolves.toEqual({ info: {} });
     });
 
-    test('a probe that resolves after the deadline but before the request is built is included, with no wait', async () => {
-        jest.useFakeTimers();
-        const resolvers: ((value: unknown) => void)[] = [];
-        withSlowProbe(() => new Promise(resolve => { resolvers.push(resolve); }));
-        const collection = collectObservations(options)!;
-        await jest.advanceTimersByTimeAsync(70);
-        resolvers.forEach(resolve => resolve(['ad-banner']));
-        await jest.advanceTimersByTimeAsync(0);
-        void getApiPromise(options, {}, collection);
-        await jest.advanceTimersByTimeAsync(0);
-        expect(fetchMock).toHaveBeenCalledTimes(1);
-        expect(sentBodies()[0].observations!.adBaitBlocked).toEqual(['ad-banner']);
-    });
-
-    test('a request built after the deadline does not wait for a pending probe', async () => {
-        jest.useFakeTimers();
+    test('getThumbmark sends the request although a probe never resolves', async () => {
         withSlowProbe(hang);
-        const collection = collectObservations(options)!;
-        await jest.advanceTimersByTimeAsync(70);
-        void getApiPromise(options, {}, collection);
-        await jest.advanceTimersByTimeAsync(0);
+        const result = await getThumbmark(apiOptions);
         expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(sentBodies()[0].observations).toMatchObject({ v: 1, automationGlobals: [] });
         expect(sentBodies()[0].observations).not.toHaveProperty('adBaitBlocked');
+        expect(result.info).toEqual({});
     });
 
-    test('waits for a probe that resolves before the deadline and includes it', async () => {
-        jest.useFakeTimers();
-        withSlowProbe(() => new Promise(resolve => setTimeout(() => resolve(['ad-banner']), 20)));
-        void getApiPromise(options, {}, collectObservations(options));
-        await jest.advanceTimersByTimeAsync(19);
-        expect(fetchMock).not.toHaveBeenCalled();
-        await jest.advanceTimersByTimeAsync(1);
-        expect(fetchMock).toHaveBeenCalledTimes(1);
-        expect(sentBodies()[0].observations!.adBaitBlocked).toEqual(['ad-banner']);
-    });
-
-    test('keys that resolved before the request is built are included without any wait', async () => {
-        const pending = collectObservations(options)!;
-        await pending;
-        void getApiPromise(options, {}, pending);
-        await Promise.resolve();
-        await Promise.resolve();
-        await Promise.resolve();
+    test('a probe that resolved before the request is built is included', async () => {
+        const collection = collectObservations(options)!;
+        await new Promise(resolve => setTimeout(resolve, 0));
+        void getApiPromise(options, {}, collection);
         expect(fetchMock).toHaveBeenCalledTimes(1);
         expect(sentBodies()[0].observations).toMatchObject({ v: 1, automationGlobals: [] });
     });
 
-    test('a collection that rejects sends the request without observations', async () => {
-        await getApiPromise(options, {}, { snapshot: () => Promise.reject(new Error('boom')) });
-        expect(sentBodies()[0]).not.toHaveProperty('observations');
+    test('a probe that resolves only after the request is built is not in that request', async () => {
+        jest.useFakeTimers();
+        let resolveProbe!: (value: string[]) => void;
+        withSlowProbe(() => new Promise(resolve => { resolveProbe = resolve; }));
+        const collection = collectObservations(options)!;
+        await jest.advanceTimersByTimeAsync(0);
+        void getApiPromise(options, {}, collection);
+        resolveProbe(['ad-banner']);
+        await jest.advanceTimersByTimeAsync(0);
+        expect(sentBodies()[0].observations).not.toHaveProperty('adBaitBlocked');
+        expect(collection.snapshot().adBaitBlocked).toEqual(['ad-banner']);
     });
 
     test('without observations the request is built and sent synchronously, as before', () => {
@@ -285,7 +262,9 @@ describe('getApiPromise with pending observations', () => {
     test('a probe that throws omits only its own key from the request', async () => {
         Object.defineProperty(navigator, 'webdriver', { get() { throw new Error('boom'); }, configurable: true });
         try {
-            await getApiPromise(options, {}, collectObservations(options));
+            const collection = collectObservations(options)!;
+            await new Promise(resolve => setTimeout(resolve, 0));
+            await getApiPromise(options, {}, collection);
         } finally {
             delete (navigator as unknown as Record<string, unknown>).webdriver;
         }
@@ -368,11 +347,42 @@ describe('observations in the sampled log', () => {
         expect(logBodies()[0].observations).toHaveProperty('automationGlobals');
     });
 
-    test('a rejected snapshot still sends the log, without the key', async () => {
-        await logThumbmarkData('abc', { a: { b: 1 } }, defaultOptions, [], { snapshot: () => Promise.reject(new Error('boom')) });
+    test('the log includes a key that resolved after the API request was built', async () => {
+        sample(0);
+        let release!: () => void;
+        const original = PROBES.adBaitBlocked;
+        PROBES.adBaitBlocked = () => new Promise(resolve => { release = () => resolve(['ad-banner']); });
+        // The API request is serialized when fetch is called; the probe resolves right after.
+        fetchMock.mockImplementation((url: string) => {
+            if (url.includes('experimental.thumbmarkjs.com')) return Promise.reject(new TypeError('Failed to fetch'));
+            if (!url.includes('/log')) release();
+            return Promise.resolve({ ok: true, status: 200, json: async () => ({ info: {} }) });
+        });
+        try {
+            await getThumbmark(apiOptions);
+            await flush();
+        } finally {
+            PROBES.adBaitBlocked = original;
+        }
+        expect(apiBodies()).toHaveLength(1);
         expect(logBodies()).toHaveLength(1);
-        expect(logBodies()[0]).not.toHaveProperty('observations');
-        expect(logBodies()[0].components).toEqual({ a: { b: 1 } });
+        expect(apiBodies()[0].observations).not.toHaveProperty('adBaitBlocked');
+        expect(logBodies()[0].observations!.adBaitBlocked).toEqual(['ad-banner']);
+    });
+
+    test('a pending probe does not hold up the log, and its key is left out', async () => {
+        sample(0);
+        const original = PROBES.adBaitBlocked;
+        PROBES.adBaitBlocked = () => new Promise(() => undefined);
+        try {
+            await getThumbmark(logOptions);
+            await flush();
+        } finally {
+            PROBES.adBaitBlocked = original;
+        }
+        expect(logBodies()).toHaveLength(1);
+        expect(logBodies()[0].observations).toMatchObject({ v: 1, automationGlobals: [] });
+        expect(logBodies()[0].observations).not.toHaveProperty('adBaitBlocked');
     });
 
     test('without a collection the log is sent without the key', async () => {

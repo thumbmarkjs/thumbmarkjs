@@ -108,10 +108,10 @@ If your Content Security Policy omits `'unsafe-eval'`, or does not allow `experi
 
 ### Environment observations
 
-With an `api_key` (or `simple_request`), the API request also carries an `observations` object: a few raw facts about the browser environment (for example the unmasked WebGL vendor and renderer, `navigator.webdriver`, whether some `navigator` properties have been overridden, and how many bytes differ between two reads of the same unmodified canvas). The API uses them to compute `info.signals`. The client only collects and sends raw values; it makes no judgement about them.
+With an `api_key` (or `simple_request`), the API request also carries an `observations` object: a few raw facts about the browser environment (for example the unmasked WebGL vendor and renderer, media decode support, `navigator.webdriver`, whether some `navigator` properties have been overridden, and how many bytes differ between two reads of the same unmodified canvas). The API uses them to compute `info.signals`. The client only collects and sends raw values; it makes no judgement about them.
 
 - They are sent next to `components` in the API request, and in the [sampled log](#sampled-logging) when a run is sampled. They are not part of the fingerprint or the thumbmark hash, and are not returned in the result.
-- Collection runs in parallel with the components. The request includes every value that has resolved by the time it is built, and waits for pending ones at most 50 ms after collection started, and in practice not at all, since every value is read synchronously. A value that cannot be determined in time is left out, so a missing key means "unknown", not "false". It never prompts or changes the page.
+- Observations are collected while the components run. The request includes whatever has been collected by the time the components finish; it never waits for observations. A value that has not resolved by then is left out, so a missing key means "unknown", not "false". It never prompts or changes the page.
 - Nothing is collected unless an API request will be built (not when a cached API response is used) or the run is sampled for logging. One collection serves both.
 - Opt out of everything with `exclude: ['observations']`, or of a single value with e.g. `exclude: ['observations.adBaitBlocked']`. The excluded probe does not run. `include` and `stabilize` do not apply to observations.
 - The payload type is exported as `ObservationsInterface`.
