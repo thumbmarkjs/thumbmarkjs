@@ -92,4 +92,22 @@ describe('logThumbmarkData', () => {
         ]);
         expect(loggedPayload().errors).toHaveLength(1);
     });
+
+    test('never sends api_key or metadata, and leaves the caller\'s options untouched', async () => {
+        arrangeFetch(VALID_ARTIFACT);
+        const options = { ...defaultOptions, logging: true, api_key: 'secret', metadata: { user: 'u1' } };
+        const snapshot = { ...options };
+
+        await logThumbmarkData('abc123', {}, options);
+
+        const body = fetchMock.mock.calls.find(([url]) => url.includes('/log'))![1].body as string;
+        expect(body).not.toContain('secret');
+        const logged = loggedPayload().options;
+        expect(logged).not.toHaveProperty('api_key');
+        expect(logged).not.toHaveProperty('metadata');
+        expect(logged.logging).toBe(true);
+        expect(options).toEqual(snapshot);
+        expect(options.api_key).toBe('secret');
+        expect(options.metadata).toEqual({ user: 'u1' });
+    });
 });
