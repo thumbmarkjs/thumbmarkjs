@@ -10,6 +10,7 @@ import type { ObservationsCollection } from './observations';
 /**
  * Logs thumbmark data to remote logging endpoint (only once per session)
  * You can disable this by setting options.logging to false.
+ * Options are sent without credentials or customer metadata (api_key, metadata).
  *
  * The experimental payload is fetched here rather than by the caller because
  * this is its only consumer. That keeps it off getThumbmark's critical path —
@@ -30,13 +31,14 @@ export async function logThumbmarkData(thisHash: string, thumbmarkData: componen
     let observed;
     try { observed = await observations?.snapshot(); } catch { /* log without observations */ }
 
+    const { api_key: _omitApiKey, metadata: _omitMetadata, ...loggableOptions } = options;
     const payload = {
         thumbmark: thisHash,
         components: thumbmarkData,
         ...(observed && { observations: observed }),
         experimental: await getExperimentalPayload(),
         version: getVersion(),
-        options,
+        options: loggableOptions,
         path: window?.location?.pathname,
         ...(errors.length > 0 && { errors }),
     };
